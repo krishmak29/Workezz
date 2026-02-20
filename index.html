@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workezz – Sheet Merger</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#f5f6f8;--white:#fff;--surface2:#f0f1f4;--border:#e2e4ea;--border2:#d0d3dc;--accent:#1a56db;--accent-light:#eff4ff;--accent-hover:#1648c0;--text:#1a1d2e;--text2:#4b5068;--muted:#8b90a7;--success:#16a34a;--success-bg:#f0fdf4;--warning:#b45309;--warning-bg:#fffbeb;--danger:#dc2626;--danger-bg:#fff1f2;--updated:#7c3aed;--updated-bg:#f5f3ff;--shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.05);--shadow-md:0 4px 12px rgba(0,0,0,.08);--radius:10px;--radius-sm:6px;}
+html,body{height:100%;font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;}
+header{background:var(--white);border-bottom:1px solid var(--border);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow);flex-shrink:0;}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.25rem;letter-spacing:-.02em;}.logo span{color:var(--accent);}
+.version-badge{font-size:.65rem;background:var(--accent-light);color:var(--accent);padding:3px 9px;border-radius:100px;font-weight:600;}
+.stepper{background:var(--white);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;flex-shrink:0;}
+.step{display:flex;align-items:center;gap:8px;padding:13px 16px 13px 0;font-size:.78rem;font-weight:500;color:var(--muted);transition:color .2s;}.step.active{color:var(--accent);}.step.done{color:var(--success);}
+.step-num{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:600;background:var(--surface2);color:var(--muted);transition:all .2s;flex-shrink:0;}
+.step.active .step-num{background:var(--accent);color:#fff;}.step.done .step-num{background:var(--success);color:#fff;}
+.step-arrow{color:var(--border2);margin-right:16px;font-size:.85rem;}
+.screen{display:none;flex:1;flex-direction:column;overflow:hidden;animation:fadeIn .2s ease;}.screen.active{display:flex;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+/* S1 */
+.s1-layout{display:grid;grid-template-columns:340px 1fr;flex:1;overflow:hidden;}
+.s1-left{background:var(--white);border-right:1px solid var(--border);padding:22px 20px;display:flex;flex-direction:column;gap:20px;overflow-y:auto;}
+.s1-right{padding:22px;display:flex;flex-direction:column;gap:16px;overflow-y:auto;}
+.section-label{font-size:.68rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.drop-zone{border:2px dashed var(--border2);border-radius:var(--radius);padding:32px 16px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;position:relative;background:var(--surface2);}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--accent);background:var(--accent-light);}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.dz-icon{font-size:1.9rem;margin-bottom:8px;display:block;}.dz-text{font-size:.8rem;color:var(--text2);line-height:1.5;}.dz-text strong{color:var(--accent);}.dz-sub{font-size:.68rem;color:var(--muted);margin-top:4px;}
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;border-radius:var(--radius-sm);font-family:'IBM Plex Sans',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .15s;border:none;white-space:nowrap;}
+.btn-primary{background:var(--accent);color:#fff;}.btn-primary:hover{background:var(--accent-hover);}.btn-primary:disabled{background:var(--border2);color:var(--muted);cursor:not-allowed;}
+.btn-secondary{background:var(--white);color:var(--text2);border:1px solid var(--border2);}.btn-secondary:hover{background:var(--surface2);}
+.btn-success{background:#16a34a;color:#fff;}.btn-success:hover{background:#15803d;}
+.btn-danger-outline{background:transparent;color:var(--danger);border:1px solid #fca5a5;}.btn-danger-outline:hover{background:var(--danger-bg);}
+.btn-full{width:100%;}.btn-lg{padding:10px 20px;font-size:.88rem;}.btn-sm{padding:4px 10px;font-size:.72rem;}
+/* Table */
+.file-table-wrap{border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);background:var(--white);box-shadow:var(--shadow);}
+table{width:100%;border-collapse:collapse;}
+thead th{background:var(--surface2);padding:9px 14px;text-align:left;font-size:.66rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);}
+tbody td{padding:11px 14px;font-size:.8rem;border-bottom:1px solid var(--border);vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}tbody tr:hover{background:#fafbfc;}
+tbody tr{animation:rowSlide .2s ease forwards;opacity:0;}
+@keyframes rowSlide{from{opacity:0;transform:translateX(-5px)}to{opacity:1;transform:translateX(0)}}
+.sr-no{color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:.72rem;width:44px;}
+.file-chip{display:inline-flex;align-items:center;gap:8px;}
+.file-chip-icon{width:28px;height:28px;border-radius:5px;background:var(--accent-light);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:.66rem;font-weight:700;font-family:'IBM Plex Mono',monospace;flex-shrink:0;}
+.file-chip-name{font-size:.8rem;color:var(--text);}.file-chip-size{font-size:.68rem;color:var(--muted);}
+.empty-table{text-align:center;padding:40px 20px;color:var(--muted);}.empty-table p{font-size:.8rem;margin-top:6px;}
+.action-footer{display:flex;justify-content:flex-end;margin-top:12px;}
+/* S2 */
+.s2-layout{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:22px;flex:1;align-content:start;overflow-y:auto;}.s2-full{grid-column:1/-1;}
+.panel{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);}
+.panel-head{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.panel-head h3{font-size:.8rem;font-weight:600;color:var(--text);}.panel-head .ph-sub{font-size:.7rem;color:var(--muted);}
+.panel-body{padding:16px;display:flex;flex-direction:column;gap:10px;}
+.tag-input-wrap{display:flex;flex-wrap:wrap;gap:5px;min-height:38px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--white);cursor:text;align-items:center;}
+.tag-input-wrap:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(26,86,219,.1);}
+.tag{display:inline-flex;align-items:center;gap:4px;background:var(--accent-light);color:var(--accent);padding:2px 7px;border-radius:4px;font-size:.72rem;font-weight:500;}
+.tag-x{cursor:pointer;opacity:.7;font-size:.82rem;line-height:1;}
+.tag-input-real{border:none;outline:none;font-family:'IBM Plex Sans',sans-serif;font-size:.8rem;color:var(--text);background:transparent;min-width:70px;flex:1;}
+.find-replace-row{display:grid;grid-template-columns:1fr auto 1fr;gap:7px;align-items:center;}
+.find-replace-row span{color:var(--muted);font-size:.78rem;text-align:center;}
+.field-input{width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'IBM Plex Sans',sans-serif;font-size:.8rem;color:var(--text);outline:none;transition:border-color .2s;}
+.field-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(26,86,219,.1);}
+.toggle-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.toggle-item{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);}
+.toggle-item label{font-size:.78rem;font-weight:500;color:var(--text2);cursor:pointer;}
+.toggle{position:relative;width:34px;height:19px;flex-shrink:0;}.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:var(--border2);border-radius:100px;transition:.2s;cursor:pointer;}
+.toggle-slider:before{content:'';position:absolute;width:13px;height:13px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}
+.toggle input:checked+.toggle-slider{background:var(--accent);}.toggle input:checked+.toggle-slider:before{transform:translateX(15px);}
+.col-map-table{width:100%;border-collapse:collapse;}
+.col-map-table th{background:var(--surface2);padding:8px 12px;text-align:left;font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border-bottom:1px solid var(--border);}
+.col-map-table td{padding:8px 12px;border-bottom:1px solid var(--border);font-size:.78rem;vertical-align:middle;}
+.col-map-table tr:last-child td{border-bottom:none;}
+.col-input{width:55px;padding:4px 7px;border:1px solid var(--border);border-radius:4px;font-family:'IBM Plex Mono',monospace;font-size:.78rem;text-align:center;outline:none;}
+.col-input:focus{border-color:var(--accent);}
+.field-badge{display:inline-flex;align-items:center;gap:4px;font-size:.74rem;font-weight:600;color:var(--text2);}
+.req-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);display:inline-block;}
+.s2-footer{padding:0 22px 22px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.s2-footer-info{font-size:.76rem;color:var(--muted);}
+/* S3 */
+.s3-layout{display:flex;flex-direction:column;flex:1;padding:22px;gap:16px;overflow-y:auto;}
+.preview-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);}
+.stat-val{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:700;line-height:1;}.stat-label{font-size:.7rem;color:var(--muted);margin-top:3px;font-weight:500;}
+.stat-new .stat-val{color:var(--success);}.stat-updated .stat-val{color:var(--updated);}.stat-mismatch .stat-val{color:var(--danger);}.stat-skipped .stat-val{color:var(--warning);}
+.preview-table-wrap{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:auto;flex:1;}
+.status-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:100px;font-size:.68rem;font-weight:600;}
+.pill-new{background:var(--success-bg);color:var(--success);}.pill-updated{background:var(--updated-bg);color:var(--updated);}.pill-mismatch{background:var(--danger-bg);color:var(--danger);}
+.row-mismatch{background:#fff8f8;}
+.warn-panel{background:var(--warning-bg);border:1px solid #fcd34d;border-radius:var(--radius);padding:14px 16px;}
+.warn-panel h4{font-size:.76rem;font-weight:600;color:var(--warning);margin-bottom:6px;}
+.warn-list{list-style:none;display:flex;flex-direction:column;gap:4px;}.warn-list li{font-size:.76rem;color:var(--warning);}
+/* S4 */
+.s4-layout{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:32px;gap:20px;overflow-y:auto;}
+.s4-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);padding:26px;width:100%;max-width:560px;}
+.s4-card h3{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:5px;}
+.s4-card p{font-size:.8rem;color:var(--text2);margin-bottom:16px;line-height:1.5;}
+.export-preview{background:var(--surface2);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:16px;font-family:'IBM Plex Mono',monospace;font-size:.7rem;color:var(--text2);line-height:1.9;}
+.export-filename{color:var(--accent);font-weight:500;}
+::-webkit-scrollbar{width:5px;height:5px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Work<span>ezz</span></div>
+  <span class="version-badge">MVP v1.0</span>
+</header>
+<div class="stepper">
+  <div class="step active" id="step1"><div class="step-num">1</div> Upload Center</div>
+  <span class="step-arrow">›</span>
+  <div class="step" id="step2"><div class="step-num">2</div> Operations</div>
+  <span class="step-arrow">›</span>
+  <div class="step" id="step3"><div class="step-num">3</div> Live Preview</div>
+  <span class="step-arrow">›</span>
+  <div class="step" id="step4"><div class="step-num">4</div> Export</div>
+</div>
+
+<!-- SCREEN 1 -->
+<div class="screen active" id="screen1">
+  <div class="s1-layout">
+    <div class="s1-left">
+      <div>
+        <div class="section-label">Upload Files</div>
+        <div class="drop-zone" id="dropZone">
+          <input type="file" id="fileInput" multiple accept=".xls,.xlsx">
+          <span class="dz-icon">📂</span>
+          <div class="dz-text"><strong>Click to browse</strong> or drag & drop</div>
+          <div class="dz-sub">Supports .xls and .xlsx (WPS / Excel)</div>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="addFiles()">＋ Add Files to List</button>
+      <div style="margin-top:auto;padding-top:14px;border-top:1px solid var(--border);">
+        <p style="font-size:.72rem;color:var(--muted);line-height:1.6;">ℹ️ Data is read from <strong>Row 9 onwards</strong> by default. Adjustable in Operations.</p>
+      </div>
+    </div>
+    <div class="s1-right">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="section-label" style="margin-bottom:0;">Uploaded Files</div>
+        <span id="s1FileCount" style="font-size:.72rem;color:var(--muted);background:var(--surface2);padding:2px 9px;border-radius:100px;border:1px solid var(--border);">0 files</span>
+      </div>
+      <div class="file-table-wrap">
+        <table>
+          <thead><tr><th style="width:44px">#</th><th>File Name</th><th>Size</th><th style="text-align:right">Action</th></tr></thead>
+          <tbody id="fileTable">
+            <tr id="emptyRow1"><td colspan="4"><div class="empty-table">📋<p>No files added yet. Upload .xls or .xlsx above.</p></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="action-footer">
+        <button class="btn btn-primary btn-lg" id="nextBtn1" onclick="goTo(2)" disabled>Next: Operations &nbsp;›</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 2 -->
+<div class="screen" id="screen2">
+  <div class="s2-layout">
+    <div class="panel">
+      <div class="panel-head"><h3>Remove Prefixes</h3><span class="ph-sub">Part Number only</span></div>
+      <div class="panel-body">
+        <p style="font-size:.74rem;color:var(--muted);">One prefix per line, e.g.<br><code style="font-size:.72rem;background:var(--surface2);padding:1px 5px;border-radius:3px;">CWT.</code> <code style="font-size:.72rem;background:var(--surface2);padding:1px 5px;border-radius:3px;">PXC.</code></p>
+        <textarea id="prefixInput" class="field-input" rows="5" placeholder="CWT.&#10;PXC.&#10;SIE.&#10;SAEL." style="resize:vertical;font-family:'IBM Plex Mono',monospace;font-size:.8rem;line-height:1.7;"></textarea>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Remove Suffixes</h3><span class="ph-sub">Part Number only</span></div>
+      <div class="panel-body">
+        <p style="font-size:.74rem;color:var(--muted);">One suffix per line, e.g.<br><code style="font-size:.72rem;background:var(--surface2);padding:1px 5px;border-radius:3px;">-OLD</code> <code style="font-size:.72rem;background:var(--surface2);padding:1px 5px;border-radius:3px;">-REV2</code></p>
+        <textarea id="suffixInput" class="field-input" rows="5" placeholder="-OLD&#10;-REV2" style="resize:vertical;font-family:'IBM Plex Mono',monospace;font-size:.8rem;line-height:1.7;"></textarea>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Find & Replace</h3><span class="ph-sub">In Part Number</span></div>
+      <div class="panel-body">
+        <div id="frRows"></div>
+        <button class="btn btn-secondary btn-sm" style="margin-top:2px;" onclick="addFRRow()">＋ Add Rule</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Additional Cleaning</h3><span class="ph-sub">Part Number only</span></div>
+      <div class="panel-body">
+        <div class="toggle-grid">
+          <div class="toggle-item"><label for="togTrim">Trim Spaces</label><label class="toggle"><input type="checkbox" id="togTrim" checked><span class="toggle-slider"></span></label></div>
+          <div class="toggle-item"><label for="togProper">Proper Case</label><label class="toggle"><input type="checkbox" id="togProper"><span class="toggle-slider"></span></label></div>
+          <div class="toggle-item"><label for="togSpecial">Remove Special Chars</label><label class="toggle"><input type="checkbox" id="togSpecial"><span class="toggle-slider"></span></label></div>
+          <!-- togSpecial is OFF by default — Part Numbers are alphanumeric, enabling this could strip dots/colons -->
+          <div class="toggle-item"><label for="togUpper">UPPERCASE</label><label class="toggle"><input type="checkbox" id="togUpper"><span class="toggle-slider"></span></label></div>
+        </div>
+        <p style="font-size:.7rem;color:var(--muted);padding:6px 0 0;">⚠️ Numbers are <strong>never</strong> stripped. Part Numbers are alphanumeric (e.g. CWT.CA103, PXC.0311087).</p>
+      </div>
+    </div>
+    <div class="panel s2-full">
+      <div class="panel-head"><h3>Column Mapping</h3><span class="ph-sub">Auto-detected defaults — editable</span></div>
+      <div class="panel-body" style="padding:0;">
+        <table class="col-map-table">
+          <thead><tr><th>Field</th><th>Column</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="field-badge">📍 Data Start Row</span></td><td><input class="col-input" id="startRow" value="9"></td><td style="font-size:.74rem;color:var(--muted);">Rows before this are skipped (headers)</td></tr>
+            <tr><td><span class="field-badge"><span class="req-dot"></span> Make / Brand</span></td><td><input class="col-input" id="colMake" value="A"></td><td style="font-size:.74rem;color:var(--muted);">Manufacturer / brand column</td></tr>
+            <tr><td><span class="field-badge"><span class="req-dot"></span> Part Number</span></td><td><input class="col-input" id="colPart" value="B"></td><td style="font-size:.74rem;color:var(--muted);">Alphanumeric — unique merge key</td></tr>
+            <tr><td><span class="field-badge"><span class="req-dot"></span> Part Name / Desc</span></td><td><input class="col-input" id="colName" value="C"></td><td style="font-size:.74rem;color:var(--muted);">Most frequent name wins on conflict</td></tr>
+            <tr><td><span class="field-badge"><span class="req-dot"></span> Quantity</span></td><td><input class="col-input" id="colQty" value="O"></td><td style="font-size:.74rem;color:var(--muted);">Must be numeric and >= 0</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="s2-footer">
+    <button class="btn btn-secondary" onclick="goTo(1)">‹ Back</button>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <span class="s2-footer-info" id="s2Info"></span>
+      <button class="btn btn-primary btn-lg" onclick="runMerge()">⚡ Merge & Preview</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 3 -->
+<div class="screen" id="screen3">
+  <div class="s3-layout">
+    <div class="preview-stats">
+      <div class="stat-card stat-new"><div class="stat-val" id="statNew">0</div><div class="stat-label">🟢 New Rows</div></div>
+      <div class="stat-card stat-updated"><div class="stat-val" id="statUpdated">0</div><div class="stat-label">🟡 Qty Updated</div></div>
+      <div class="stat-card stat-mismatch"><div class="stat-val" id="statMismatch">0</div><div class="stat-label">🔴 Name Mismatch</div></div>
+      <div class="stat-card stat-skipped"><div class="stat-val" id="statSkipped">0</div><div class="stat-label">⚠️ Skipped</div></div>
+    </div>
+    <div id="warnPanel" class="warn-panel" style="display:none;">
+      <h4>⚠️ Warnings</h4>
+      <ul class="warn-list" id="warnList"></ul>
+    </div>
+    <div class="preview-table-wrap">
+      <table>
+        <thead><tr><th style="width:44px">#</th><th>Make</th><th>Part Number</th><th>Part Name</th><th>Qty</th><th>Status</th></tr></thead>
+        <tbody id="previewTable"></tbody>
+      </table>
+    </div>
+    <div style="display:flex;justify-content:space-between;">
+      <button class="btn btn-secondary" onclick="goTo(2)">‹ Back</button>
+      <button class="btn btn-primary btn-lg" onclick="goTo(4)">Export &nbsp;›</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 4 -->
+<div class="screen" id="screen4">
+  <div class="s4-layout">
+    <div class="s4-card">
+      <h3>✅ Export Merged Data</h3>
+      <p>Cleaned and merged sheet. Name conflicts are flagged in the Notes column.</p>
+      <div class="export-preview">📄 <span class="export-filename" id="exportFileName">Workezz_Merged_YYYY-MM-DD.xlsx</span><br>SR · Make · Part Number · Part Name · Total Qty · Notes</div>
+      <button class="btn btn-success btn-full btn-lg" onclick="exportMerged()">⬇ Download Merged File</button>
+    </div>
+    <div class="s4-card">
+      <h3>⚠️ Download Error Report</h3>
+      <p>All skipped rows with error reasons — for auditing and data correction.</p>
+      <div class="export-preview">📄 <span class="export-filename" id="errorFileName">Workezz_Error_Report_YYYY-MM-DD.xlsx</span><br>File · Row · Make · Part No · Part Name · Qty · Reason</div>
+      <button class="btn btn-danger-outline btn-full btn-lg" onclick="exportErrors()" id="errorBtn">⬇ Download Error Report</button>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-secondary" onclick="goTo(3)">‹ Back to Preview</button>
+      <button class="btn btn-secondary" onclick="resetApp()">↺ Start Over</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const state={files:[],prefixes:[],suffixes:[],findReplace:[],merged:[],errors:[],warnings:[]};
+
+function goTo(n){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.querySelectorAll('.step').forEach((s,i)=>{s.classList.remove('active','done');if(i+1<n)s.classList.add('done');if(i+1===n)s.classList.add('active');});document.getElementById('screen'+n).classList.add('active');if(n===4)setExportNames();}
+
+const dz=document.getElementById('dropZone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dragover');document.getElementById('fileInput').files=e.dataTransfer.files;addFiles();});
+
+function addFiles(){const input=document.getElementById('fileInput');if(!input.files.length){alert('Please select files first.');return;}for(const file of input.files){if(state.files.find(f=>f.name===file.name))continue;state.files.push({file,name:file.name,size:file.size});}input.value='';renderFileTable();}
+
+function removeFile(name){state.files=state.files.filter(f=>f.name!==name);renderFileTable();}
+
+function renderFileTable(){
+  const tbody=document.getElementById('fileTable');
+  const count=state.files.length;
+  document.getElementById('s1FileCount').textContent=count+' file'+(count!==1?'s':'');
+  document.getElementById('nextBtn1').disabled=count===0;
+  if(!count){tbody.innerHTML='<tr id="emptyRow1"><td colspan="4"><div class="empty-table">📋<p>No files added yet.</p></div></td></tr>';return;}
+  tbody.innerHTML=state.files.map((f,i)=>{
+    const ext=f.name.split('.').pop().toUpperCase();
+    return `<tr><td class="sr-no">${String(i+1).padStart(2,'0')}</td><td><div class="file-chip"><div class="file-chip-icon">${ext}</div><div><div class="file-chip-name">${f.name}</div><div class="file-chip-size">${formatSize(f.size)}</div></div></div></td><td style="font-size:.76rem;color:var(--muted);">${formatSize(f.size)}</td><td style="text-align:right;"><button class="btn btn-danger-outline btn-sm" onclick="removeFile('${f.name}')">✕ Remove</button></td></tr>`;
+  }).join('');
+}
+
+function formatSize(b){if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(1)+' MB';}
+
+function getPrefixes(){return document.getElementById('prefixInput').value.split('\n').map(s=>s.trim()).filter(s=>s.length>0);}
+function getSuffixes(){return document.getElementById('suffixInput').value.split('\n').map(s=>s.trim()).filter(s=>s.length>0);}
+function addFRRow(){const id=Date.now();state.findReplace.push({id,find:'',replace:''});renderFRRows();}
+function renderFRRows(){const c=document.getElementById('frRows');c.innerHTML=state.findReplace.map(fr=>`<div class="find-replace-row" style="margin-bottom:7px;"><input class="field-input" placeholder="Find…" value="${fr.find}" oninput="updateFR(${fr.id},'find',this.value)"><span>→</span><div style="display:flex;gap:5px;"><input class="field-input" placeholder="Replace with…" value="${fr.replace}" oninput="updateFR(${fr.id},'replace',this.value)" style="flex:1;"><button class="btn btn-sm" style="background:var(--danger-bg);color:var(--danger);border:1px solid #fca5a5;" onclick="removeFR(${fr.id})">✕</button></div></div>`).join('');}
+function updateFR(id,key,val){const fr=state.findReplace.find(f=>f.id===id);if(fr)fr[key]=val;}
+function removeFR(id){state.findReplace=state.findReplace.filter(f=>f.id!==id);renderFRRows();}
+
+function colLetter(l){return l.toUpperCase().charCodeAt(0)-65;}
+
+function cleanPartNumber(val){
+  let s=String(val??'').trim();
+  // Remove prefixes - matches Python logic exactly: one pass, first match wins, then trim spaces
+  const _prefixes=getPrefixes();for(const p of _prefixes){if(p&&s.startsWith(p)){s=s.slice(p.length).trim();break;}}
+  // Remove suffixes
+  const _suffixes=getSuffixes();for(const sf of _suffixes){if(sf&&s.endsWith(sf)){s=s.slice(0,s.length-sf.length).trim();break;}}
+  // Find & Replace
+  for(const fr of state.findReplace)if(fr.find)s=s.split(fr.find).join(fr.replace);
+  // Toggles — numbers are NEVER removed (Part Numbers are alphanumeric)
+  if(document.getElementById('togTrim').checked)s=s.trim();
+  if(document.getElementById('togSpecial').checked)s=s.replace(/[^a-zA-Z0-9\s\-\.]/g,'');
+  if(document.getElementById('togUpper').checked)s=s.toUpperCase();
+  else if(document.getElementById('togProper').checked)s=s.replace(/\w\S*/g,t=>t.charAt(0).toUpperCase()+t.slice(1).toLowerCase());
+  return s.trim();
+}
+
+async function parseFile(fileObj){
+  return new Promise(resolve=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      try{const wb=XLSX.read(e.target.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true});resolve(data);}
+      catch(err){console.error('Parse error:',err);resolve([]);}
+    };
+    reader.readAsArrayBuffer(fileObj.file);
+  });
+}
+
+async function runMerge(){
+  document.getElementById('s2Info').textContent='Processing…';
+  const colMake=colLetter(document.getElementById('colMake').value||'B');
+  const colPart=colLetter(document.getElementById('colPart').value||'C');
+  const colName=colLetter(document.getElementById('colName').value||'D');
+  const colQty=colLetter(document.getElementById('colQty').value||'P');
+  const startRow=Math.max(1,parseInt(document.getElementById('startRow').value)||9);
+  state.merged=[];state.errors=[];state.warnings=[];
+  const mergeMap=new Map();
+
+  for(const fileObj of state.files){
+    const rows=await parseFile(fileObj);
+    for(let i=startRow-1;i<rows.length;i++){
+      const row=rows[i];
+      const rawPart=String(row[colPart]??'').trim(); // String() handles both text and numeric part numbers
+      const make=String(row[colMake]??'').trim();
+      const partName=String(row[colName]??'').trim();
+      const rawQty=row[colQty];
+
+      // Only skip if Part Number is truly blank — alphanumeric is fine
+      if(!rawPart){
+        if(make||partName||(rawQty!==''&&rawQty!==null&&rawQty!==undefined))
+          state.errors.push({file:fileObj.name,rowNum:i+1,make,partNum:'',partName,qty:rawQty,reason:'Blank Part Number'});
+        continue;
+      }
+
+      // Qty: only skip if missing or negative
+      // Parse qty — never skip a row just because qty looks odd
+      let qty=0;
+      if(typeof rawQty==='number'){
+        qty=rawQty;
+      } else if(rawQty!==''&&rawQty!==null&&rawQty!==undefined){
+        const parsed=parseFloat(String(rawQty).replace(/,/g,'').trim());
+        qty=isNaN(parsed)?0:parsed;
+      }
+      // Only warn (don't skip) for negative qty
+      if(qty<0){
+        state.warnings.push('Row '+(i+1)+' in '+fileObj.name+': negative qty ('+qty+') for part '+rawPart+' — included as 0');
+        qty=0;
+      }
+
+      const cleaned=cleanPartNumber(rawPart);
+      const key=(make+'||'+cleaned).toLowerCase();
+      if(mergeMap.has(key)){const ex=mergeMap.get(key);ex.qty+=qty;ex.names[partName]=(ex.names[partName]||0)+1;ex.status='updated';}
+      else{const names={};names[partName]=1;mergeMap.set(key,{make,partNum:cleaned,names,qty,status:'new',mismatch:false});}
+    }
+  }
+
+  for(const[,entry]of mergeMap){
+    const ne=Object.entries(entry.names);ne.sort((a,b)=>b[1]-a[1]);
+    entry.resolvedName=ne[0][0];
+    if(ne.length>1){entry.mismatch=true;entry.status='mismatch';}
+    state.merged.push(entry);
+  }
+
+  const bc=state.errors.filter(e=>e.reason==='Blank Part Number').length;
+  const nc=state.errors.filter(e=>e.reason==='Negative Quantity').length;
+  const nan=0; // non-numeric qty no longer causes skips
+  if(bc)state.warnings.push(`${bc} row(s) skipped — blank Part Number`);
+  if(nc)state.warnings.push(`${nc} row(s) skipped — negative quantity`);
+  if(nan)state.warnings.push(`${nan} row(s) skipped — non-numeric quantity`);
+  document.getElementById('s2Info').textContent='';
+  renderPreview();goTo(3);
+}
+
+function renderPreview(){
+  const counts={new:0,updated:0,mismatch:0};
+  state.merged.forEach(r=>{if(r.status==='new')counts.new++;else if(r.status==='updated')counts.updated++;else if(r.status==='mismatch')counts.mismatch++;});
+  document.getElementById('statNew').textContent=counts.new;
+  document.getElementById('statUpdated').textContent=counts.updated;
+  document.getElementById('statMismatch').textContent=counts.mismatch;
+  document.getElementById('statSkipped').textContent=state.errors.length;
+  const wp=document.getElementById('warnPanel');
+  if(state.warnings.length){wp.style.display='';document.getElementById('warnList').innerHTML=state.warnings.map(w=>`<li>⚠ ${w}</li>`).join('');}
+  else wp.style.display='none';
+  const tbody=document.getElementById('previewTable');
+  if(!state.merged.length){tbody.innerHTML='<tr><td colspan="6"><div class="empty-table">No data to display.</div></td></tr>';return;}
+  const pills={new:'<span class="status-pill pill-new">🟢 New</span>',updated:'<span class="status-pill pill-updated">🟡 Updated</span>',mismatch:'<span class="status-pill pill-mismatch">🔴 Mismatch</span>'};
+  tbody.innerHTML=state.merged.map((r,i)=>`<tr class="${r.mismatch?'row-mismatch':''}"><td class="sr-no">${String(i+1).padStart(2,'0')}</td><td style="font-size:.78rem;">${r.make}</td><td style="font-family:'IBM Plex Mono',monospace;font-size:.75rem;">${r.partNum}</td><td style="font-size:.78rem;">${r.resolvedName}</td><td style="font-family:'IBM Plex Mono',monospace;font-size:.78rem;font-weight:600;">${r.qty}</td><td>${pills[r.status]||''}</td></tr>`).join('');
+}
+
+function todayStr(){return new Date().toISOString().slice(0,10);}
+function setExportNames(){const d=todayStr();document.getElementById('exportFileName').textContent=`Workezz_Merged_${d}.xlsx`;document.getElementById('errorFileName').textContent=`Workezz_Error_Report_${d}.xlsx`;document.getElementById('errorBtn').disabled=state.errors.length===0;}
+function exportMerged(){const header=['SR','Make','Part Number','Part Description','','','','','','','','','','','','Total Qty'];const data=[header];state.merged.forEach((r,i)=>{const row=new Array(16).fill('');row[0]=i+1;row[1]=r.make;row[2]=r.partNum;row[3]=r.resolvedName;row[15]=r.qty;data.push(row);});const ws=XLSX.utils.aoa_to_sheet(data);ws['!cols']=[{wch:6},{wch:20},{wch:25},{wch:40},{wch:5},{wch:5},{wch:5},{wch:5},{wch:5},{wch:5},{wch:5},{wch:5},{wch:5},{wch:5},{wch:5},{wch:12}];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Merged');XLSX.writeFile(wb,`Workezz_Merged_${todayStr()}.xlsx`);}
+function exportErrors(){const data=[['File Name','Row Number','Make','Part Number','Part Name','Quantity','Error Reason']];state.errors.forEach(e=>data.push([e.file,e.rowNum,e.make,e.partNum,e.partName,e.qty,e.reason]));const ws=XLSX.utils.aoa_to_sheet(data);ws['!cols']=[{wch:25},{wch:12},{wch:20},{wch:25},{wch:35},{wch:10},{wch:30}];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Error Report');XLSX.writeFile(wb,`Workezz_Error_Report_${todayStr()}.xlsx`);}
+function resetApp(){state.files=[];state.findReplace=[];state.merged=[];state.errors=[];state.warnings=[];document.getElementById('prefixInput').value='';document.getElementById('suffixInput').value='';renderFileTable();renderFRRows();goTo(1);}
+
+renderFRRows();
+</script>
+</body>
+</html>
