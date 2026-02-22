@@ -1,3 +1,25 @@
+// ══ PROGRESS BAR ══
+function showProgress(current, total, fileName) {
+  const wrap = document.getElementById('progressWrap');
+  const bar  = document.getElementById('progressBar');
+  const txt  = document.getElementById('progressText');
+  if (!wrap) return;
+  wrap.style.display = '';
+  const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+  bar.style.width = pct + '%';
+  txt.textContent = total > 0
+    ? `Processing file ${current + 1} of ${total} — ${fileName}`
+    : 'Starting…';
+  document.getElementById('mergeBtn').disabled = true;
+}
+
+function hideProgress() {
+  const wrap = document.getElementById('progressWrap');
+  if (wrap) wrap.style.display = 'none';
+  const btn = document.getElementById('mergeBtn');
+  if (btn) btn.disabled = false;
+}
+
 // ══ NAVIGATION ══
 function goTo(n) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -21,12 +43,13 @@ dz.addEventListener('drop', e => {
 });
 
 // ══ ADD PANEL FILES ══
-function addFiles() {
+async function addFiles() {
   const input = document.getElementById('fileInput');
   if (!input.files.length) { alert('Please select files first.'); return; }
   for (const file of input.files) {
     if (state.files.find(f => f.name === file.name)) continue;
-    state.files.push({ file, name: file.name, size: file.size });
+    const validation = await validateExcelFile(file);
+    state.files.push({ file, name: file.name, size: file.size, validation });
   }
   input.value = '';
   renderFileTable();
@@ -48,11 +71,23 @@ function renderFileTable() {
   }
   tbody.innerHTML = state.files.map((f, i) => {
     const ext = f.name.split('.').pop().toUpperCase();
+    const v = f.validation || { status: 'ok' };
+    let indicator = '';
+    if (v.status === 'corrupt') {
+      indicator = `<span class="file-status-indicator status-error">ⓘ<span class="tip">Could not read file — it may be corrupt or in an unsupported format</span></span>`;
+    } else if (v.status === 'password') {
+      indicator = `<span class="file-status-indicator status-error">ⓘ<span class="tip">File is password protected — cannot be read</span></span>`;
+    } else if (v.status === 'multi') {
+      indicator = `<span class="file-status-indicator status-warn">ⓘ<span class="tip">Multiple sheets detected (${v.sheetCount}) — using the first sheet</span></span>`;
+    }
     return `<tr>
       <td class="sr-no">${String(i + 1).padStart(2, '0')}</td>
       <td><div class="file-chip">
         <div class="file-chip-icon">${ext}</div>
-        <div><div class="file-chip-name">${f.name}</div><div class="file-chip-size">${formatSize(f.size)}</div></div>
+        <div>
+          <div class="file-chip-name">${f.name} ${indicator}</div>
+          <div class="file-chip-size">${formatSize(f.size)}</div>
+        </div>
       </div></td>
       <td style="font-size:.76rem;color:var(--muted);">${formatSize(f.size)}</td>
       <td style="text-align:right;"><button class="btn btn-danger-outline btn-sm" onclick="removeFile('${f.name}')">✕ Remove</button></td>
@@ -125,6 +160,7 @@ function importPrefixSuffix(input) {
         if (suffix && !state.suffixes.includes(suffix)) { state.suffixes.push(suffix); addedS++; }
       }
       renderTags();
+      savePrefixSuffix();
       alert(`✅ Imported ${addedP} prefix(es) and ${addedS} suffix(es) successfully!`);
     } catch (err) {
       alert('Error reading file: ' + err.message);
@@ -144,12 +180,14 @@ function addTag(type, e) {
   else { if (!state.suffixes.includes(val)) state.suffixes.push(val); }
   input.value = '';
   renderTags();
+  savePrefixSuffix();
 }
 
 function removeTag(type, val) {
   if (type === 'prefix') state.prefixes = state.prefixes.filter(v => v !== val);
   else state.suffixes = state.suffixes.filter(v => v !== val);
   renderTags();
+  savePrefixSuffix();
 }
 
 function renderTags() {
@@ -165,6 +203,23 @@ function renderTags() {
       wrap.insertBefore(tag, input);
     });
   });
+}
+
+function savePrefixSuffix() {
+  try {
+    localStorage.setItem('wz-prefixes', JSON.stringify(state.prefixes));
+    localStorage.setItem('wz-suffixes', JSON.stringify(state.suffixes));
+  } catch(e) {}
+}
+
+function loadPrefixSuffix() {
+  try {
+    const p = localStorage.getItem('wz-prefixes');
+    const s = localStorage.getItem('wz-suffixes');
+    if (p) state.prefixes = JSON.parse(p);
+    if (s) state.suffixes = JSON.parse(s);
+    renderTags();
+  } catch(e) {}
 }
 
 function addFRRow() {
@@ -195,23 +250,45 @@ function removeFR(id) { state.findReplace = state.findReplace.filter(f => f.id !
 function setFilter(filter) {
   state.currentFilter = filter;
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector(`.filter-btn.filter-${filter}`).classList.add('active');
+  const btn = document.querySelector(`.filter-btn.filter-${filter}`);
+  if (btn) btn.classList.add('active');
   renderPreviewTable();
 }
 
 function renderPreview() {
-  const counts = { new: 0, updated: 0, mismatch: 0 };
+  const counts = { new: 0, updated: 0, mismatch: 0, nomrs: 0 };
   state.merged.forEach(r => {
     if (r.status === 'new') counts.new++;
     else if (r.status === 'updated') counts.updated++;
     else if (r.status === 'mismatch') counts.mismatch++;
+    // Count no MRS match
+    if (state.mrsData) {
+      let mrsQty = state.mrsData.get(r.partNum.toLowerCase()) || 0;
+      if (!mrsQty) {
+        for (const [mrsKey, mrsVal] of state.mrsData) {
+          let stripped = mrsKey;
+          for (const p of state.prefixes) {
+            const pt = p.trim().toLowerCase();
+            if (pt && stripped.startsWith(pt)) { stripped = stripped.slice(pt.length).trim(); break; }
+          }
+          if (stripped === r.partNum.toLowerCase()) { mrsQty = mrsVal; break; }
+        }
+      }
+      if (!mrsQty) counts.nomrs++;
+    }
   });
 
-  document.getElementById('countAll').textContent     = state.merged.length;
-  document.getElementById('countNew').textContent     = counts.new;
-  document.getElementById('countUpdated').textContent = counts.updated;
-  document.getElementById('countMismatch').textContent= counts.mismatch;
-  document.getElementById('countSkipped').textContent = state.errors.length;
+  document.getElementById('countAll').textContent      = state.merged.length;
+  document.getElementById('countNew').textContent      = counts.new;
+  document.getElementById('countUpdated').textContent  = counts.updated;
+  document.getElementById('countMismatch').textContent = counts.mismatch;
+  document.getElementById('countSkipped').textContent  = state.errors.length;
+  // Show/hide No MRS Match button
+  const noMrsBtn = document.getElementById('btnNoMrs');
+  if (noMrsBtn) {
+    noMrsBtn.style.display = state.mrsData ? '' : 'none';
+    document.getElementById('countNoMrs').textContent = counts.nomrs;
+  }
 
   const wp = document.getElementById('warnPanel');
   if (state.warnings.length) {
@@ -245,7 +322,24 @@ function renderPreviewTable() {
     return;
   }
 
-  rows = filter === 'all' ? state.merged : state.merged.filter(r => r.status === filter);
+  if (filter === 'nomrs') {
+    rows = state.merged.filter(r => {
+      let mrsQty = state.mrsData ? (state.mrsData.get(r.partNum.toLowerCase()) || 0) : 0;
+      if (!mrsQty && state.mrsData) {
+        for (const [mrsKey, mrsVal] of state.mrsData) {
+          let stripped = mrsKey;
+          for (const p of state.prefixes) {
+            const pt = p.trim().toLowerCase();
+            if (pt && stripped.startsWith(pt)) { stripped = stripped.slice(pt.length).trim(); break; }
+          }
+          if (stripped === r.partNum.toLowerCase()) { mrsQty = mrsVal; break; }
+        }
+      }
+      return !mrsQty;
+    });
+  } else {
+    rows = filter === 'all' ? state.merged : state.merged.filter(r => r.status === filter);
+  }
 
   if (!rows.length) {
     tbody.innerHTML = `<tr><td colspan="6"><div class="empty-table">No rows for this filter.</div></td></tr>`;
@@ -274,29 +368,87 @@ function todayStr() { return new Date().toISOString().slice(0, 10); }
 
 function setExportNames() {
   const d = todayStr();
-  document.getElementById('exportFileName').textContent = `Workezz_Merged_${d}.xlsx`;
   document.getElementById('errorFileName').textContent  = `Workezz_Error_Report_${d}.xlsx`;
   document.getElementById('errorBtn').disabled = state.errors.length === 0;
-  // Show MRS cols info
-  const mrsEl = document.getElementById('exportMrsCols');
-  if (state.mrsData) mrsEl.textContent = ' · MRS Qty · Qty to Order';
-  else mrsEl.textContent = '';
+  // Set default sheet name input
+  const nameInput = document.getElementById('sheetNameInput');
+  if (nameInput && !nameInput.dataset.touched) nameInput.value = `Master Sheet – ${d}`;
+  // Build column checkboxes dynamically
+  renderColSelector();
 }
 
-function exportMerged() {
+function renderColSelector() {
+  const grid = document.getElementById('colSelectorGrid');
+  if (!grid) return;
+  const fileNames = state.files.map(f => f.name.replace(/\.[^/.]+$/, ''));
+  const cols = [
+    { id: 'col_sr',   label: 'SR',               badge: 'A',    always: true },
+    { id: 'col_make', label: 'Make',              badge: 'B' },
+    { id: 'col_part', label: 'Part Number',       badge: 'C' },
+    { id: 'col_desc', label: 'Part Description',  badge: 'D' },
+    ...fileNames.map((fn, i) => ({ id: `col_file_${i}`, label: fn, badge: 'File', fileName: fn })),
+    { id: 'col_total', label: 'Total Qty',        badge: 'Qty' },
+    ...(state.mrsData ? [
+      { id: 'col_mrsqty',   label: 'MRS Qty',      badge: 'MRS', mrs: true },
+      { id: 'col_mrsorder', label: 'Qty to Order', badge: 'MRS', mrs: true }
+    ] : [])
+  ];
+  grid.innerHTML = cols.map(c => `
+    <div class="col-item ${c.mrs ? 'mrs' : ''} checked" id="${c.id}" onclick="toggleColItem(this)">
+      <div class="col-checkbox">
+        <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+          <path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="col-name">${c.label}</span>
+      <span class="col-badge">${c.badge}</span>
+    </div>`).join('');
+  updateSelectAllBtn();
+}
+
+function toggleColItem(el) {
+  el.classList.toggle('checked');
+  updateSelectAllBtn();
+}
+
+function updateSelectAllBtn() {
+  const items = document.querySelectorAll('.col-item');
+  if (!items.length) return;
+  const allChecked = [...items].every(i => i.classList.contains('checked'));
+  const btn = document.getElementById('selectAllBtn');
+  if (btn) btn.textContent = allChecked ? 'Deselect All' : 'Select All';
+}
+
+function toggleAllCols() {
+  const items = document.querySelectorAll('.col-item');
+  const allChecked = [...items].every(i => i.classList.contains('checked'));
+  items.forEach(i => allChecked ? i.classList.remove('checked') : i.classList.add('checked'));
+  updateSelectAllBtn();
+}
+
+async function exportMerged() {
   const fileNames = state.files.map(f => f.name.replace(/\.[^/.]+$/, ''));
 
-  // Build header
-  const header = ['SR', 'Make', 'Part Number', 'Part Description', ...fileNames, 'Total Qty'];
-  if (state.mrsData) { header.push('MRS Qty'); header.push('Qty to Order'); }
+  const nameInput = document.getElementById('sheetNameInput');
+  const sheetName = (nameInput && nameInput.value.trim()) || `Master Sheet – ${todayStr()}`;
 
-  const data = [header];
+  const isChecked = id => { const el = document.getElementById(id); return el ? el.classList.contains('checked') : true; };
+  const allHeaders = ['SR', 'Make', 'Part Number', 'Part Description', ...fileNames, 'Total Qty'];
+  const allHeaderIds = ['col_sr','col_make','col_part','col_desc',...fileNames.map((_,i)=>`col_file_${i}`),'col_total'];
+  if (state.mrsData) { allHeaders.push('MRS Qty','Qty to Order'); allHeaderIds.push('col_mrsqty','col_mrsorder'); }
 
-  state.merged.forEach((r, i) => {
-    const row = [i + 1, r.make, r.partNum, r.resolvedName];
-    fileNames.forEach(fn => row.push(r.fileQtys[fn] || 0));
-    row.push(r.totalQty);
+  const selectedIdx = allHeaderIds.map((id,i)=>({id,i})).filter(({id})=>isChecked(id)).map(({i})=>i);
+  const header = selectedIdx.map(i => allHeaders[i]);
 
+  const mrsColPos   = state.mrsData ? selectedIdx.indexOf(4 + fileNames.length + 1) : -1;
+  const orderColPos = state.mrsData ? selectedIdx.indexOf(4 + fileNames.length + 2) : -1;
+  const allWidths   = [5,20,28,42,...fileNames.map(()=>14),12,...(state.mrsData?[12,14]:[])];
+
+  const dataRows = [];
+  state.merged.forEach((r, ri) => {
+    const fullRow = [ri+1, r.make, r.partNum, r.resolvedName];
+    fileNames.forEach(fn => fullRow.push(r.fileQtys[fn] || 0));
+    fullRow.push(r.totalQty);
     if (state.mrsData) {
       let mrsQty = state.mrsData.get(r.partNum.toLowerCase()) || 0;
       if (!mrsQty) {
@@ -309,38 +461,81 @@ function exportMerged() {
           if (stripped === r.partNum.toLowerCase()) { mrsQty = mrsVal; break; }
         }
       }
-      const toOrder = r.totalQty - mrsQty;
-      row.push(mrsQty);
-      row.push(toOrder);
+      fullRow.push(mrsQty);
+      fullRow.push(r.totalQty - mrsQty);
     }
-
-    data.push(row);
+    dataRows.push(selectedIdx.map(i => fullRow[i]));
   });
 
-  const ws = XLSX.utils.aoa_to_sheet(data);
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet(sheetName, { views:[{ state:'frozen', ySplit:1 }] });
+  ws.columns = selectedIdx.map(i => ({ width: allWidths[i] || 14 }));
 
-  // Column widths
-  const cols = [
-    { wch: 5 }, { wch: 20 }, { wch: 28 }, { wch: 42 },
-    ...fileNames.map(() => ({ wch: 14 })),
-    { wch: 12 }
-  ];
-  if (state.mrsData) { cols.push({ wch: 12 }); cols.push({ wch: 14 }); }
-  ws['!cols'] = cols;
+  // Header
+  const hRow = ws.addRow(header);
+  hRow.height = 28;
+  hRow.eachCell(cell => {
+    cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FF1E3A5F' } };
+    cell.font = { bold:true, color:{ argb:'FFFFFFFF' }, name:'Calibri', size:10 };
+    cell.alignment = { horizontal:'center', vertical:'middle', wrapText:true };
+    cell.border = { bottom:{ style:'thin', color:{ argb:'FF2563EB' } } };
+  });
 
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Master Sheet');
-  XLSX.writeFile(wb, `Workezz_Merged_${todayStr()}.xlsx`);
+  // Data rows
+  dataRows.forEach((row, ri) => {
+    const exRow = ws.addRow(row);
+    exRow.height = 18;
+    const isAlt = ri % 2 === 0;
+    exRow.eachCell({ includeEmpty:true }, (cell, colNum) => {
+      const ci = colNum - 1;
+      cell.font = { name:'Calibri', size:10 };
+      cell.alignment = { vertical:'middle' };
+      cell.border = {
+        top:{ style:'thin', color:{ argb:'FFDEE2E6' } }, bottom:{ style:'thin', color:{ argb:'FFDEE2E6' } },
+        left:{ style:'thin', color:{ argb:'FFDEE2E6' } }, right:{ style:'thin', color:{ argb:'FFDEE2E6' } }
+      };
+      if (mrsColPos >= 0 && ci === mrsColPos) {
+        cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFDBEAFE' } };
+        cell.font = { bold:true, color:{ argb:'FF1E40AF' }, name:'Calibri', size:10 };
+        cell.alignment = { horizontal:'center', vertical:'middle' };
+      } else if (orderColPos >= 0 && ci === orderColPos) {
+        const val = cell.value;
+        if (typeof val === 'number' && val <= 0) {
+          cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFDCFCE7' } };
+          cell.font = { bold:true, color:{ argb:'FF15803D' }, name:'Calibri', size:10 };
+        } else {
+          cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFFEE2E2' } };
+          cell.font = { bold:true, color:{ argb:'FFB91C1C' }, name:'Calibri', size:10 };
+        }
+        cell.alignment = { horizontal:'center', vertical:'middle' };
+      } else if (isAlt) {
+        cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFF7F8FB' } };
+      }
+    });
+  });
+
+  ws.autoFilter = { from:{ row:1, column:1 }, to:{ row:1, column:header.length } };
+
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  saveAs(blob, `Workezz_Merged_${todayStr()}.xlsx`);
 }
 
-function exportErrors() {
-  const data = [['File Name', 'Row Number', 'Make', 'Part Number', 'Part Description', 'Quantity', 'Error Reason']];
-  state.errors.forEach(e => data.push([e.file, e.rowNum, e.make, e.partNum, e.partName, e.qty, e.reason]));
-  const ws = XLSX.utils.aoa_to_sheet(data);
-  ws['!cols'] = [{ wch: 25 }, { wch: 12 }, { wch: 20 }, { wch: 25 }, { wch: 40 }, { wch: 10 }, { wch: 30 }];
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Error Report');
-  XLSX.writeFile(wb, `Workezz_Error_Report_${todayStr()}.xlsx`);
+async function exportErrors() {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Error Report');
+  ws.columns = [{ width:25 },{ width:12 },{ width:20 },{ width:25 },{ width:40 },{ width:10 },{ width:30 }];
+  const hRow = ws.addRow(['File Name','Row Number','Make','Part Number','Part Description','Quantity','Error Reason']);
+  hRow.height = 24;
+  hRow.eachCell(cell => {
+    cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FF1E3A5F' } };
+    cell.font = { bold:true, color:{ argb:'FFFFFFFF' }, name:'Calibri', size:10 };
+    cell.alignment = { horizontal:'center', vertical:'middle' };
+  });
+  state.errors.forEach(e => ws.addRow([e.file, e.rowNum, e.make, e.partNum, e.partName, e.qty, e.reason]));
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  saveAs(blob, `Workezz_Error_Report_${todayStr()}.xlsx`);
 }
 
 function resetApp() {
@@ -365,4 +560,5 @@ function toggleDark() {
 })();
 
 // Init
+loadPrefixSuffix();
 renderFRRows();

@@ -7,6 +7,8 @@
 <title>Workezz – Sheet Merger</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
 </head>
 <body>
@@ -185,11 +187,18 @@
     </div>
 
   </div>
+  <!-- Progress Bar -->
+  <div id="progressWrap" style="display:none;padding:0 22px 10px;">
+    <div style="font-size:.74rem;color:var(--text2);margin-bottom:6px;" id="progressText">Processing…</div>
+    <div style="background:var(--surface2);border-radius:100px;height:8px;overflow:hidden;border:1px solid var(--border);">
+      <div id="progressBar" style="height:100%;width:0%;background:var(--accent);border-radius:100px;transition:width .3s ease;"></div>
+    </div>
+  </div>
   <div class="s2-footer">
     <button class="btn btn-secondary" onclick="goTo(1)">‹ Back</button>
     <div style="display:flex;gap:10px;align-items:center;">
       <span class="s2-footer-info" id="s2Info"></span>
-      <button class="btn btn-primary btn-lg" onclick="runMerge()">⚡ Merge & Preview</button>
+      <button class="btn btn-primary btn-lg" id="mergeBtn" onclick="runMerge()">⚡ Merge & Preview</button>
     </div>
   </div>
 </div>
@@ -225,6 +234,11 @@
         <span class="filter-btn-label">Skipped</span>
         <span class="filter-btn-count" id="countSkipped">0</span>
       </button>
+      <button class="filter-btn filter-nomrs" id="btnNoMrs" onclick="setFilter('nomrs')" style="display:none;">
+        <span class="filter-btn-icon">🔵</span>
+        <span class="filter-btn-label">No MRS Match</span>
+        <span class="filter-btn-count" id="countNoMrs">0</span>
+      </button>
     </div>
 
     <div id="warnPanel" class="warn-panel" style="display:none;">
@@ -258,28 +272,47 @@
 <!-- ══ SCREEN 4 ══ -->
 <div class="screen" id="screen4">
   <div class="s4-layout">
+
+    <!-- Main export card -->
     <div class="s4-card">
       <h3>✅ Export Master Sheet</h3>
-      <p>Downloads the fully merged master sheet with per-file quantity breakdown, and MRS columns if MRS file was uploaded.</p>
-      <div class="export-preview">
-        📄 <span class="export-filename" id="exportFileName">Workezz_Merged_YYYY-MM-DD.xlsx</span><br>
-        SR · Make · Part Number · Part Description · [File Columns] · Total Qty<span id="exportMrsCols"></span>
+      <p>Set a sheet name and choose which columns to include in your export.</p>
+
+      <!-- Sheet name -->
+      <div class="sheet-name-wrap">
+        <label class="sheet-name-label">Sheet Name</label>
+        <input class="sheet-name-input" type="text" id="sheetNameInput" placeholder="Master Sheet – YYYY-MM-DD" oninput="this.dataset.touched='1'">
       </div>
-      <button class="btn btn-success btn-full btn-lg" onclick="exportMerged()">⬇ Download Master Sheet</button>
-    </div>
-    <div class="s4-card">
-      <h3>⚠️ Download Error Report</h3>
-      <p>All skipped rows with error reasons — for auditing and data correction.</p>
-      <div class="export-preview">
-        📄 <span class="export-filename" id="errorFileName">Workezz_Error_Report_YYYY-MM-DD.xlsx</span><br>
-        File · Row · Make · Part No · Part Description · Qty · Reason
+
+      <div class="s4-divider"></div>
+
+      <!-- Column selector -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <span style="font-size:.76rem;font-weight:600;color:var(--text2);">Columns to Include</span>
+        <button class="select-all-btn" id="selectAllBtn" onclick="toggleAllCols()">Deselect All</button>
       </div>
-      <button class="btn btn-danger-outline btn-full btn-lg" onclick="exportErrors()" id="errorBtn">⬇ Download Error Report</button>
+      <div class="col-selector-grid" id="colSelectorGrid"></div>
+
+      <div style="margin-top:20px;">
+        <button class="btn btn-success btn-full btn-lg" onclick="exportMerged()">⬇ Download Master Sheet</button>
+      </div>
     </div>
+
+    <!-- Error report -->
+    <div class="s4-error-strip">
+      <div>
+        <div style="font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:2px;">⚠️ Error Report</div>
+        <div style="font-size:.72rem;color:var(--muted);" id="errorFileName">Workezz_Error_Report_YYYY-MM-DD.xlsx</div>
+      </div>
+      <button class="btn btn-danger-outline" onclick="exportErrors()" id="errorBtn">⬇ Download</button>
+    </div>
+
+    <!-- Nav -->
     <div style="display:flex;gap:10px;">
       <button class="btn btn-secondary" onclick="goTo(3)">‹ Back to Preview</button>
       <button class="btn btn-secondary" onclick="resetApp()">↺ Start Over</button>
     </div>
+
   </div>
 </div>
 

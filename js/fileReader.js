@@ -5,24 +5,39 @@ function readExcelFile(file, startRowHint) {
     reader.onload = e => {
       try {
         const wb = XLSX.read(e.target.result, { type: 'array' });
-        // Try all sheets, pick the one with most data rows from startRow onwards
-        const sr = (startRowHint || 9) - 1;
-        let bestData = [];
-        let bestCount = 0;
-        for (const name of wb.SheetNames) {
-          const ws = wb.Sheets[name];
-          const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
-          // Count rows from startRow that have content in cols B,C,D (idx 1,2,3)
-          let count = 0;
-          for (let i = sr; i < data.length; i++) {
-            const row = data[i];
-            if (row[1] || row[2] || row[3]) count++;
-          }
-          if (count > bestCount) { bestCount = count; bestData = data; }
-        }
-        resolve(bestData);
+        // Always use first sheet
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
+        resolve(data);
       } catch (err) { console.error(err); resolve([]); }
     };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// Validate a file — returns { status: 'ok'|'corrupt'|'password'|'multi', sheetCount }
+function validateExcelFile(file) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const wb = XLSX.read(e.target.result, { type: 'array' });
+        const sheetCount = wb.SheetNames.length;
+        if (sheetCount > 1) {
+          resolve({ status: 'multi', sheetCount });
+        } else {
+          resolve({ status: 'ok', sheetCount });
+        }
+      } catch (err) {
+        const msg = err.message || '';
+        if (msg.toLowerCase().includes('password') || msg.toLowerCase().includes('encrypted')) {
+          resolve({ status: 'password' });
+        } else {
+          resolve({ status: 'corrupt' });
+        }
+      }
+    };
+    reader.onerror = () => resolve({ status: 'corrupt' });
     reader.readAsArrayBuffer(file);
   });
 }
@@ -33,5 +48,5 @@ function formatSize(b) {
   return (b / 1048576).toFixed(1) + ' MB';
 }
 
-// ══ CLEAN PART NUMBER ══
+// ══ COLUMN LETTER TO INDEX ══
 function colLetter(l) { return l.toUpperCase().charCodeAt(0) - 65; }

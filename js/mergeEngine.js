@@ -1,6 +1,7 @@
 // ══ MERGE ENGINE ══
 async function runMerge() {
-  document.getElementById('s2Info').textContent = 'Processing…';
+  const totalFiles = state.files.length;
+  showProgress(0, totalFiles, '');
 
   const colMake  = colLetter(document.getElementById('colMake').value  || 'B');
   const colPart  = colLetter(document.getElementById('colPart').value  || 'C');
@@ -12,7 +13,9 @@ async function runMerge() {
   // mergeMap: key -> { make, partNum, names, totalQty, fileQtys:{filename:qty}, status, mismatch }
   const mergeMap = new Map();
 
-  for (const fileObj of state.files) {
+  for (let fi = 0; fi < state.files.length; fi++) {
+    const fileObj = state.files[fi];
+    showProgress(fi, totalFiles, fileObj.name);
     const rows = await readExcelFile(fileObj.file, startRow);
     const cleanFileName = fileObj.name.replace(/\.[^/.]+$/, ''); // strip extension
 
@@ -73,7 +76,7 @@ async function runMerge() {
   const bc = state.errors.filter(e => e.reason === 'Blank Part Number').length;
   if (bc) state.warnings.push(`${bc} row(s) skipped — blank Part Number`);
 
-  document.getElementById('s2Info').textContent = '';
+  hideProgress();
   state.currentFilter = 'all';
   renderPreview();
   goTo(3);
