@@ -1,346 +1,115 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workezz — Tool Suite</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f1117;--surface:#161b27;--border:#2a3148;
+  --accent:#2563eb;--accent2:#3b82f6;--accent-glow:rgba(37,99,235,.35);
+  --text:#f0f2f8;--text2:#8890aa;--muted:#4a5072;
+  --green:#10b981;--green-glow:rgba(16,185,129,.3);
+}
+html,body{height:100%;font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;
+  background-image:linear-gradient(rgba(37,99,235,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.04) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+.orb{position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;opacity:.5;}
+.orb-1{width:500px;height:500px;background:radial-gradient(circle,rgba(37,99,235,.2),transparent 70%);top:-100px;left:-100px;}
+.orb-2{width:400px;height:400px;background:radial-gradient(circle,rgba(16,185,129,.15),transparent 70%);bottom:-80px;right:-80px;}
 
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="css/style.css">
-<title>Workezz – Sheet Merger</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+.page{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:40px 24px;position:relative;z-index:1;}
 
+.logo-wrap{display:flex;align-items:center;gap:14px;margin-bottom:10px;animation:fadeUp .6s ease both;}
+.logo-text{font-family:'Syne',sans-serif;font-size:2.4rem;font-weight:800;letter-spacing:-.03em;}
+.logo-text span{color:var(--accent2);}
+.logo-sub{font-size:.72rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:56px;animation:fadeUp .6s .1s ease both;opacity:0;animation-fill-mode:forwards;}
+
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:20px;width:100%;max-width:700px;animation:fadeUp .6s .2s ease both;opacity:0;animation-fill-mode:forwards;}
+
+.tool-card{
+  position:relative;background:var(--surface);border:1px solid var(--border);border-radius:16px;
+  padding:32px 28px;cursor:pointer;text-decoration:none;display:flex;flex-direction:column;gap:14px;
+  transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;overflow:hidden;
+}
+.tool-card::before{content:'';position:absolute;inset:0;border-radius:16px;opacity:0;transition:opacity .3s;}
+.tool-card:hover{transform:translateY(-5px);}
+.tool-card.bom::before{background:radial-gradient(circle at 30% 30%,var(--accent-glow),transparent 65%);}
+.tool-card.mrs::before{background:radial-gradient(circle at 30% 30%,var(--green-glow),transparent 65%);}
+.tool-card:hover::before{opacity:1;}
+.tool-card.bom:hover{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),0 20px 40px rgba(37,99,235,.15);}
+.tool-card.mrs:hover{border-color:var(--green);box-shadow:0 0 0 1px var(--green),0 20px 40px rgba(16,185,129,.15);}
+
+.tool-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;}
+.tool-card.bom .tool-icon{background:rgba(37,99,235,.15);border:1px solid rgba(37,99,235,.3);}
+.tool-card.mrs .tool-icon{background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);}
+
+.tool-name{font-family:'Syne',sans-serif;font-size:1.15rem;font-weight:700;color:var(--text);}
+.tool-desc{font-size:.78rem;color:var(--text2);line-height:1.65;}
+.tool-arrow{margin-top:auto;font-size:.76rem;font-weight:600;display:flex;align-items:center;gap:6px;transition:gap .2s;}
+.tool-card.bom .tool-arrow{color:var(--accent2);}
+.tool-card.mrs .tool-arrow{color:var(--green);}
+.tool-card:hover .tool-arrow{gap:12px;}
+
+.tool-tag{position:absolute;top:16px;right:16px;font-size:.6rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:100px;}
+.tool-card.bom .tool-tag{background:rgba(37,99,235,.15);color:var(--accent2);border:1px solid rgba(37,99,235,.2);}
+.tool-card.mrs .tool-tag{background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.2);}
+
+.home-footer{margin-top:48px;font-size:.68rem;color:var(--muted);animation:fadeUp .6s .35s ease both;opacity:0;animation-fill-mode:forwards;}
+.home-footer strong{color:var(--text2);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+@media(max-width:520px){.cards{grid-template-columns:1fr;}.logo-text{font-size:1.8rem;}}
+</style>
 </head>
 <body>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
 
-<header>
-  <div style="display:flex;align-items:center;gap:14px;">
-    <!-- Logo mark -->
-    <div class="logo-mark">
-      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="32" height="32" rx="8" fill="#2563eb"/>
-        <path d="M7 10L12 22L16 13L20 22L25 10" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-        <circle cx="16" cy="13" r="1.5" fill="white"/>
-      </svg>
-    </div>
-    <div>
-      <div class="logo">Work<span>ezz</span></div>
-      <div class="logo-sub">by Krish Makwane</div>
-    </div>
+<div class="page">
+
+  <div class="logo-wrap">
+    <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+      <rect width="48" height="48" rx="12" fill="#2563eb"/>
+      <path d="M10 15L18 33L24 19.5L30 33L38 15" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="24" cy="19.5" r="2.5" fill="white"/>
+    </svg>
+    <div class="logo-text">Work<span>ezz</span></div>
   </div>
-  <div style="display:flex;align-items:center;gap:12px;">
-    <button class="dark-toggle" onclick="toggleDark()" id="darkToggle">
-      <span class="dark-toggle-icon" id="darkIcon">🌙</span>
-      <span id="darkLabel">Dark Mode</span>
-    </button>
-    <span class="version-badge">MVP v2.0</span>
-  </div>
-</header>
 
-<div class="stepper">
-  <div class="step active" id="step1"><div class="step-num">1</div> Upload Center</div>
-  <span class="step-arrow">›</span>
-  <div class="step" id="step2"><div class="step-num">2</div> Operations</div>
-  <span class="step-arrow">›</span>
-  <div class="step" id="step3"><div class="step-num">3</div> Live Preview</div>
-  <span class="step-arrow">›</span>
-  <div class="step" id="step4"><div class="step-num">4</div> Export</div>
-</div>
+  <div class="logo-sub">by Krish Makwane &nbsp;·&nbsp; MVP v2.0</div>
 
-<!-- ══ SCREEN 1 ══ -->
-<div class="screen active" id="screen1">
-  <div class="s1-layout">
-    <div class="s1-left">
+  <div class="cards">
+
+    <a class="tool-card bom" href="bom.html">
+      <span class="tool-tag">Active</span>
+      <div class="tool-icon">📊</div>
       <div>
-        <div class="section-label">Upload Panel Files</div>
-        <div class="drop-zone" id="dropZone">
-          <input type="file" id="fileInput" multiple accept=".xls,.xlsx">
-          <span class="dz-icon">📂</span>
-          <div class="dz-text"><strong>Click to browse</strong> or drag & drop</div>
-          <div class="dz-sub">Supports .xls and .xlsx (WPS / Excel)</div>
-        </div>
+        <div class="tool-name">BOM Generator</div>
+        <div class="tool-desc">Merge multiple panel sheets, clean part numbers, and export a unified Bill of Materials with MRS quantity matching.</div>
       </div>
-      <button class="btn btn-primary btn-full" onclick="addFiles()">＋ Add Files to List</button>
+      <div class="tool-arrow">Open Tool →</div>
+    </a>
 
-      <!-- MRS Upload -->
+    <a class="tool-card mrs" href="mrs.html">
+      <span class="tool-tag">New</span>
+      <div class="tool-icon">🔀</div>
       <div>
-        <div class="section-label">MRS File (Optional)</div>
-        <div class="mrs-strip">
-          <div class="mrs-strip-info">
-            <div class="mrs-strip-title">Upload MRS Quantity Sheet</div>
-            <div id="mrsFileName" class="mrs-strip-sub">No file selected — MRS columns will be hidden</div>
-          </div>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <input type="file" id="mrsInput" accept=".xls,.xlsx" style="display:none;">
-            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('mrsInput').click()">📋 Browse</button>
-            <button class="btn btn-danger-outline btn-sm" id="mrsClearBtn" onclick="clearMRS()" style="display:none;">✕ Cancel</button>
-          </div>
-        </div>
+        <div class="tool-name">MRS Merger</div>
+        <div class="tool-desc">Merge multiple MRS files into a Master — matching by Part Number and Section, adding quantities or inserting new rows intelligently.</div>
       </div>
+      <div class="tool-arrow">Open Tool →</div>
+    </a>
 
-      <div class="info-box">
-        ℹ️ Data is read from <strong>Row 9 onwards</strong> by default. Adjustable in Operations.
-      </div>
-    </div>
-
-    <div class="s1-right">
-      <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div class="section-label" style="margin-bottom:0;">Uploaded Panel Files</div>
-        <span id="s1FileCount" style="font-size:.72rem;color:var(--muted);background:var(--surface2);padding:2px 10px;border-radius:100px;border:1px solid var(--border);">0 files</span>
-      </div>
-      <div class="file-table-wrap">
-        <table style="width:100%">
-          <thead><tr><th style="width:44px">#</th><th>File Name</th><th>Size</th><th style="text-align:right">Action</th></tr></thead>
-        </table>
-        <div class="table-scroll">
-          <table style="width:100%">
-            <tbody id="fileTable">
-              <tr id="emptyRow1"><td colspan="4"><div class="empty-table">📋<p>No files added yet.<br>Upload .xls or .xlsx panel sheets above.</p></div></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div class="action-footer">
-        <button class="btn btn-primary btn-lg" id="nextBtn1" onclick="goTo(2)" disabled>Next: Operations &nbsp;›</button>
-      </div>
-    </div>
   </div>
+
+  <div class="home-footer">Designed & built by <strong>Krish Makwane</strong></div>
+
 </div>
-
-<!-- ══ SCREEN 2 ══ -->
-<div class="screen" id="screen2">
-  <div class="s2-layout">
-
-    <!-- Prefixes -->
-    <div class="panel">
-      <div class="panel-head">
-        <h3>Remove Prefixes</h3>
-        <span class="ph-sub">Part Number only</span>
-      </div>
-      <div class="panel-body">
-        <p style="font-size:.74rem;color:var(--muted);">Type then press <kbd style="background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-size:.68rem;">Enter</kbd> to add</p>
-        <div class="tag-row">
-          <div class="tag-input-wrap" id="prefixWrap" onclick="this.querySelector('input').focus()">
-            <input class="tag-input-real" id="prefixInput" placeholder="e.g. PXC." onkeydown="addTag('prefix',event)">
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;padding-top:2px;">
-          <div style="position:relative;flex:1;">
-            <input type="file" id="psPrefixInput" accept=".xls,.xlsx" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" onchange="importPrefixSuffix(this)">
-            <button class="btn btn-import btn-full">📥 Import from Excel (Col A = Prefix, Col C = Suffix)</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Suffixes -->
-    <div class="panel">
-      <div class="panel-head">
-        <h3>Remove Suffixes</h3>
-        <span class="ph-sub">Part Number only</span>
-      </div>
-      <div class="panel-body">
-        <p style="font-size:.74rem;color:var(--muted);">Type then press <kbd style="background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-size:.68rem;">Enter</kbd> to add</p>
-        <div class="tag-row">
-          <div class="tag-input-wrap" id="suffixWrap" onclick="this.querySelector('input').focus()">
-            <input class="tag-input-real" id="suffixInput" placeholder="e.g. -OLD" onkeydown="addTag('suffix',event)">
-          </div>
-        </div>
-        <p style="font-size:.7rem;color:var(--muted);padding-top:2px;">⬆ Use the Import button in Prefixes panel to load both at once</p>
-      </div>
-    </div>
-
-    <!-- Find & Replace -->
-    <div class="panel">
-      <div class="panel-head"><h3>Find & Replace</h3><span class="ph-sub">In Part Number</span></div>
-      <div class="panel-body">
-        <div id="frRows"></div>
-        <button class="btn btn-secondary btn-sm" style="margin-top:2px;" onclick="addFRRow()">＋ Add Rule</button>
-      </div>
-    </div>
-
-    <!-- Toggles -->
-    <div class="panel">
-      <div class="panel-head"><h3>Additional Cleaning</h3><span class="ph-sub">Part Number only</span></div>
-      <div class="panel-body">
-        <div class="toggle-grid">
-          <div class="toggle-item"><label for="togTrim">Trim Spaces</label><label class="toggle"><input type="checkbox" id="togTrim" checked><span class="toggle-slider"></span></label></div>
-          <div class="toggle-item"><label for="togProper">Proper Case</label><label class="toggle"><input type="checkbox" id="togProper"><span class="toggle-slider"></span></label></div>
-          <div class="toggle-item"><label for="togSpecial">Remove Special Chars</label><label class="toggle"><input type="checkbox" id="togSpecial"><span class="toggle-slider"></span></label></div>
-          <div class="toggle-item"><label for="togUpper">UPPERCASE</label><label class="toggle"><input type="checkbox" id="togUpper"><span class="toggle-slider"></span></label></div>
-        </div>
-        <p style="font-size:.7rem;color:var(--muted);padding-top:4px;">⚠️ Numbers are never stripped — Part Numbers are alphanumeric.</p>
-      </div>
-    </div>
-
-    <!-- Column Mapping -->
-    <div class="panel s2-full">
-      <div class="panel-head"><h3>Column Mapping</h3><span class="ph-sub">Auto-detected defaults — editable</span></div>
-      <div class="panel-body" style="padding:0;">
-        <table class="col-map-table">
-          <thead><tr><th>Field</th><th>Column</th><th>Notes</th></tr></thead>
-          <tbody>
-            <tr><td><span class="field-badge">📍 Data Start Row</span></td><td><input class="col-input" id="startRow" value="9"></td><td style="font-size:.74rem;color:var(--muted);">Rows before this are skipped (headers)</td></tr>
-            <tr><td><span class="field-badge"><span class="req-dot"></span> Make / Brand</span></td><td><input class="col-input" id="colMake" value="A"></td><td style="font-size:.74rem;color:var(--muted);">Manufacturer / brand column</td></tr>
-            <tr><td><span class="field-badge"><span class="req-dot"></span> Part Number</span></td><td><input class="col-input" id="colPart" value="B"></td><td style="font-size:.74rem;color:var(--muted);">Alphanumeric — unique merge key</td></tr>
-            <tr><td><span class="field-badge"><span class="req-dot"></span> Part Description</span></td><td><input class="col-input" id="colName" value="C"></td><td style="font-size:.74rem;color:var(--muted);">Most frequent name wins on conflict</td></tr>
-            <tr><td><span class="field-badge"><span class="req-dot"></span> Quantity</span></td><td><input class="col-input" id="colQty" value="O"></td><td style="font-size:.74rem;color:var(--muted);">Must be numeric and >= 0</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-  </div>
-  <!-- Progress Bar -->
-  <div id="progressWrap" style="display:none;padding:0 22px 10px;">
-    <div style="font-size:.74rem;color:var(--text2);margin-bottom:6px;" id="progressText">Processing…</div>
-    <div style="background:var(--surface2);border-radius:100px;height:8px;overflow:hidden;border:1px solid var(--border);">
-      <div id="progressBar" style="height:100%;width:0%;background:var(--accent);border-radius:100px;transition:width .3s ease;"></div>
-    </div>
-  </div>
-  <div class="s2-footer">
-    <button class="btn btn-secondary" onclick="goTo(1)">‹ Back</button>
-    <div style="display:flex;gap:10px;align-items:center;">
-      <span class="s2-footer-info" id="s2Info"></span>
-      <button class="btn btn-primary btn-lg" id="mergeBtn" onclick="runMerge()">⚡ Merge & Preview</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ SCREEN 3 ══ -->
-<div class="screen" id="screen3">
-  <div class="s3-layout">
-
-    <!-- Filter buttons -->
-    <div class="filter-bar">
-      <button class="filter-btn filter-all active" onclick="setFilter('all')">
-        <span class="filter-btn-icon">📋</span>
-        <span class="filter-btn-label">All Rows</span>
-        <span class="filter-btn-count" id="countAll">0</span>
-      </button>
-      <button class="filter-btn filter-new" onclick="setFilter('new')">
-        <span class="filter-btn-icon">🟢</span>
-        <span class="filter-btn-label">New</span>
-        <span class="filter-btn-count" id="countNew">0</span>
-      </button>
-      <button class="filter-btn filter-updated" onclick="setFilter('updated')">
-        <span class="filter-btn-icon">🟡</span>
-        <span class="filter-btn-label">Qty Updated</span>
-        <span class="filter-btn-count" id="countUpdated">0</span>
-      </button>
-      <button class="filter-btn filter-mismatch" onclick="setFilter('mismatch')">
-        <span class="filter-btn-icon">🔴</span>
-        <span class="filter-btn-label">Name Mismatch</span>
-        <span class="filter-btn-count" id="countMismatch">0</span>
-      </button>
-      <button class="filter-btn filter-skipped" onclick="setFilter('skipped')">
-        <span class="filter-btn-icon">⚠️</span>
-        <span class="filter-btn-label">Skipped</span>
-        <span class="filter-btn-count" id="countSkipped">0</span>
-      </button>
-      <button class="filter-btn filter-nomrs" id="btnNoMrs" onclick="setFilter('nomrs')" style="display:none;">
-        <span class="filter-btn-icon">🔵</span>
-        <span class="filter-btn-label">No MRS Match</span>
-        <span class="filter-btn-count" id="countNoMrs">0</span>
-      </button>
-    </div>
-
-    <div id="warnPanel" class="warn-panel" style="display:none;">
-      <h4>⚠️ Warnings</h4>
-      <ul class="warn-list" id="warnList"></ul>
-    </div>
-
-    <div class="preview-table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th style="width:44px">#</th>
-            <th>Make</th>
-            <th>Part Number</th>
-            <th>Part Description</th>
-            <th>Total Qty</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="previewTable"></tbody>
-      </table>
-    </div>
-
-    <div style="display:flex;justify-content:space-between;">
-      <button class="btn btn-secondary" onclick="goTo(2)">‹ Back</button>
-      <button class="btn btn-primary btn-lg" onclick="goTo(4)">Export &nbsp;›</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ SCREEN 4 ══ -->
-<div class="screen" id="screen4">
-  <div class="s4-layout">
-
-    <!-- Main export card -->
-    <div class="s4-card">
-      <h3>✅ Export Master Sheet</h3>
-      <p>Set a sheet name and choose which columns to include in your export.</p>
-
-      <!-- Sheet name -->
-      <div class="sheet-name-wrap">
-        <label class="sheet-name-label">Sheet Name</label>
-        <input class="sheet-name-input" type="text" id="sheetNameInput" placeholder="Master Sheet – YYYY-MM-DD" oninput="this.dataset.touched='1'">
-      </div>
-
-      <div class="s4-divider"></div>
-
-      <!-- Column selector -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <span style="font-size:.76rem;font-weight:600;color:var(--text2);">Columns to Include</span>
-        <button class="select-all-btn" id="selectAllBtn" onclick="toggleAllCols()">Deselect All</button>
-      </div>
-      <div class="col-selector-grid" id="colSelectorGrid"></div>
-
-      <div style="margin-top:20px;">
-        <button class="btn btn-success btn-full btn-lg" onclick="exportMerged()">⬇ Download Master Sheet</button>
-      </div>
-    </div>
-
-    <!-- Error report -->
-    <div class="s4-error-strip">
-      <div>
-        <div style="font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:2px;">⚠️ Error Report</div>
-        <div style="font-size:.72rem;color:var(--muted);" id="errorFileName">Workezz_Error_Report_YYYY-MM-DD.xlsx</div>
-      </div>
-      <button class="btn btn-danger-outline" onclick="exportErrors()" id="errorBtn">⬇ Download</button>
-    </div>
-
-    <!-- Nav -->
-    <div style="display:flex;gap:10px;">
-      <button class="btn btn-secondary" onclick="goTo(3)">‹ Back to Preview</button>
-      <button class="btn btn-secondary" onclick="resetApp()">↺ Start Over</button>
-    </div>
-
-  </div>
-</div>
-
-<script src="js/state.js"></script>
-<script src="js/fileReader.js"></script>
-<script src="js/cleaner.js"></script>
-<script src="js/mergeEngine.js"></script>
-<script src="js/ui.js"></script>
-
-  <!-- Footer -->
-  <footer style="background:var(--white);border-top:1px solid var(--border);padding:10px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;box-shadow:0 -1px 4px rgba(30,34,53,.05);">
-    <div style="display:flex;align-items:center;gap:8px;">
-      <svg width="16" height="16" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="32" height="32" rx="8" fill="#2563eb"/>
-        <path d="M7 10L12 22L16 13L20 22L25 10" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-        <circle cx="16" cy="13" r="1.5" fill="white"/>
-      </svg>
-      <span style="font-size:.72rem;font-weight:700;font-family:'Syne',sans-serif;color:var(--text);">Workezz</span>
-      <span style="font-size:.68rem;color:var(--muted);">— Sheet Merger & Cleaner</span>
-    </div>
-    <div style="font-size:.68rem;color:var(--muted);">
-      Designed & built by <strong style="color:var(--text2);">Krish Makwane</strong> &nbsp;·&nbsp; MVP v2.0
-    </div>
-  </footer>
-  
 </body>
 </html>
