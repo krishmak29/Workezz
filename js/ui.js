@@ -118,24 +118,35 @@ function clearMRS() {
 async function parseMRS(file) {
   const data = await readExcelFile(file, 8);
   // MRS: data from row 8 (index 7)
-  // Col B (idx 1) = Make, Col C (idx 2) = Part Number, Col O (idx 14) = Qty
+  // Col B (idx 1) = Make, Col C (idx 2) = Part Number, Col P (idx 15) = Qty
   const mrsMap = new Map();
   for (let i = 7; i < data.length; i++) {
     const row = data[i];
-    const make = String(row[1] ?? '').trim();
     const rawPart = String(row[2] ?? '').trim();
-    const rawQty = row[15]; // Column P = index 15
+    // Use raw numeric qty from _raw if available
+    const rawQty = (row._raw && row._raw[15] !== undefined) ? row._raw[15] : row[15];
     if (!rawPart) continue;
-    // Strip prefixes from MRS part number so it matches cleaned panel part numbers
-    let part = rawPart;
-    for (const p of state.prefixes) {
-      const pt = p.trim();
-      if (pt && part.startsWith(pt)) { part = part.slice(pt.length).trim(); break; }
-    }
+    // Store both the raw part number AND the cleaned version as keys
+    // so lookup always works regardless of whether prefixes are applied
     let qty = typeof rawQty === 'number' ? rawQty : parseFloat(String(rawQty ?? '').replace(/,/g, ''));
     if (isNaN(qty)) qty = 0;
-    const key = part.toLowerCase();
-    mrsMap.set(key, (mrsMap.get(key) || 0) + qty);
+    // Raw key
+    const rawKey = rawPart.toLowerCase();
+    mrsMap.set(rawKey, (mrsMap.get(rawKey) || 0) + qty);
+    // Also store cleaned key (prefix/suffix stripped) so it matches panel cleaned parts
+    let cleaned = rawPart;
+    for (const p of state.prefixes) {
+      const pt = p.trim();
+      if (pt && cleaned.startsWith(pt)) { cleaned = cleaned.slice(pt.length).trim(); break; }
+    }
+    for (const s of state.suffixes) {
+      const st = s.trim();
+      if (st && cleaned.endsWith(st)) { cleaned = cleaned.slice(0, cleaned.length - st.length).trim(); break; }
+    }
+    const cleanedKey = cleaned.toLowerCase();
+    if (cleanedKey !== rawKey) {
+      mrsMap.set(cleanedKey, (mrsMap.get(cleanedKey) || 0) + qty);
+    }
   }
   state.mrsData = mrsMap;
 }
@@ -263,17 +274,7 @@ function renderPreview() {
     else if (r.status === 'mismatch') counts.mismatch++;
     // Count no MRS match
     if (state.mrsData) {
-      let mrsQty = state.mrsData.get(r.partNum.toLowerCase()) || 0;
-      if (!mrsQty) {
-        for (const [mrsKey, mrsVal] of state.mrsData) {
-          let stripped = mrsKey;
-          for (const p of state.prefixes) {
-            const pt = p.trim().toLowerCase();
-            if (pt && stripped.startsWith(pt)) { stripped = stripped.slice(pt.length).trim(); break; }
-          }
-          if (stripped === r.partNum.toLowerCase()) { mrsQty = mrsVal; break; }
-        }
-      }
+      const mrsQty = state.mrsData.get(r.partNum.toLowerCase()) || 0;
       if (!mrsQty) counts.nomrs++;
     }
   });
@@ -324,17 +325,7 @@ function renderPreviewTable() {
 
   if (filter === 'nomrs') {
     rows = state.merged.filter(r => {
-      let mrsQty = state.mrsData ? (state.mrsData.get(r.partNum.toLowerCase()) || 0) : 0;
-      if (!mrsQty && state.mrsData) {
-        for (const [mrsKey, mrsVal] of state.mrsData) {
-          let stripped = mrsKey;
-          for (const p of state.prefixes) {
-            const pt = p.trim().toLowerCase();
-            if (pt && stripped.startsWith(pt)) { stripped = stripped.slice(pt.length).trim(); break; }
-          }
-          if (stripped === r.partNum.toLowerCase()) { mrsQty = mrsVal; break; }
-        }
-      }
+      const mrsQty = state.mrsData ? (state.mrsData.get(r.partNum.toLowerCase()) || 0) : 0;
       return !mrsQty;
     });
   } else {
@@ -450,17 +441,7 @@ async function exportMerged() {
     fileNames.forEach(fn => fullRow.push(r.fileQtys[fn] || 0));
     fullRow.push(r.totalQty);
     if (state.mrsData) {
-      let mrsQty = state.mrsData.get(r.partNum.toLowerCase()) || 0;
-      if (!mrsQty) {
-        for (const [mrsKey, mrsVal] of state.mrsData) {
-          let stripped = mrsKey;
-          for (const p of state.prefixes) {
-            const pt = p.trim().toLowerCase();
-            if (pt && stripped.startsWith(pt)) { stripped = stripped.slice(pt.length).trim(); break; }
-          }
-          if (stripped === r.partNum.toLowerCase()) { mrsQty = mrsVal; break; }
-        }
-      }
+      const mrsQty = state.mrsData.get(r.partNum.toLowerCase()) || 0;
       fullRow.push(mrsQty);
       fullRow.push(r.totalQty - mrsQty);
     }
