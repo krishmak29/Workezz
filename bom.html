@@ -4,6 +4,11 @@
 
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="css/style.css">
+<style>
+.home-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:6px;font-size:.78rem;font-weight:600;color:var(--text2);background:var(--surface2);border:1px solid var(--border2);cursor:pointer;text-decoration:none;transition:all .15s;font-family:'IBM Plex Sans',sans-serif;}
+.home-btn:hover{background:var(--accent-light);color:var(--accent);border-color:var(--accent);}
+body.dark .home-btn{background:var(--surface2);border-color:var(--border2);color:var(--text2);}
+</style>
 <title>Workezz – Sheet Merger</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -33,7 +38,10 @@
       <span class="dark-toggle-icon" id="darkIcon">🌙</span>
       <span id="darkLabel">Dark Mode</span>
     </button>
-    <span class="version-badge">MVP v2.0</span>
+    <a href="index.html" class="home-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Home
+    </a>
   </div>
 </header>
 
