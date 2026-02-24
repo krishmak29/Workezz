@@ -4,34 +4,41 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Workezz — Tool Suite</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --bg:#0f1117;--surface:#161b27;--border:#2a3148;
+  --bg:#0f1117;--surface:#161b27;--surface2:#1c2235;--border:#2a3148;--border2:#353d5a;
   --accent:#2563eb;--accent2:#3b82f6;--accent-glow:rgba(37,99,235,.35);
   --text:#f0f2f8;--text2:#8890aa;--muted:#4a5072;
   --green:#10b981;--green-glow:rgba(16,185,129,.3);
+  --purple:#7c3aed;--purple-glow:rgba(124,58,237,.3);
 }
-html,body{height:100%;font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);}
+html{scroll-behavior:smooth;}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);}
+
+/* Grid BG */
 body::before{
-  content:'';position:fixed;inset:0;pointer-events:none;
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   background-image:linear-gradient(rgba(37,99,235,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.04) 1px,transparent 1px);
   background-size:40px 40px;
 }
-.orb{position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;opacity:.5;}
+.orb{position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;opacity:.5;z-index:0;}
 .orb-1{width:500px;height:500px;background:radial-gradient(circle,rgba(37,99,235,.2),transparent 70%);top:-100px;left:-100px;}
-.orb-2{width:400px;height:400px;background:radial-gradient(circle,rgba(16,185,129,.15),transparent 70%);bottom:-80px;right:-80px;}
+.orb-2{width:400px;height:400px;background:radial-gradient(circle,rgba(16,185,129,.15),transparent 70%);bottom:10%;right:-80px;}
+.orb-3{width:350px;height:350px;background:radial-gradient(circle,rgba(124,58,237,.12),transparent 70%);top:60%;left:60%;}
 
-.page{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:40px 24px;position:relative;z-index:1;}
-
+/* ── HERO SECTION ── */
+.hero{
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:40px 24px 60px;position:relative;z-index:1;
+}
 .logo-wrap{display:flex;align-items:center;gap:14px;margin-bottom:10px;animation:fadeUp .6s ease both;}
 .logo-text{font-family:'Syne',sans-serif;font-size:2.4rem;font-weight:800;letter-spacing:-.03em;}
 .logo-text span{color:var(--accent2);}
-.logo-sub{font-size:.72rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:56px;animation:fadeUp .6s .1s ease both;opacity:0;animation-fill-mode:forwards;}
+.logo-sub{font-size:.72rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:52px;animation:fadeUp .6s .1s ease both;opacity:0;animation-fill-mode:forwards;}
 
 .cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;width:100%;max-width:1000px;animation:fadeUp .6s .2s ease both;opacity:0;animation-fill-mode:forwards;}
-
 .tool-card{
   position:relative;background:var(--surface);border:1px solid var(--border);border-radius:16px;
   padding:32px 28px;cursor:pointer;text-decoration:none;display:flex;flex-direction:column;gap:14px;
@@ -41,43 +48,135 @@ body::before{
 .tool-card:hover{transform:translateY(-5px);}
 .tool-card.bom::before{background:radial-gradient(circle at 30% 30%,var(--accent-glow),transparent 65%);}
 .tool-card.mrs::before{background:radial-gradient(circle at 30% 30%,var(--green-glow),transparent 65%);}
+.tool-card.proc::before{background:radial-gradient(circle at 30% 30%,var(--purple-glow),transparent 65%);}
 .tool-card:hover::before{opacity:1;}
 .tool-card.bom:hover{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),0 20px 40px rgba(37,99,235,.15);}
 .tool-card.mrs:hover{border-color:var(--green);box-shadow:0 0 0 1px var(--green),0 20px 40px rgba(16,185,129,.15);}
-
+.tool-card.proc:hover{border-color:var(--purple);box-shadow:0 0 0 1px var(--purple),0 20px 40px rgba(124,58,237,.15);}
 .tool-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;}
 .tool-card.bom .tool-icon{background:rgba(37,99,235,.15);border:1px solid rgba(37,99,235,.3);}
 .tool-card.mrs .tool-icon{background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);}
-
+.tool-card.proc .tool-icon{background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.3);}
 .tool-name{font-family:'Syne',sans-serif;font-size:1.15rem;font-weight:700;color:var(--text);}
 .tool-desc{font-size:.78rem;color:var(--text2);line-height:1.65;}
 .tool-arrow{margin-top:auto;font-size:.76rem;font-weight:600;display:flex;align-items:center;gap:6px;transition:gap .2s;}
 .tool-card.bom .tool-arrow{color:var(--accent2);}
 .tool-card.mrs .tool-arrow{color:var(--green);}
+.tool-card.proc .tool-arrow{color:#a78bfa;}
 .tool-card:hover .tool-arrow{gap:12px;}
-
 .tool-tag{position:absolute;top:16px;right:16px;font-size:.6rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:100px;}
 .tool-card.bom .tool-tag{background:rgba(37,99,235,.15);color:var(--accent2);border:1px solid rgba(37,99,235,.2);}
 .tool-card.mrs .tool-tag{background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.2);}
+.tool-card.proc .tool-tag{background:rgba(124,58,237,.15);color:#a78bfa;border:1px solid rgba(124,58,237,.2);}
 
-.home-footer{margin-top:48px;font-size:.68rem;color:var(--muted);animation:fadeUp .6s .35s ease both;opacity:0;animation-fill-mode:forwards;}
-.home-footer strong{color:var(--text2);}
+/* Scroll hint */
+.scroll-hint{
+  position:absolute;bottom:32px;left:50%;transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  animation:fadeUp .6s .5s ease both;opacity:0;animation-fill-mode:forwards;cursor:pointer;
+}
+.scroll-hint span{font-size:.65rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;}
+.scroll-arrow{width:24px;height:24px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);animation:bounce 1.5s infinite;}
+@keyframes bounce{0%,100%{transform:rotate(45deg) translateY(0);}50%{transform:rotate(45deg) translateY(5px);}}
+
+/* ── HOW TO USE SECTION ── */
+.how-section{
+  position:relative;z-index:1;padding:80px 24px;
+  background:linear-gradient(to bottom, var(--bg), #0d1020);
+  border-top:1px solid var(--border);
+}
+.how-inner{max-width:1060px;margin:0 auto;}
+.how-label{font-size:.68rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent2);margin-bottom:10px;text-align:center;}
+.how-title{font-family:'Syne',sans-serif;font-size:1.9rem;font-weight:800;text-align:center;color:var(--text);margin-bottom:6px;}
+.how-sub{font-size:.82rem;color:var(--text2);text-align:center;margin-bottom:56px;}
+
+.how-cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;}
+
+.how-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:16px;
+  overflow:hidden;display:flex;flex-direction:column;
+  transition:transform .2s,box-shadow .2s;
+}
+.how-card:hover{transform:translateY(-3px);}
+.how-card.bom{border-top:3px solid var(--accent);}
+.how-card.mrs{border-top:3px solid var(--green);}
+.how-card.proc{border-top:3px solid var(--purple);}
+
+.how-card-head{padding:20px 22px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;}
+.how-card-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;}
+.how-card.bom .how-card-icon{background:rgba(37,99,235,.15);border:1px solid rgba(37,99,235,.3);}
+.how-card.mrs .how-card-icon{background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);}
+.how-card.proc .how-card-icon{background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.3);}
+.how-card-title{font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;color:var(--text);}
+.how-card-tag{font-size:.58rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2px 7px;border-radius:100px;margin-left:auto;}
+.how-card.bom .how-card-tag{background:rgba(37,99,235,.15);color:var(--accent2);border:1px solid rgba(37,99,235,.2);}
+.how-card.mrs .how-card-tag{background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.2);}
+.how-card.proc .how-card-tag{background:rgba(124,58,237,.15);color:#a78bfa;border:1px solid rgba(124,58,237,.2);}
+
+.how-card-body{padding:18px 22px;display:flex;flex-direction:column;gap:18px;flex:1;}
+
+.info-block{}
+.info-block-label{
+  font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  margin-bottom:8px;display:flex;align-items:center;gap:6px;
+}
+.info-block-label::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;}
+.bom .info-block-label.what::before{background:var(--accent2);}
+.bom .info-block-label.req::before{background:#f59e0b;}
+.bom .info-block-label.fmt::before{background:#ec4899;}
+.bom .info-block-label.out::before{background:var(--green);}
+.mrs .info-block-label.what::before{background:var(--green);}
+.mrs .info-block-label.req::before{background:#f59e0b;}
+.mrs .info-block-label.fmt::before{background:#ec4899;}
+.mrs .info-block-label.out::before{background:var(--accent2);}
+.proc .info-block-label.what::before{background:#a78bfa;}
+.proc .info-block-label.req::before{background:#f59e0b;}
+.proc .info-block-label.fmt::before{background:#ec4899;}
+.proc .info-block-label.out::before{background:var(--green);}
+
+.info-block-label span{color:var(--text2);}
+.info-block p{font-size:.75rem;color:var(--text2);line-height:1.7;}
+
+.tag-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
+.tag{display:inline-block;font-size:.65rem;font-family:'IBM Plex Mono',monospace;padding:2px 8px;border-radius:4px;border:1px solid var(--border2);color:var(--text2);background:var(--surface2);}
+.tag.blue{border-color:rgba(37,99,235,.3);color:var(--accent2);background:rgba(37,99,235,.08);}
+.tag.green{border-color:rgba(16,185,129,.3);color:var(--green);background:rgba(16,185,129,.08);}
+.tag.purple{border-color:rgba(124,58,237,.3);color:#a78bfa;background:rgba(124,58,237,.08);}
+.tag.amber{border-color:rgba(245,158,11,.3);color:#fbbf24;background:rgba(245,158,11,.08);}
+
+.divider{height:1px;background:var(--border);}
+
+.how-card-footer{padding:14px 22px;border-top:1px solid var(--border);}
+.open-btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+  padding:9px 16px;border-radius:8px;font-size:.78rem;font-weight:600;
+  text-decoration:none;transition:all .15s;border:1px solid var(--border2);
+  background:var(--surface2);color:var(--text2);
+}
+.how-card.bom .open-btn:hover{background:rgba(37,99,235,.15);color:var(--accent2);border-color:var(--accent);}
+.how-card.mrs .open-btn:hover{background:rgba(16,185,129,.1);color:var(--green);border-color:var(--green);}
+.how-card.proc .open-btn:hover{background:rgba(124,58,237,.1);color:#a78bfa;border-color:var(--purple);}
+
+/* Footer */
+.page-footer{text-align:center;padding:32px;font-size:.68rem;color:var(--muted);position:relative;z-index:1;border-top:1px solid var(--border);}
+.page-footer strong{color:var(--text2);}
 
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
-@media(max-width:520px){.cards{grid-template-columns:1fr;}.logo-text{font-size:1.8rem;}}
-
-.tool-card.proc::before{background:radial-gradient(circle at 30% 30%,rgba(124,58,237,.3),transparent 65%);}
-.tool-card.proc:hover{border-color:#7c3aed;box-shadow:0 0 0 1px #7c3aed,0 20px 40px rgba(124,58,237,.15);}
-.tool-card.proc .tool-icon{background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.3);}
-.tool-card.proc .tool-arrow{color:#a78bfa;}
-.proc-tag{background:rgba(124,58,237,.15);color:#a78bfa;border:1px solid rgba(124,58,237,.2);}
+@media(max-width:768px){
+  .cards,.how-cards{grid-template-columns:1fr;}
+  .logo-text{font-size:1.8rem;}
+  .how-title{font-size:1.4rem;}
+}
 </style>
 </head>
 <body>
+
 <div class="orb orb-1"></div>
 <div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
 
-<div class="page">
+<!-- ══ HERO ══ -->
+<section class="hero">
 
   <div class="logo-wrap">
     <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
@@ -103,17 +202,17 @@ body::before{
     </a>
 
     <a class="tool-card mrs" href="mrs.html">
-      <span class="tool-tag">New</span>
+      <span class="tool-tag">Active</span>
       <div class="tool-icon">🔀</div>
       <div>
         <div class="tool-name">MRS Merger</div>
-        <div class="tool-desc">Merge multiple MRS files into a Master — matching by Part Number and Section, adding quantities or inserting new rows intelligently.</div>
+        <div class="tool-desc">Merge multiple MRS files into a Master — paste Sheet 1 then Sheet 2 of each file sequentially into the master template.</div>
       </div>
       <div class="tool-arrow">Open Tool →</div>
     </a>
 
     <a class="tool-card proc" href="procurement.html">
-      <span class="tool-tag proc-tag">Beta</span>
+      <span class="tool-tag">Beta</span>
       <div class="tool-icon">📋</div>
       <div>
         <div class="tool-name">Procurement Planner</div>
@@ -124,8 +223,200 @@ body::before{
 
   </div>
 
-  <div class="home-footer">Designed & built by <strong>Krish Makwane</strong></div>
+  <!-- Scroll hint -->
+  <div class="scroll-hint" onclick="document.getElementById('howto').scrollIntoView({behavior:'smooth'})">
+    <span>How to use</span>
+    <div class="scroll-arrow"></div>
+  </div>
 
-</div>
+</section>
+
+<!-- ══ HOW TO USE ══ -->
+<section class="how-section" id="howto">
+  <div class="how-inner">
+
+    <div class="how-label">Documentation</div>
+    <div class="how-title">How to Use Each Tool</div>
+    <div class="how-sub">Everything you need to know — inputs, formats, and what you get out.</div>
+
+    <div class="how-cards">
+
+      <!-- BOM GENERATOR -->
+      <div class="how-card bom">
+        <div class="how-card-head">
+          <div class="how-card-icon">📊</div>
+          <div class="how-card-title">BOM Generator</div>
+          <span class="how-card-tag">Active</span>
+        </div>
+        <div class="how-card-body bom">
+
+          <div class="info-block">
+            <div class="info-block-label what"><span>What It Does</span></div>
+            <p>Merges multiple individual panel Excel sheets into a single unified Bill of Materials. Cleans and deduplicates part numbers, sums quantities across panels, and matches against MRS data.</p>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="info-block">
+            <div class="info-block-label req"><span>Requirements</span></div>
+            <p>Each panel sheet must be an Excel file (.xls / .xlsx). All files must share the same column structure — Part Number, Make, Description, and Qty.</p>
+            <div class="tag-row">
+              <span class="tag blue">.xls</span>
+              <span class="tag blue">.xlsx</span>
+              <span class="tag amber">Same column layout</span>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="info-block">
+            <div class="info-block-label fmt"><span>Excel Format Expected</span></div>
+            <p>Col A: Sr No &nbsp;·&nbsp; Col B: Make &nbsp;·&nbsp; Col C: Part Number &nbsp;·&nbsp; Col D: Description &nbsp;·&nbsp; Col E: Qty. Data starts from row 2.</p>
+            <div class="tag-row">
+              <span class="tag">Col A → SR</span>
+              <span class="tag">Col B → Make</span>
+              <span class="tag">Col C → Part No</span>
+              <span class="tag">Col E → Qty</span>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="info-block">
+            <div class="info-block-label out"><span>What You Get</span></div>
+            <p>A single merged Excel with all parts consolidated. Duplicate part numbers are summed. Output is ready to use as your project BOM.</p>
+            <div class="tag-row">
+              <span class="tag green">Merged BOM</span>
+              <span class="tag green">Deduped parts</span>
+              <span class="tag green">Summed qty</span>
+            </div>
+          </div>
+
+        </div>
+        <div class="how-card-footer">
+          <a class="open-btn" href="bom.html">Open BOM Generator →</a>
+        </div>
+      </div>
+
+      <!-- MRS MERGER -->
+      <div class="how-card mrs">
+        <div class="how-card-head">
+          <div class="how-card-icon">🔀</div>
+          <div class="how-card-title">MRS Merger</div>
+          <span class="how-card-tag">Active</span>
+        </div>
+        <div class="how-card-body mrs">
+
+          <div class="info-block">
+            <div class="info-block-label what"><span>What It Does</span></div>
+            <p>Takes a blank Master MRS template and merges multiple MRS files into it. For each file, Sheet 1 is pasted first, then Sheet 2 right after — sequentially, one after another.</p>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="info-block">
+            <div class="info-block-label req"><span>Requirements</span></div>
+            <p>One Master Sheet (blank template with formatting). One or more MRS files to merge. Each MRS file must have data on its second sheet.</p>
+            <div class="tag-row">
+              <span class="tag green">1 Master file</span>
+              <span class="tag green">1+ Merge files</span>
+              <span class="tag amber">Data on Sheet 2</span>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="info-block">
+            <div class="info-block-label fmt"><span>Excel Format Expected</span></div>
+            <p>Master: formatted blank template, rows 1–7 are headers. Merge files: Sheet 1 and Sheet 2 both contain MRS data rows to be carried over as-is.</p>
+            <div class="tag-row">
+              <span class="tag">Master = template</span>
+              <span class="tag">Sheet 1 + Sheet 2</span>
+              <span class="tag">Rows 1–7 = headers</span>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="info-block">
+            <div class="info-block-label out"><span>What You Get</span></div>
+            <p>A single merged MRS Excel built on the master template. All data from each file's Sheet 1 and Sheet 2 is appended in order, preserving master formatting.</p>
+            <div class="tag-row">
+              <span class="tag blue">Merged MRS</span>
+              <span class="tag blue">Master formatting</span>
+              <span class="tag blue">Sequential paste</span>
+            </div>
+          </div>
+
+        </div>
+        <div class="how-card-footer">
+          <a class="open-btn" href="mrs.html">Open MRS Merger →</a>
+        </div>
+      </div>
+
+      <!-- PROCUREMENT PLANNER -->
+      <div class="how-card proc">
+        <div class="how-card-head">
+          <div class="how-card-icon">📋</div>
+          <div class="how-card-title">Procurement Planner</div>
+          <span class="how-card-tag">Beta</span>
+        </div>
+        <div class="how-card-body proc">
+
+          <div class="info-block">
+            <div class="info-block-label what"><span>What It Does</span></div>
+            <p>Compares your BOM (what's needed per panel) against your MRS (what's been ordered per section) and tells you exactly which parts are in excess, shortage, or exact — broken down by section.</p>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="info-block">
+            <div class="info-block-label req"><span>Requirements</span></div>
+            <p>One BOM sheet with panel columns from col E onwards. One MRS sheet with Part Number in col C, Section in col G, Qty in col P.</p>
+            <div class="tag-row">
+              <span class="tag purple">1 BOM file</span>
+              <span class="tag purple">1 MRS file</span>
+              <span class="tag amber">Panel headers row 1</span>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="info-block">
+            <div class="info-block-label fmt"><span>Excel Format Expected</span></div>
+            <p>BOM: Row 1 = panel headers (e.g. ZA_P1_PANE_1), Row 2 onwards = part data. MRS: Col C = Part No, Col G = Section, Col P = Qty. Section names auto-derived — <code style="font-family:monospace;font-size:.7rem;background:rgba(124,58,237,.15);padding:1px 5px;border-radius:3px;">ZA_P1_PANE_1 → ZA_P1</code></p>
+            <div class="tag-row">
+              <span class="tag">BOM row 1 = headers</span>
+              <span class="tag">MRS col G = section</span>
+              <span class="tag">MRS col P = qty</span>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="info-block">
+            <div class="info-block-label out"><span>What You Get</span></div>
+            <p>A visual breakdown per section showing panel quantities vs MRS ordered. Export a structured Excel with per-section columns, MRS qty, and colour-coded excess/shortage/exact status. Summary column shows overall picture.</p>
+            <div class="tag-row">
+              <span class="tag green">Excess flagged</span>
+              <span class="tag" style="border-color:rgba(185,28,28,.3);color:#f87171;background:rgba(185,28,28,.08);">Shortage flagged</span>
+              <span class="tag amber">Summary col</span>
+            </div>
+          </div>
+
+        </div>
+        <div class="how-card-footer">
+          <a class="open-btn" href="procurement.html">Open Procurement Planner →</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<footer class="page-footer">
+  Designed & built by <strong>Krish Makwane</strong> &nbsp;·&nbsp; Workezz MVP v2.0
+</footer>
+
 </body>
 </html>
