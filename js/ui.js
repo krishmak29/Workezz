@@ -60,6 +60,9 @@ function removeFile(name) {
   renderFileTable();
 }
 
+// ── DRAG AND DROP REORDER ──
+let dragSrcIndex = null;
+
 function renderFileTable() {
   const tbody = document.getElementById('fileTable');
   const count = state.files.length;
@@ -80,19 +83,61 @@ function renderFileTable() {
     } else if (v.status === 'multi') {
       indicator = `<span class="file-status-indicator status-warn">ⓘ<span class="tip">Multiple sheets detected (${v.sheetCount}) — using the first sheet</span></span>`;
     }
-    return `<tr>
-      <td class="sr-no">${String(i + 1).padStart(2, '0')}</td>
+    return `<tr draggable="true" data-index="${i}" 
+        ondragstart="bomDragStart(event,${i})" 
+        ondragover="bomDragOver(event)" 
+        ondragenter="bomDragEnter(event)"
+        ondragleave="bomDragLeave(event)"
+        ondrop="bomDrop(event,${i})" 
+        ondragend="bomDragEnd(event)"
+        style="cursor:grab;">
+      <td class="sr-no" style="cursor:grab;">
+        <span style="display:inline-flex;flex-direction:column;gap:1px;opacity:0.4;pointer-events:none;user-select:none;">
+          <span style="display:block;width:14px;height:2px;background:currentColor;border-radius:1px;"></span>
+          <span style="display:block;width:14px;height:2px;background:currentColor;border-radius:1px;"></span>
+          <span style="display:block;width:14px;height:2px;background:currentColor;border-radius:1px;"></span>
+        </span>
+      </td>
       <td><div class="file-chip">
         <div class="file-chip-icon">${ext}</div>
         <div>
           <div class="file-chip-name">${f.name} ${indicator}</div>
-          <div class="file-chip-size">${formatSize(f.size)}</div>
+          <div class="file-chip-size">${String(i + 1).padStart(2, '0')} · ${formatSize(f.size)}</div>
         </div>
       </div></td>
       <td style="font-size:.76rem;color:var(--muted);">${formatSize(f.size)}</td>
       <td style="text-align:right;"><button class="btn btn-danger-outline btn-sm" onclick="removeFile('${f.name}')">✕ Remove</button></td>
     </tr>`;
   }).join('');
+}
+
+function bomDragStart(e, i) {
+  dragSrcIndex = i;
+  e.dataTransfer.effectAllowed = 'move';
+  e.currentTarget.style.opacity = '0.45';
+}
+function bomDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+}
+function bomDragEnter(e) {
+  e.currentTarget.classList.add('drag-over');
+}
+function bomDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+function bomDrop(e, toIndex) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (dragSrcIndex === null || dragSrcIndex === toIndex) return;
+  const moved = state.files.splice(dragSrcIndex, 1)[0];
+  state.files.splice(toIndex, 0, moved);
+  dragSrcIndex = null;
+  renderFileTable();
+}
+function bomDragEnd(e) {
+  e.currentTarget.style.opacity = '';
+  document.querySelectorAll('#fileTable tr').forEach(r => r.classList.remove('drag-over'));
 }
 
 
