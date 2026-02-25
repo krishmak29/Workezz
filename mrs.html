@@ -205,6 +205,19 @@ tr[draggable]:hover td{background:var(--surface);}
 
     <!-- MERGE BUTTON -->
     <div style="margin-top:auto;padding-top:8px;">
+      <div style="margin-bottom:10px;">
+        <label style="font-size:.68rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;">Export File Name</label>
+        <div style="display:flex;align-items:center;gap:0;border:1px solid var(--border2);border-radius:var(--radius-sm);overflow:hidden;background:var(--white);">
+          <input 
+            id="exportFileName" 
+            type="text" 
+            placeholder="MRS_Merged" 
+            value="MRS_Merged"
+            style="flex:1;border:none;outline:none;padding:8px 12px;font-family:'IBM Plex Sans',sans-serif;font-size:.82rem;color:var(--text);background:transparent;"
+          >
+          <span style="padding:8px 12px;font-size:.75rem;font-weight:600;color:var(--muted);background:var(--surface2);border-left:1px solid var(--border);white-space:nowrap;">.xlsx</span>
+        </div>
+      </div>
       <button class="btn btn-success btn-full btn-lg" id="mergeBtn" onclick="runMRSMerge()" disabled>
         🔀 Merge & Download
       </button>
@@ -533,8 +546,10 @@ async function exportResult(result) {
 
     const buffer = await wb.xlsx.writeBuffer();
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    saveAs(blob, `MRS_Merged_${todayStr()}.xlsx`);
-    log(`✅ Downloaded: MRS_Merged_${todayStr()}.xlsx`, 'new');
+    const exportName = (document.getElementById('exportFileName').value.trim() || 'MRS_Merged').replace(/[^a-zA-Z0-9_\-. ]/g, '_');
+    const finalName = `${exportName}_${todayStr()}.xlsx`;
+    saveAs(blob, finalName);
+    log(`✅ Downloaded: ${finalName}`, 'new');
   } catch(err) {
     log('Export error: ' + err.message, 'error');
     console.error(err);
