@@ -69,12 +69,12 @@
       <!-- MRS Upload -->
       <div>
         <div class="section-label">MRS File (Optional)</div>
-        <div class="mrs-strip">
+        <div class="mrs-strip" style="flex-wrap:wrap;gap:8px;">
           <div class="mrs-strip-info">
             <div class="mrs-strip-title">Upload MRS Quantity Sheet</div>
             <div id="mrsFileName" class="mrs-strip-sub">No file selected — MRS columns will be hidden</div>
           </div>
-          <div style="display:flex;gap:8px;align-items:center;">
+          <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
             <input type="file" id="mrsInput" accept=".xls,.xlsx" style="display:none;">
             <button class="btn btn-secondary btn-sm" onclick="document.getElementById('mrsInput').click()">📋 Browse</button>
             <button class="btn btn-danger-outline btn-sm" id="mrsClearBtn" onclick="clearMRS()" style="display:none;">✕ Cancel</button>
@@ -329,6 +329,24 @@
 <script src="js/cleaner.js"></script>
 <script src="js/mergeEngine.js"></script>
 <script src="js/ui.js"></script>
+<script>
+// ── DARK MODE — synced via wz-theme ──
+function toggleDark() {
+  const isDark = document.body.classList.toggle("dark");
+  document.getElementById("darkIcon").textContent = isDark ? "☀️" : "🌙";
+  document.getElementById("darkLabel").textContent = isDark ? "Light Mode" : "Dark Mode";
+  try { localStorage.setItem("wz-theme", isDark ? "dark" : "light"); } catch(e) {}
+}
+(function(){
+  try {
+    if (localStorage.getItem("wz-theme") === "dark") {
+      document.body.classList.add("dark");
+      document.getElementById("darkIcon").textContent = "☀️";
+      document.getElementById("darkLabel").textContent = "Light Mode";
+    }
+  } catch(e) {}
+})();
+</script>
 
   <!-- Footer -->
   <footer style="background:var(--white);border-top:1px solid var(--border);padding:10px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;box-shadow:0 -1px 4px rgba(30,34,53,.05);">

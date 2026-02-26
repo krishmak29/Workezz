@@ -28,8 +28,8 @@
   <div class="nav-right">
     <span class="nav-version">v2.0</span>
     <button class="nav-toggle" id="modeBtn" onclick="toggleMode()">
-      <span id="modeIcon">🌙</span>
-      <span id="modeLbl">Dark</span>
+      <span id="modeIcon">☀️</span>
+      <span id="modeLbl">Light</span>
     </button>
   </div>
 </nav>
@@ -75,7 +75,7 @@
       <div class="tool-arrow">Open Tool →</div>
     </a>
 
-    <a class="tool-card filler" href="mrsfiller.html">
+    <a class="tool-card filler" href="mrsgenerator.html">
       <div class="tool-card-top">
         <div class="tool-icon">⚡</div>
         <span class="tool-tag">New</span>
@@ -284,18 +284,24 @@
 
 <script>
 function toggleMode(){
-  const isLight=document.body.classList.toggle('light');
-  document.getElementById('modeIcon').textContent=isLight?'☀️':'🌙';
-  document.getElementById('modeLbl').textContent=isLight?'Light':'Dark';
-  try{localStorage.setItem('wz-dark',isLight?'0':'1');}catch(e){}
+  // index.html: dark=default(no class), light=body.light
+  // toggle: if currently light, go dark; if dark, go light
+  var isLight=document.body.classList.toggle('light');
+  document.getElementById('modeIcon').textContent=isLight?'🌙':'☀️';
+  document.getElementById('modeLbl').textContent=isLight?'Dark':'Light';
+  // Shared key 'wz-theme' read by all tools — always write so cross-page sync works
+  try{localStorage.setItem('wz-theme',isLight?'light':'dark');}catch(e){}
 }
 (function(){
   try{
-    if(localStorage.getItem('wz-dark')==='0'){
+    var saved=localStorage.getItem('wz-theme');
+    // Default is dark. Only apply light class if explicitly set to light.
+    if(saved==='light'){
       document.body.classList.add('light');
-      document.getElementById('modeIcon').textContent='☀️';
-      document.getElementById('modeLbl').textContent='Light';
+      document.getElementById('modeIcon').textContent='🌙';
+      document.getElementById('modeLbl').textContent='Dark';
     }
+    // If 'dark' or null → default dark, button shows ☀️ Light (already in HTML)
   }catch(e){}
 })();
 </script>

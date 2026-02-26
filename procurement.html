@@ -137,6 +137,14 @@
             <input class="col-input" id="mrsColQty" value="P" maxlength="2" oninput="this.value=this.value.toUpperCase();saveSettings()">
           </div>
           <div class="col-map-item">
+            <span class="col-map-label">Make Col</span>
+            <input class="col-input" id="mrsColMake" value="E" maxlength="2" oninput="this.value=this.value.toUpperCase();saveSettings()">
+          </div>
+          <div class="col-map-item">
+            <span class="col-map-label">Description Col</span>
+            <input class="col-input" id="mrsColDesc" value="D" maxlength="2" oninput="this.value=this.value.toUpperCase();saveSettings()">
+          </div>
+          <div class="col-map-item">
             <span class="col-map-label">Data Start Row</span>
             <input class="col-input" id="mrsStartRow" value="8" maxlength="4" type="number" min="1" oninput="saveSettings()">
           </div>
@@ -204,7 +212,7 @@ function fmtSz(b) { if(b<1024)return b+' B'; if(b<1048576)return (b/1024).toFixe
 function todayStr() { return new Date().toISOString().slice(0,10); }
 
 // ── PERSIST ──
-var PKEYS = ['bomColPart','bomColDesc','bomColMake','bomStartRow','bomColPanelStart','bomPanelCount','mrsColPart','mrsColSection','mrsColQty','mrsStartRow'];
+var PKEYS = ['bomColPart','bomColDesc','bomColMake','bomStartRow','bomColPanelStart','bomPanelCount','mrsColPart','mrsColSection','mrsColQty','mrsColMake','mrsColDesc','mrsStartRow'];
 function saveSettings() {
   try {
     var obj = {};
@@ -300,6 +308,8 @@ async function processData() {
   var mCP     = colIdx(document.getElementById('mrsColPart').value||'C');
   var mCS     = colIdx(document.getElementById('mrsColSection').value||'G');
   var mCQ     = colIdx(document.getElementById('mrsColQty').value||'P');
+  var mCM     = colIdx(document.getElementById('mrsColMake').value||'E');
+  var mCDesc  = colIdx(document.getElementById('mrsColDesc').value||'D');
   var bPC     = parseInt(document.getElementById('bomPanelCount').value)||0;
 
   var res = await Promise.all([readExcel(bomFile), readExcel(mrsFile)]);
@@ -329,7 +339,7 @@ async function processData() {
     });
   }
 
-  // MRS rows
+  // MRS rows — store {make, desc, sections: Map(section->qty)} per part key
   var mrsMap=new Map();
   for(var j=mrsSR-1;j<mrsData.length;j++){
     var mr=mrsData[j];
@@ -340,8 +350,18 @@ async function processData() {
     var mq=typeof mraw==='number'?mraw:(parseFloat(String(mraw||'').replace(/,/g,''))||0);
     if(!mq) continue;
     var mk=mp.toLowerCase();
-    if(!mrsMap.has(mk)) mrsMap.set(mk,new Map());
-    mrsMap.get(mk).set(ms,(mrsMap.get(mk).get(ms)||0)+mq);
+    if(!mrsMap.has(mk)){
+      mrsMap.set(mk,{
+        make: String(mr[mCM]||'').trim(),
+        desc: String(mr[mCDesc]||'').trim(),
+        sections: new Map()
+      });
+    }
+    var mrsEntry=mrsMap.get(mk);
+    // Fill make/desc from first row that has them if not already set
+    if(!mrsEntry.make) mrsEntry.make=String(mr[mCM]||'').trim();
+    if(!mrsEntry.desc) mrsEntry.desc=String(mr[mCDesc]||'').trim();
+    mrsEntry.sections.set(ms,(mrsEntry.sections.get(ms)||0)+mq);
   }
 
   // panelRows for viz
@@ -351,7 +371,7 @@ async function processData() {
   partsMap.forEach(function(part,key){
     panels.forEach(function(p){
       var rq=part.panelQtys[p.name]||0; if(!rq) return;
-      var mq=(mrsMap.has(key)&&mrsMap.get(key).has(p.name))?mrsMap.get(key).get(p.name):0;
+      var mq=(mrsMap.has(key)&&mrsMap.get(key).sections.has(p.name))?mrsMap.get(key).sections.get(p.name):0;
       var st,stype;
       if(mq===0)       {st='No MRS';                          stype='nomrs';}
       else if(mq>rq)   {st='+'+(mq-rq)+' Excess';            stype='excess';}
@@ -361,11 +381,20 @@ async function processData() {
     });
   });
 
-  // Unmatched MRS
+  // Unmatched MRS — parts in MRS with no match in BOM
   var unmatchedMRS=[];
-  mrsMap.forEach(function(pm,key){
+  mrsMap.forEach(function(mrsEntry,key){
     if(!partsMap.has(key)){
-      pm.forEach(function(qty,panel){unmatchedMRS.push({partNum:key,make:'',desc:'',panel:panel,qty:qty});});
+      mrsEntry.sections.forEach(function(qty,panel){
+        unmatchedMRS.push({
+          partNum: mrsEntry.desc ? key : key,  // keep original key as part number lookup
+          partNumDisplay: key,
+          make: mrsEntry.make||'',
+          desc: mrsEntry.desc||'',
+          panel: panel,
+          qty: qty
+        });
+      });
     }
   });
 
@@ -374,7 +403,7 @@ async function processData() {
   partsMap.forEach(function(part,key){
     panels.forEach(function(p){
       var rq=part.panelQtys[p.name]||0; if(!rq) return;
-      var mq=(mrsMap.has(key)&&mrsMap.get(key).has(p.name))?mrsMap.get(key).get(p.name):0;
+      var mq=(mrsMap.has(key)&&mrsMap.get(key).sections.has(p.name))?mrsMap.get(key).sections.get(p.name):0;
       if(mq<rq){
         if(!toOrderMap.has(key)) toOrderMap.set(key,{partNum:part.partNum,make:part.make,desc:part.desc,totalReq:0});
         toOrderMap.get(key).totalReq+=rq;
@@ -388,7 +417,7 @@ async function processData() {
   partsMap.forEach(function(part,key){
     panels.forEach(function(p){
       var rq=part.panelQtys[p.name]||0; if(!rq) return;
-      var mq=(mrsMap.has(key)&&mrsMap.get(key).has(p.name))?mrsMap.get(key).get(p.name):0;
+      var mq=(mrsMap.has(key)&&mrsMap.get(key).sections.has(p.name))?mrsMap.get(key).sections.get(p.name):0;
       if(mq>rq){
         if(!excessMap.has(key)) excessMap.set(key,{partNum:part.partNum,make:part.make,desc:part.desc,totalReq:0,totalMrs:0});
         excessMap.get(key).totalReq+=rq;
@@ -403,7 +432,7 @@ async function processData() {
   partsMap.forEach(function(part,key){
     panels.forEach(function(p){
       var rq=part.panelQtys[p.name]||0; if(!rq) return;
-      var mq=(mrsMap.has(key)&&mrsMap.get(key).has(p.name))?mrsMap.get(key).get(p.name):0;
+      var mq=(mrsMap.has(key)&&mrsMap.get(key).sections.has(p.name))?mrsMap.get(key).sections.get(p.name):0;
       if(mq<rq) shortParts.push({partNum:part.partNum,make:part.make,desc:part.desc,panel:p.name,reqQty:rq,mrsQty:mq,shortage:rq-mq});
     });
   });
@@ -574,7 +603,7 @@ async function exportExcel(){
       panels.forEach(function(pl){
         var psc=pcm.get(pl.name);
         var rq=part.panelQtys[pl.name]||0;
-        var mq=(mrsMap.has(key)&&mrsMap.get(key).has(pl.name))?mrsMap.get(key).get(pl.name):0;
+        var mq=(mrsMap.has(key)&&mrsMap.get(key).sections.has(pl.name))?mrsMap.get(key).sections.get(pl.name):0;
         var st,sb,sf;
         if(rq===0)       {st='';           sb=rbg;   sf=C.GF2;}
         else if(mq===0)  {st='No MRS';     sb=C.GB2;  sf=C.GF2;}
@@ -602,8 +631,13 @@ async function exportExcel(){
 
     var uByPart=new Map();
     unmatchedMRS.forEach(function(u){
-      if(!uByPart.has(u.partNum)) uByPart.set(u.partNum,{partNum:u.partNum,make:u.make||'',desc:u.desc||'',panels:{}});
-      uByPart.get(u.partNum).panels[u.panel]=(uByPart.get(u.partNum).panels[u.panel]||0)+u.qty;
+      var displayKey=u.partNumDisplay||u.partNum;
+      if(!uByPart.has(displayKey)) uByPart.set(displayKey,{partNum:displayKey,make:u.make||'',desc:u.desc||'',panels:{}});
+      var entry=uByPart.get(displayKey);
+      // keep best make/desc if later rows have it
+      if(!entry.make && u.make) entry.make=u.make;
+      if(!entry.desc && u.desc) entry.desc=u.desc;
+      entry.panels[u.panel]=(entry.panels[u.panel]||0)+u.qty;
     });
     var usr2=1;
     Array.from(uByPart.values()).forEach(function(up,ri){
@@ -649,21 +683,27 @@ async function exportExcel(){
 }
 
 // ── DARK MODE ──
+// Synced with index.html via shared key 'wz-theme'.
+// index: default=dark, adds 'light' class for light mode.
+// procurement: default=light (no class), adds 'dark' class for dark mode.
+// Both read/write 'wz-theme' = 'light' | 'dark'.
 function toggleDark(){
   var isDark=document.body.classList.toggle('dark');
   document.getElementById('darkIcon').textContent = isDark?'\u2600\uFE0F':'\uD83C\uDF19';
   document.getElementById('darkLabel').textContent = isDark?'Light Mode':'Dark Mode';
-  try{localStorage.setItem('wz-dark',isDark?'1':'0');}catch(e){}
+  try{localStorage.setItem('wz-theme',isDark?'dark':'light');}catch(e){}
 }
 
 // ── INIT ──
 (function(){
   try{
-    if(localStorage.getItem('wz-dark')==='1'){
+    var saved=localStorage.getItem('wz-theme');
+    if(saved==='dark'){
       document.body.classList.add('dark');
       document.getElementById('darkIcon').textContent='\u2600\uFE0F';
       document.getElementById('darkLabel').textContent='Light Mode';
     }
+    // default = light (no class), button shows 🌙 Dark Mode (already in HTML)
   }catch(e){}
   loadSettings();
 })();

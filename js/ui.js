@@ -581,11 +581,11 @@ function toggleDark() {
   const isDark = document.body.classList.toggle('dark');
   document.getElementById('darkIcon').textContent = isDark ? '☀️' : '🌙';
   document.getElementById('darkLabel').textContent = isDark ? 'Light Mode' : 'Dark Mode';
-  localStorage.setItem('wz-dark', isDark ? '1' : '0');
+  try { localStorage.setItem('wz-theme', isDark ? 'dark' : 'light'); } catch(e) {}
 }
 // Restore preference
 (function(){
-  try { if(localStorage.getItem('wz-dark')==='1'){document.body.classList.add('dark');document.getElementById('darkIcon').textContent='☀️';document.getElementById('darkLabel').textContent='Light Mode';} } catch(e){}
+  try { if(localStorage.getItem('wz-theme')==='dark'){document.body.classList.add('dark');document.getElementById('darkIcon').textContent='☀️';document.getElementById('darkLabel').textContent='Light Mode';} } catch(e){}
 })();
 
 // Init
