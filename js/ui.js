@@ -544,7 +544,10 @@ async function exportMerged() {
 
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  saveAs(blob, `Workezz_Merged_${todayStr()}.xlsx`);
+  const exportFileName = (nameInput && nameInput.value.trim()
+    ? nameInput.value.trim().replace(/[^a-zA-Z0-9_\-. ]/g, '_')
+    : 'Workezz_Merged') + `_${todayStr()}.xlsx`;
+  saveAs(blob, exportFileName);
 }
 
 async function exportErrors() {

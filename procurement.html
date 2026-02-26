@@ -3,184 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="css/procurement_style.css">
 <title>Workezz — Procurement Planner</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-:root{
-  --bg:#eef0f5;--white:#fff;--surface:#f7f8fb;--surface2:#eceef4;
-  --border:#dde0ea;--border2:#c8ccda;
-  --accent:#2563eb;--accent-light:#dbeafe;--accent-hover:#1d4ed8;
-  --text:#1e2235;--text2:#4a5072;--muted:#8890aa;
-  --success:#15803d;--success-bg:#dcfce7;--success-border:#86efac;
-  --danger:#b91c1c;--danger-bg:#fee2e2;--danger-border:#fca5a5;
-  --warning:#92400e;--warning-bg:#fef3c7;--warning-border:#fcd34d;
-  --purple:#7c3aed;--purple-light:#ede9fe;--purple-border:#c4b5fd;
-  --shadow:0 1px 3px rgba(30,34,53,.07),0 1px 2px rgba(30,34,53,.05);
-  --shadow-md:0 4px 16px rgba(30,34,53,.09);
-  --radius:10px;--radius-sm:6px;
-}
-html,body{height:100%;font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;}
-
-/* ── HEADER ── */
-header{background:var(--white);border-bottom:1px solid var(--border);padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow-md);flex-shrink:0;}
-.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.3rem;letter-spacing:-.02em;color:var(--text);}
-.logo span{color:var(--accent);}
-.logo-sub{font-size:.62rem;color:var(--muted);font-weight:500;letter-spacing:.04em;margin-top:-2px;}
-.home-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--radius-sm);font-size:.78rem;font-weight:600;color:var(--text2);background:var(--surface2);border:1px solid var(--border2);cursor:pointer;text-decoration:none;transition:all .15s;}
-.home-btn:hover{background:var(--accent-light);color:var(--accent);border-color:var(--accent);}
-
-/* ── STEPPER ── */
-.stepper{background:var(--white);border-bottom:1px solid var(--border);padding:0 24px;height:46px;display:flex;align-items:center;gap:8px;flex-shrink:0;}
-.step{display:flex;align-items:center;gap:8px;padding:5px 14px;border-radius:100px;font-size:.74rem;font-weight:600;color:var(--muted);cursor:default;transition:all .2s;white-space:nowrap;}
-.step.active{background:var(--accent-light);color:var(--accent);}
-.step.done{color:var(--success);}
-.step-num{width:20px;height:20px;border-radius:50%;background:var(--border2);color:var(--white);display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;flex-shrink:0;}
-.step.active .step-num{background:var(--accent);}
-.step.done .step-num{background:var(--success);}
-.step-arrow{color:var(--border2);font-size:1rem;}
-
-/* ── SCREENS ── */
-.screen{display:none;flex:1;overflow:hidden;}
-.screen.active{display:flex;flex-direction:column;}
-
-/* ── SECTION LABEL ── */
-.section-label{font-size:.68rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
-
-/* ── BUTTONS ── */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;border-radius:var(--radius-sm);font-family:'IBM Plex Sans',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .15s;border:none;white-space:nowrap;}
-.btn-primary{background:var(--accent);color:#fff;box-shadow:0 1px 3px rgba(37,99,235,.3);}
-.btn-primary:hover{background:var(--accent-hover);transform:translateY(-1px);}
-.btn-primary:disabled{background:var(--border2);color:var(--muted);cursor:not-allowed;transform:none;box-shadow:none;}
-.btn-success{background:var(--success);color:#fff;box-shadow:0 1px 3px rgba(21,128,61,.25);}
-.btn-success:hover{background:#166534;transform:translateY(-1px);}
-.btn-success:disabled{background:var(--border2);color:var(--muted);cursor:not-allowed;transform:none;box-shadow:none;}
-.btn-secondary{background:var(--white);color:var(--text2);border:1px solid var(--border2);}
-.btn-secondary:hover{background:var(--surface2);}
-.btn-danger-outline{background:transparent;color:var(--danger);border:1px solid var(--danger-border);}
-.btn-danger-outline:hover{background:var(--danger-bg);}
-.btn-full{width:100%;}
-.btn-lg{padding:11px 22px;font-size:.9rem;}
-.btn-sm{padding:4px 10px;font-size:.72rem;}
-
-/* ── SCREEN 1 LAYOUT ── */
-.s1-layout{display:grid;grid-template-columns:1fr 1fr;gap:0;flex:1;overflow:hidden;}
-.s1-panel{padding:28px 24px;display:flex;flex-direction:column;gap:18px;overflow-y:auto;}
-.s1-panel:first-child{border-right:1px solid var(--border);}
-.panel-title{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;color:var(--text);margin-bottom:2px;}
-.panel-sub{font-size:.74rem;color:var(--muted);margin-bottom:16px;}
-
-/* ── UPLOAD ZONES ── */
-.upload-zone{border:2px dashed var(--border2);border-radius:var(--radius);padding:28px 16px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface);}
-.upload-zone:hover{border-color:var(--accent);background:var(--accent-light);}
-.upload-zone.bom-zone{border-color:#93c5fd;background:#eff6ff;}
-.upload-zone.bom-zone:hover{border-color:var(--accent);background:var(--accent-light);}
-.upload-zone.mrs-zone{border-color:var(--purple-border);background:var(--purple-light);}
-.upload-zone.mrs-zone:hover{border-color:var(--purple);background:#ddd6fe;}
-.uz-icon{font-size:2rem;margin-bottom:8px;display:block;}
-.uz-text{font-size:.8rem;line-height:1.5;}
-.uz-text strong{color:var(--accent);}
-.mrs-zone .uz-text strong{color:var(--purple);}
-.uz-sub{font-size:.68rem;color:var(--muted);margin-top:4px;}
-
-/* File chip */
-.file-chip{display:flex;align-items:center;gap:10px;border-radius:var(--radius-sm);padding:10px 14px;border:1px solid;}
-.file-chip.bom-chip{background:var(--accent-light);border-color:#93c5fd;}
-.file-chip.mrs-chip{background:var(--purple-light);border-color:var(--purple-border);}
-.fc-icon{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:700;font-family:'IBM Plex Mono',monospace;flex-shrink:0;color:#fff;}
-.bom-chip .fc-icon{background:var(--accent);}
-.mrs-chip .fc-icon{background:var(--purple);}
-.fc-info{flex:1;min-width:0;}
-.fc-name{font-size:.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.bom-chip .fc-name{color:var(--accent);}
-.mrs-chip .fc-name{color:var(--purple);}
-.fc-sub{font-size:.68rem;color:var(--muted);}
-
-/* Column mapping */
-.col-map-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);}
-.col-map-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
-.col-map-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);}
-.col-map-label{font-size:.74rem;font-weight:600;color:var(--text2);}
-.col-input{width:52px;padding:4px 7px;border:1px solid var(--border);border-radius:4px;font-family:'IBM Plex Mono',monospace;font-size:.78rem;text-align:center;outline:none;background:var(--white);color:var(--text);}
-.col-input:focus{border-color:var(--accent);}
-
-/* S1 footer */
-.s1-footer{padding:16px 24px;background:var(--white);border-top:1px solid var(--border);display:flex;justify-content:flex-end;align-items:center;gap:12px;flex-shrink:0;}
-
-/* ── SCREEN 2 — VISUALIZATION ── */
-.s2-layout{display:flex;flex-direction:column;flex:1;overflow:hidden;}
-.s2-toolbar{padding:12px 24px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0;flex-wrap:wrap;}
-.section-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:100px;border:1.5px solid var(--border2);background:var(--white);font-size:.72rem;font-weight:600;cursor:pointer;transition:all .15s;color:var(--text2);}
-.section-pill:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light);}
-.section-pill.active{border-color:var(--accent);background:var(--accent);color:#fff;}
-.s2-content{flex:1;overflow:auto;padding:20px 24px;}
-.section-block{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px;overflow:hidden;box-shadow:var(--shadow);}
-.section-head{padding:12px 18px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
-.section-head h3{font-family:'Syne',sans-serif;font-size:.88rem;font-weight:700;color:var(--text);}
-.section-badge{font-size:.62rem;font-weight:700;padding:2px 8px;border-radius:100px;background:var(--accent-light);color:var(--accent);border:1px solid #93c5fd;}
-.viz-table{width:100%;border-collapse:collapse;font-size:.75rem;}
-.viz-table th{padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);font-size:.64rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);background:var(--surface);white-space:nowrap;}
-.viz-table th.section-col-head{background:var(--accent-light);color:var(--accent);text-align:center;}
-.viz-table th.panel-head{background:#eff6ff;color:#1d4ed8;text-align:center;}
-.viz-table th.mrs-head{background:var(--purple-light);color:var(--purple);text-align:center;}
-.viz-table th.status-head{background:var(--surface2);color:var(--text2);text-align:center;}
-.viz-table td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
-.viz-table tr:last-child td{border-bottom:none;}
-.viz-table tr:hover td{background:var(--surface);}
-.td-mono{font-family:'IBM Plex Mono',monospace;font-size:.72rem;}
-.td-center{text-align:center;}
-.pill-excess{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:100px;font-size:.65rem;font-weight:700;background:var(--success-bg);color:var(--success);border:1px solid var(--success-border);}
-.pill-short{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:100px;font-size:.65rem;font-weight:700;background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger-border);}
-.pill-exact{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:100px;font-size:.65rem;font-weight:700;background:var(--warning-bg);color:var(--warning);border:1px solid var(--warning-border);}
-.pill-nomrs{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:100px;font-size:.65rem;font-weight:700;background:var(--surface2);color:var(--muted);border:1px solid var(--border2);}
-
-/* Stats bar */
-.stats-bar{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
-.stat-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 16px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow);flex:1;min-width:120px;}
-.stat-icon{font-size:1.1rem;}
-.stat-val{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;color:var(--text);}
-.stat-label{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
-
-/* ── SCREEN 3 — EXPORT ── */
-.s3-layout{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:32px;gap:20px;}
-.export-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:32px 36px;width:100%;max-width:560px;box-shadow:var(--shadow-md);text-align:center;}
-.export-card h2{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--text);margin-bottom:6px;}
-.export-card p{font-size:.78rem;color:var(--muted);margin-bottom:24px;line-height:1.6;}
-.export-summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;text-align:left;}
-.exp-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;}
-.exp-item-val{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:var(--accent);}
-.exp-item-label{font-size:.68rem;color:var(--muted);margin-top:2px;}
-
-/* ── DARK MODE ── */
-body.dark{
-  --bg:#13151f;--white:#1e2235;--surface:#252840;--surface2:#2d3148;
-  --border:#363b58;--border2:#444968;--accent:#4f8eff;--accent-light:#1e2d4a;
-  --accent-hover:#6aa3ff;--text:#e8eaf2;--text2:#9ba3c0;--muted:#6b7494;
-  --success:#22c55e;--success-bg:#0f2d1a;--success-border:#166334;
-  --danger:#f87171;--danger-bg:#2d0f0f;--danger-border:#991b1b;
-  --warning:#fbbf24;--warning-bg:#2d2008;--warning-border:#854d0e;
-  --purple:#a78bfa;--purple-light:#1e1535;--purple-border:#5b21b6;
-  --shadow:0 1px 3px rgba(0,0,0,.3);--shadow-md:0 4px 16px rgba(0,0,0,.4);
-}
-body.dark header{background:#1a1d2e;border-color:#2a2e45;}
-body.dark .stepper{background:#1a1d2e;border-color:#2a2e45;}
-body.dark .s1-footer{background:#1a1d2e;}
-body.dark .upload-zone.bom-zone{background:#1e2d4a;border-color:#2d4a8a;}
-body.dark .upload-zone.mrs-zone{background:#1e1535;border-color:#5b21b6;}
-body.dark .col-map-card{background:var(--surface);}
-body.dark .col-input{background:var(--surface2);color:var(--text);}
-body.dark .s2-toolbar{background:#1a1d2e;}
-.dark-toggle{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:100px;padding:5px 12px;cursor:pointer;font-size:.75rem;font-weight:600;color:var(--text2);transition:all .2s;font-family:'IBM Plex Sans',sans-serif;}
-.dark-toggle:hover{background:var(--accent-light);color:var(--accent);border-color:var(--accent);}
-.dark-toggle-icon{font-size:.9rem;transition:transform .3s;}
-body.dark .dark-toggle-icon{transform:rotate(180deg);}
-
-.empty-state{text-align:center;padding:60px 20px;color:var(--muted);}
-.empty-state p{font-size:.8rem;margin-top:8px;line-height:1.6;}
-</style>
 </head>
 <body>
 
@@ -199,7 +27,7 @@ body.dark .dark-toggle-icon{transform:rotate(180deg);}
   </div>
   <div style="display:flex;align-items:center;gap:10px;">
     <button class="dark-toggle" onclick="toggleDark()">
-      <span class="dark-toggle-icon" id="darkIcon">🌙</span>
+      <span class="dark-toggle-icon" id="darkIcon">&#127769;</span>
       <span id="darkLabel">Dark Mode</span>
     </button>
     <a class="home-btn" href="index.html">
@@ -211,684 +39,633 @@ body.dark .dark-toggle-icon{transform:rotate(180deg);}
 
 <!-- STEPPER -->
 <div class="stepper">
-  <div class="step active" id="step1"><div class="step-num">1</div> Import & Map</div>
-  <span class="step-arrow">›</span>
+  <div class="step active" id="step1"><div class="step-num">1</div> Import &amp; Map</div>
+  <span class="step-arrow">&#8250;</span>
   <div class="step" id="step2"><div class="step-num">2</div> Data Visualization</div>
-  <span class="step-arrow">›</span>
+  <span class="step-arrow">&#8250;</span>
   <div class="step" id="step3"><div class="step-num">3</div> Export</div>
 </div>
 
-<!-- ══ SCREEN 1 — IMPORT & MAP ══ -->
+<!-- SCREEN 1 -->
 <div class="screen active" id="screen1">
   <div class="s1-layout">
 
-    <!-- BOM SIDE -->
     <div class="s1-panel">
       <div>
-        <div class="panel-title">📊 BOM Sheet</div>
+        <div class="panel-title">&#128202; BOM Sheet</div>
         <div class="panel-sub">Bill of Materials — panel quantities per part</div>
       </div>
-
       <input type="file" id="bomInput" accept=".xls,.xlsx" style="display:none;" onchange="handleBOM(this)">
       <div id="bomEmptyZone" class="upload-zone bom-zone" onclick="document.getElementById('bomInput').click()">
-        <span class="uz-icon">📊</span>
+        <span class="uz-icon">&#128202;</span>
         <div class="uz-text"><strong>Click to upload BOM Sheet</strong></div>
         <div class="uz-sub">.xls or .xlsx</div>
       </div>
       <div id="bomChip" class="file-chip bom-chip" style="display:none;">
         <div class="fc-icon" id="bomExt">XLS</div>
         <div class="fc-info">
-          <div class="fc-name" id="bomName">—</div>
-          <div class="fc-sub" id="bomSize">—</div>
+          <div class="fc-name" id="bomName">&#8212;</div>
+          <div class="fc-sub" id="bomSize">&#8212;</div>
         </div>
-        <button class="btn btn-danger-outline btn-sm" onclick="clearBOM()">✕</button>
+        <button class="btn btn-danger-outline btn-sm" onclick="clearBOM()">&#10005;</button>
       </div>
-
-      <!-- BOM Column Mapping -->
       <div class="col-map-card">
         <div class="section-label">BOM Column Mapping</div>
-        <div style="font-size:.72rem;color:var(--muted);margin-bottom:10px;">Part data starts from which row?</div>
+        <div style="font-size:.72rem;color:var(--muted);margin-bottom:10px;">Configure columns and data start row</div>
         <div class="col-map-grid">
           <div class="col-map-item">
             <span class="col-map-label">Part Number Col</span>
-            <input class="col-input" id="bomColPart" value="C" maxlength="2" oninput="this.value=this.value.toUpperCase()">
+            <input class="col-input" id="bomColPart" value="C" maxlength="2" oninput="this.value=this.value.toUpperCase();saveSettings()">
           </div>
           <div class="col-map-item">
             <span class="col-map-label">Description Col</span>
-            <input class="col-input" id="bomColDesc" value="D" maxlength="2" oninput="this.value=this.value.toUpperCase()">
+            <input class="col-input" id="bomColDesc" value="D" maxlength="2" oninput="this.value=this.value.toUpperCase();saveSettings()">
           </div>
           <div class="col-map-item">
             <span class="col-map-label">Make Col</span>
-            <input class="col-input" id="bomColMake" value="B" maxlength="2" oninput="this.value=this.value.toUpperCase()">
+            <input class="col-input" id="bomColMake" value="B" maxlength="2" oninput="this.value=this.value.toUpperCase();saveSettings()">
           </div>
           <div class="col-map-item">
             <span class="col-map-label">Data Start Row</span>
-            <input class="col-input" id="bomStartRow" value="2" maxlength="4" type="number" min="1">
+            <input class="col-input" id="bomStartRow" value="2" maxlength="4" type="number" min="1" oninput="saveSettings()">
           </div>
           <div class="col-map-item" style="grid-column:1/-1;">
             <span class="col-map-label">Panel columns start at</span>
-            <input class="col-input" id="bomColPanelStart" value="E" maxlength="2" oninput="this.value=this.value.toUpperCase()">
+            <input class="col-input" id="bomColPanelStart" value="E" maxlength="2" oninput="this.value=this.value.toUpperCase();saveSettings()">
+          </div>
+          <div class="col-map-item" style="grid-column:1/-1;">
+            <span class="col-map-label">Number of panels</span>
+            <input class="col-input" id="bomPanelCount" value="" maxlength="3" type="number" min="1" placeholder="&#8212;" style="width:60px;" oninput="saveSettings()">
           </div>
         </div>
       </div>
     </div>
 
-    <!-- MRS SIDE -->
     <div class="s1-panel">
       <div>
-        <div class="panel-title">🔀 MRS Sheet</div>
+        <div class="panel-title">&#128256; MRS Sheet</div>
         <div class="panel-sub">Material Requirement Schedule — available quantities</div>
       </div>
-
       <input type="file" id="mrsInput" accept=".xls,.xlsx" style="display:none;" onchange="handleMRS(this)">
       <div id="mrsEmptyZone" class="upload-zone mrs-zone" onclick="document.getElementById('mrsInput').click()">
-        <span class="uz-icon">🔀</span>
+        <span class="uz-icon">&#128256;</span>
         <div class="uz-text"><strong>Click to upload MRS Sheet</strong></div>
         <div class="uz-sub">.xls or .xlsx</div>
       </div>
       <div id="mrsChip" class="file-chip mrs-chip" style="display:none;">
         <div class="fc-icon" id="mrsExt">XLS</div>
         <div class="fc-info">
-          <div class="fc-name" id="mrsName">—</div>
-          <div class="fc-sub" id="mrsSize">—</div>
+          <div class="fc-name" id="mrsName">&#8212;</div>
+          <div class="fc-sub" id="mrsSize">&#8212;</div>
         </div>
-        <button class="btn btn-danger-outline btn-sm" onclick="clearMRS()">✕</button>
+        <button class="btn btn-danger-outline btn-sm" onclick="clearMRS()">&#10005;</button>
       </div>
-
-      <!-- MRS Column Mapping -->
       <div class="col-map-card">
         <div class="section-label">MRS Column Mapping</div>
         <div style="font-size:.72rem;color:var(--muted);margin-bottom:10px;">Which columns hold the key fields?</div>
         <div class="col-map-grid">
           <div class="col-map-item">
             <span class="col-map-label">Part Number Col</span>
-            <input class="col-input" id="mrsColPart" value="C" maxlength="2" oninput="this.value=this.value.toUpperCase()">
+            <input class="col-input" id="mrsColPart" value="C" maxlength="2" oninput="this.value=this.value.toUpperCase();saveSettings()">
           </div>
           <div class="col-map-item">
             <span class="col-map-label">Section Col</span>
-            <input class="col-input" id="mrsColSection" value="G" maxlength="2" oninput="this.value=this.value.toUpperCase()">
+            <input class="col-input" id="mrsColSection" value="G" maxlength="2" oninput="this.value=this.value.toUpperCase();saveSettings()">
           </div>
           <div class="col-map-item">
             <span class="col-map-label">Qty Col</span>
-            <input class="col-input" id="mrsColQty" value="P" maxlength="2" oninput="this.value=this.value.toUpperCase()">
+            <input class="col-input" id="mrsColQty" value="P" maxlength="2" oninput="this.value=this.value.toUpperCase();saveSettings()">
           </div>
           <div class="col-map-item">
             <span class="col-map-label">Data Start Row</span>
-            <input class="col-input" id="mrsStartRow" value="9" maxlength="4" type="number" min="1">
+            <input class="col-input" id="mrsStartRow" value="8" maxlength="4" type="number" min="1" oninput="saveSettings()">
           </div>
         </div>
       </div>
-
-      <!-- Info box -->
       <div style="background:var(--accent-light);border:1px solid #bfdbfe;border-radius:var(--radius-sm);padding:12px 14px;font-size:.73rem;color:#1e40af;line-height:1.7;">
-        <strong>Section naming rule:</strong> Panel names like <code style="background:#dbeafe;padding:1px 5px;border-radius:3px;">ZA_P1_PANEL1</code> belong to section <code style="background:#dbeafe;padding:1px 5px;border-radius:3px;">ZA_P1</code> — first 2 parts before underscore.
+        <strong>Note:</strong> Panel name in BOM must exactly match Section name in MRS column G.
       </div>
     </div>
 
   </div>
-
   <div class="s1-footer">
     <span id="s1hint" style="font-size:.74rem;color:var(--muted);">Upload both BOM and MRS sheets to continue</span>
-    <button class="btn btn-primary btn-lg" id="processBtn" onclick="processData()" disabled>Process Data →</button>
+    <button class="btn btn-primary btn-lg" id="processBtn" onclick="processData()" disabled>Process Data &#8594;</button>
   </div>
 </div>
 
-<!-- ══ SCREEN 2 — VISUALIZATION ══ -->
+<!-- SCREEN 2 -->
 <div class="screen" id="screen2">
   <div class="s2-layout">
     <div class="s2-toolbar">
       <span style="font-size:.74rem;font-weight:600;color:var(--text2);margin-right:4px;">Sections:</span>
       <div id="sectionPills" style="display:flex;gap:6px;flex-wrap:wrap;flex:1;"></div>
       <div style="display:flex;gap:8px;margin-left:auto;">
-        <button class="btn btn-secondary btn-sm" onclick="goTo(1)">‹ Back</button>
-        <button class="btn btn-primary btn-sm" onclick="goTo(3)">Export →</button>
+        <button class="btn btn-secondary btn-sm" onclick="goTo(1)">&#8249; Back</button>
+        <button class="btn btn-primary btn-sm" onclick="goTo(3)">Export &#8594;</button>
       </div>
     </div>
-
-    <!-- Stats bar -->
     <div style="padding:16px 24px 0;flex-shrink:0;">
       <div class="stats-bar" id="statsBar"></div>
     </div>
-
     <div class="s2-content" id="vizContent">
-      <div class="empty-state">📊<p>Process data to see visualization</p></div>
+      <div class="empty-state">&#128202;<p>Process data to see visualization</p></div>
     </div>
   </div>
 </div>
 
-<!-- ══ SCREEN 3 — EXPORT ══ -->
+<!-- SCREEN 3 -->
 <div class="screen" id="screen3">
   <div class="s3-layout">
     <div class="export-card">
-      <div style="font-size:2.5rem;margin-bottom:12px;">📥</div>
+      <div style="font-size:2.5rem;margin-bottom:12px;">&#128229;</div>
       <h2>Export Procurement Plan</h2>
-      <p>Your data is ready. The export will create a multi-column Excel with sections, panels, MRS quantities, and excess/shortage status.</p>
-
+      <p>Exports 4 sheets: Panel Comparison &middot; Unmatched MRS &middot; Parts to Order &middot; Excess Parts.</p>
       <div class="export-summary" id="exportSummary"></div>
-
-      <button class="btn btn-success btn-full btn-lg" onclick="exportExcel()">⬇ Download Excel</button>
+      <div style="margin-bottom:16px;text-align:left;">
+        <div style="font-size:.68rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Output File Name</div>
+        <div style="display:flex;align-items:center;border:1px solid var(--border2);border-radius:var(--radius-sm);overflow:hidden;">
+          <input id="exportFileName" type="text" value="Procurement_Plan" placeholder="Procurement_Plan"
+            style="flex:1;border:none;outline:none;padding:9px 12px;font-family:'IBM Plex Sans',sans-serif;font-size:.82rem;color:var(--text);background:transparent;">
+          <span style="padding:9px 12px;font-size:.74rem;font-weight:600;color:var(--muted);background:var(--surface2);border-left:1px solid var(--border);">.xlsx</span>
+        </div>
+      </div>
+      <button class="btn btn-success btn-full btn-lg" id="exportBtn" onclick="exportExcel()">&#8595; Download Excel</button>
     </div>
-    <button class="btn btn-secondary" onclick="goTo(2)">‹ Back to Visualization</button>
+    <button class="btn btn-secondary" onclick="goTo(2)">&#8249; Back to Visualization</button>
   </div>
 </div>
 
 <script>
-// ── STATE ──
-let bomFile = null, mrsFile = null;
-let processedData = null; // { sections, parts }
+var bomFile = null, mrsFile = null, processedData = null;
 
-function colIdx(letter) { return letter.toUpperCase().charCodeAt(0) - 65; }
-function formatSize(b) {
-  if (b < 1024) return b + ' B';
-  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
-  return (b/1048576).toFixed(1) + ' MB';
-}
+function colIdx(l) { return l.toUpperCase().charCodeAt(0) - 65; }
+function fmtSz(b) { if(b<1024)return b+' B'; if(b<1048576)return (b/1024).toFixed(1)+' KB'; return (b/1048576).toFixed(1)+' MB'; }
 function todayStr() { return new Date().toISOString().slice(0,10); }
 
-// Section name = first 2 underscore-separated parts
-function sectionFromPanel(panelName) {
-  const parts = panelName.split('_');
-  return parts.slice(0, 2).join('_');
+// ── PERSIST ──
+var PKEYS = ['bomColPart','bomColDesc','bomColMake','bomStartRow','bomColPanelStart','bomPanelCount','mrsColPart','mrsColSection','mrsColQty','mrsStartRow'];
+function saveSettings() {
+  try {
+    var obj = {};
+    PKEYS.forEach(function(k){ var el=document.getElementById(k); if(el) obj[k]=el.value; });
+    localStorage.setItem('wz-proc-v1', JSON.stringify(obj));
+  } catch(e){}
+}
+function loadSettings() {
+  try {
+    var saved = localStorage.getItem('wz-proc-v1');
+    if (!saved) return;
+    var obj = JSON.parse(saved);
+    PKEYS.forEach(function(k){
+      var el = document.getElementById(k);
+      if (el && obj[k] !== undefined && obj[k] !== '') el.value = obj[k];
+    });
+  } catch(e){}
 }
 
-// ── FILE HANDLERS ──
+// ── FILES ──
 function handleBOM(input) {
   if (!input.files.length) return;
-  bomFile = input.files[0];
-  input.value = '';
-  const ext = bomFile.name.split('.').pop().toUpperCase();
-  document.getElementById('bomEmptyZone').style.display = 'none';
-  document.getElementById('bomChip').style.display = 'flex';
-  document.getElementById('bomExt').textContent = ext;
+  bomFile = input.files[0]; input.value='';
+  document.getElementById('bomEmptyZone').style.display='none';
+  document.getElementById('bomChip').style.display='flex';
+  document.getElementById('bomExt').textContent = bomFile.name.split('.').pop().toUpperCase();
   document.getElementById('bomName').textContent = bomFile.name;
-  document.getElementById('bomSize').textContent = formatSize(bomFile.size);
+  document.getElementById('bomSize').textContent = fmtSz(bomFile.size);
   checkReady();
 }
 function clearBOM() {
-  bomFile = null;
-  document.getElementById('bomEmptyZone').style.display = '';
-  document.getElementById('bomChip').style.display = 'none';
-  document.getElementById('bomInput').value = '';
+  bomFile=null;
+  document.getElementById('bomEmptyZone').style.display='';
+  document.getElementById('bomChip').style.display='none';
+  document.getElementById('bomInput').value='';
   checkReady();
 }
 function handleMRS(input) {
   if (!input.files.length) return;
-  mrsFile = input.files[0];
-  input.value = '';
-  const ext = mrsFile.name.split('.').pop().toUpperCase();
-  document.getElementById('mrsEmptyZone').style.display = 'none';
-  document.getElementById('mrsChip').style.display = 'flex';
-  document.getElementById('mrsExt').textContent = ext;
+  mrsFile = input.files[0]; input.value='';
+  document.getElementById('mrsEmptyZone').style.display='none';
+  document.getElementById('mrsChip').style.display='flex';
+  document.getElementById('mrsExt').textContent = mrsFile.name.split('.').pop().toUpperCase();
   document.getElementById('mrsName').textContent = mrsFile.name;
-  document.getElementById('mrsSize').textContent = formatSize(mrsFile.size);
+  document.getElementById('mrsSize').textContent = fmtSz(mrsFile.size);
   checkReady();
 }
 function clearMRS() {
-  mrsFile = null;
-  document.getElementById('mrsEmptyZone').style.display = '';
-  document.getElementById('mrsChip').style.display = 'none';
-  document.getElementById('mrsInput').value = '';
+  mrsFile=null;
+  document.getElementById('mrsEmptyZone').style.display='';
+  document.getElementById('mrsChip').style.display='none';
+  document.getElementById('mrsInput').value='';
   checkReady();
 }
 function checkReady() {
-  const ready = bomFile && mrsFile;
-  document.getElementById('processBtn').disabled = !ready;
-  document.getElementById('s1hint').textContent = !bomFile
-    ? 'Upload BOM sheet to continue'
-    : !mrsFile ? 'Upload MRS sheet to continue'
-    : 'Both files ready — click Process Data';
+  var ok = !!(bomFile && mrsFile);
+  document.getElementById('processBtn').disabled = !ok;
+  document.getElementById('s1hint').textContent = !bomFile ? 'Upload BOM sheet to continue' : !mrsFile ? 'Upload MRS sheet to continue' : 'Both files ready — click Process Data';
 }
 
 // ── READ EXCEL ──
 function readExcel(file) {
-  return new Promise(resolve => {
-    const reader = new FileReader();
-    reader.onload = e => {
+  return new Promise(function(resolve) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
       try {
-        const wb = XLSX.read(e.target.result, { type: 'array' });
-        // Pick sheet with most data
-        let best = [], bestCount = 0;
-        for (const name of wb.SheetNames) {
-          const ws = wb.Sheets[name];
-          const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
-          const count = data.filter(r => r.some(v => v !== '')).length;
-          if (count > bestCount) { bestCount = count; best = data; }
+        var wb = XLSX.read(e.target.result, {type:'array'});
+        var best=[], bestN=0;
+        for (var i=0;i<wb.SheetNames.length;i++) {
+          var ws = wb.Sheets[wb.SheetNames[i]];
+          var data = XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true});
+          var n = data.filter(function(r){return r.some(function(v){return v!=='';});}).length;
+          if(n>bestN){bestN=n;best=data;}
         }
         resolve(best);
-      } catch(e) { resolve([]); }
+      } catch(err){resolve([]);}
     };
     reader.readAsArrayBuffer(file);
   });
 }
 
-// ── PROCESS DATA ──
+// ── PROCESS ──
 async function processData() {
-  document.getElementById('processBtn').disabled = true;
-  document.getElementById('processBtn').textContent = 'Processing…';
+  document.getElementById('processBtn').disabled=true;
+  document.getElementById('processBtn').textContent='Processing...';
 
-  const bomStartRow = parseInt(document.getElementById('bomStartRow').value) || 9;
-  const mrsStartRow = parseInt(document.getElementById('mrsStartRow').value) || 9;
-  const bomColPart  = colIdx(document.getElementById('bomColPart').value || 'C');
-  const bomColDesc  = colIdx(document.getElementById('bomColDesc').value || 'D');
-  const bomColMake  = colIdx(document.getElementById('bomColMake').value || 'B');
-  const bomPanelStart = colIdx(document.getElementById('bomColPanelStart').value || 'E');
-  const mrsColPart  = colIdx(document.getElementById('mrsColPart').value || 'C');
-  const mrsColSect  = colIdx(document.getElementById('mrsColSection').value || 'G');
-  const mrsColQty   = colIdx(document.getElementById('mrsColQty').value || 'P');
+  var bomSR   = parseInt(document.getElementById('bomStartRow').value)||2;
+  var mrsSR   = parseInt(document.getElementById('mrsStartRow').value)||8;
+  var bCP     = colIdx(document.getElementById('bomColPart').value||'C');
+  var bCD     = colIdx(document.getElementById('bomColDesc').value||'D');
+  var bCM     = colIdx(document.getElementById('bomColMake').value||'B');
+  var bPS     = colIdx(document.getElementById('bomColPanelStart').value||'E');
+  var mCP     = colIdx(document.getElementById('mrsColPart').value||'C');
+  var mCS     = colIdx(document.getElementById('mrsColSection').value||'G');
+  var mCQ     = colIdx(document.getElementById('mrsColQty').value||'P');
+  var bPC     = parseInt(document.getElementById('bomPanelCount').value)||0;
 
-  const [bomData, mrsData] = await Promise.all([readExcel(bomFile), readExcel(mrsFile)]);
+  var res = await Promise.all([readExcel(bomFile), readExcel(mrsFile)]);
+  var bomData=res[0], mrsData=res[1];
 
-  // ── Parse BOM header row — row 1 (index 0) always has panel names ──
-  const headerRow = bomData[0] || []; // row 1 = panel headers
-  const panels = [];
-  for (let c = bomPanelStart; c < headerRow.length; c++) {
-    const h = String(headerRow[c] || '').trim();
-    if (h) panels.push({ name: h, col: c });
+  // panels from BOM row 1
+  var hdr = bomData[0]||[];
+  var panels=[];
+  for(var c=bPS;c<hdr.length;c++){
+    var h=String(hdr[c]||'').trim();
+    if(h) panels.push({name:h,col:c});
+    if(bPC>0 && panels.length>=bPC) break;
   }
 
-  console.log('BOM panels found:', panels.map(p => p.name));
-
-  // Determine sections from panels — first 2 underscore parts
-  const sectionMap = new Map();
-  panels.forEach(p => {
-    const sec = sectionFromPanel(p.name);
-    if (!sectionMap.has(sec)) sectionMap.set(sec, []);
-    sectionMap.get(sec).push(p.name);
-  });
-
-  console.log('Sections:', [...sectionMap.keys()]);
-
-  // ── Parse BOM data rows — starts from bomStartRow (default 2 = index 1) ──
-  const partsMap = new Map();
-  for (let i = bomStartRow - 1; i < bomData.length; i++) {
-    const row = bomData[i];
-    const partNum = String(row[bomColPart] || '').trim();
-    if (!partNum) continue;
-    const make = String(row[bomColMake] || '').trim();
-    const desc = String(row[bomColDesc] || '').trim();
-    const key = partNum.toLowerCase();
-    if (!partsMap.has(key)) {
-      partsMap.set(key, { partNum, make, desc, panelQtys: {} });
-    }
-    const entry = partsMap.get(key);
-    panels.forEach(p => {
-      const rawQty = row[p.col];
-      const qty = typeof rawQty === 'number' ? rawQty : parseFloat(String(rawQty || '').replace(/,/g,'')) || 0;
-      entry.panelQtys[p.name] = (entry.panelQtys[p.name] || 0) + qty;
+  // BOM parts
+  var partsMap=new Map();
+  for(var i=bomSR-1;i<bomData.length;i++){
+    var row=bomData[i];
+    var pn=String(row[bCP]||'').trim(); if(!pn) continue;
+    var key=pn.toLowerCase();
+    if(!partsMap.has(key)) partsMap.set(key,{partNum:pn,make:String(row[bCM]||'').trim(),desc:String(row[bCD]||'').trim(),panelQtys:{}});
+    var ent=partsMap.get(key);
+    panels.forEach(function(p){
+      var raw=row[p.col];
+      var qty=typeof raw==='number'?raw:(parseFloat(String(raw||'').replace(/,/g,''))||0);
+      ent.panelQtys[p.name]=(ent.panelQtys[p.name]||0)+qty;
     });
   }
 
-  console.log('Parts found in BOM:', partsMap.size);
-
-  // ── Parse MRS data rows ──
-  // Primary key = Part Number + Section
-  // MRS col G section: strip to first 2 underscore parts → ZA_P1_PANE_1 → ZA_P1
-  // Same part + same section → SUM qty
-  // Same part + different section → separate entry
-  const mrsMap = new Map();
-  for (let i = mrsStartRow - 1; i < mrsData.length; i++) {
-    const row = mrsData[i];
-    const partNum = String(row[mrsColPart] || '').trim();
-    const rawSection = String(row[mrsColSect] || '').trim();
-    if (!partNum || !rawSection) continue;
-    const section = rawSection.split('_').slice(0, 2).join('_');
-    const rawQty = row[mrsColQty];
-    const qty = typeof rawQty === 'number' ? rawQty : parseFloat(String(rawQty || '').replace(/,/g,'')) || 0;
-    if (!qty) continue;
-    const key = partNum.toLowerCase();
-    if (!mrsMap.has(key)) mrsMap.set(key, new Map());
-    mrsMap.get(key).set(section, (mrsMap.get(key).get(section) || 0) + qty);
+  // MRS rows
+  var mrsMap=new Map();
+  for(var j=mrsSR-1;j<mrsData.length;j++){
+    var mr=mrsData[j];
+    var mp=String(mr[mCP]||'').trim();
+    var ms=String(mr[mCS]||'').trim();
+    if(!mp||!ms) continue;
+    var mraw=mr[mCQ];
+    var mq=typeof mraw==='number'?mraw:(parseFloat(String(mraw||'').replace(/,/g,''))||0);
+    if(!mq) continue;
+    var mk=mp.toLowerCase();
+    if(!mrsMap.has(mk)) mrsMap.set(mk,new Map());
+    mrsMap.get(mk).set(ms,(mrsMap.get(mk).get(ms)||0)+mq);
   }
 
-  console.log('Parts found in MRS:', mrsMap.size);
-  // Log first 5 MRS entries for debugging
-  let mrsDebug = 0;
-  for (const [k, v] of mrsMap) {
-    if (mrsDebug++ < 5) console.log('MRS entry:', k, [...v.entries()]);
-  }
+  // panelRows for viz
+  var panelRows=new Map();
+  panels.forEach(function(p){panelRows.set(p.name,[]);});
+  var gsr=1;
+  partsMap.forEach(function(part,key){
+    panels.forEach(function(p){
+      var rq=part.panelQtys[p.name]||0; if(!rq) return;
+      var mq=(mrsMap.has(key)&&mrsMap.get(key).has(p.name))?mrsMap.get(key).get(p.name):0;
+      var st,stype;
+      if(mq===0)       {st='No MRS';                          stype='nomrs';}
+      else if(mq>rq)   {st='+'+(mq-rq)+' Excess';            stype='excess';}
+      else if(mq<rq)   {st='-'+(rq-mq)+' Short';             stype='short';}
+      else             {st='Exact \u2713';                    stype='exact';}
+      panelRows.get(p.name).push({srNo:gsr++,make:part.make,partNum:part.partNum,desc:part.desc,reqQty:rq,mrsQty:mq,status:st,statusType:stype});
+    });
+  });
 
-  // ── Build final structure ──
-  // Columns per section: Panel1 qty | Panel2 qty | ... | MRS Qty | Excess/Shortage
-  // NO total BOM column — just individual panel qtys then MRS then status
-  const sections = [];
-  for (const [secName, panelNames] of sectionMap) {
-    const rows = [];
-    let srNo = 1;
-    for (const [key, part] of partsMap) {
-      // Individual qty per panel in this section
-      const bomPanelQtys = panelNames.map(pn => part.panelQtys[pn] || 0);
-      const totalBomQty = bomPanelQtys.reduce((a, b) => a + b, 0);
-      if (totalBomQty === 0) continue; // part not used in this section at all
-
-      // MRS qty: Part Number + Section = primary key, qty summed
-      const mrsQty = mrsMap.get(key)?.get(secName) || 0;
-
-      // Compare total BOM needed vs MRS ordered for this section
-      let status, statusType;
-      if (mrsQty === 0) { status = 'No MRS'; statusType = 'nomrs'; }
-      else if (mrsQty > totalBomQty) { status = `+${mrsQty - totalBomQty} Excess`; statusType = 'excess'; }
-      else if (mrsQty < totalBomQty) { status = `-${totalBomQty - mrsQty} Short`; statusType = 'short'; }
-      else { status = 'Exact ✓'; statusType = 'exact'; }
-
-      rows.push({ srNo: srNo++, make: part.make, partNum: part.partNum, desc: part.desc, bomPanelQtys, mrsQty, status, statusType });
+  // Unmatched MRS
+  var unmatchedMRS=[];
+  mrsMap.forEach(function(pm,key){
+    if(!partsMap.has(key)){
+      pm.forEach(function(qty,panel){unmatchedMRS.push({partNum:key,make:'',desc:'',panel:panel,qty:qty});});
     }
-    if (rows.length) sections.push({ name: secName, panels: panelNames, rows });
-  }
-  console.log('Sections built:', sections.map(s => s.name + ':' + s.rows.length + 'rows'));
+  });
 
-  processedData = { sections, sectionMap, panels };
+  // Parts to order (consolidated)
+  var toOrderMap=new Map();
+  partsMap.forEach(function(part,key){
+    panels.forEach(function(p){
+      var rq=part.panelQtys[p.name]||0; if(!rq) return;
+      var mq=(mrsMap.has(key)&&mrsMap.get(key).has(p.name))?mrsMap.get(key).get(p.name):0;
+      if(mq<rq){
+        if(!toOrderMap.has(key)) toOrderMap.set(key,{partNum:part.partNum,make:part.make,desc:part.desc,totalReq:0});
+        toOrderMap.get(key).totalReq+=rq;
+      }
+    });
+  });
+  var toOrderParts=Array.from(toOrderMap.values());
 
-  document.getElementById('processBtn').disabled = false;
-  document.getElementById('processBtn').textContent = 'Process Data →';
+  // Excess (consolidated)
+  var excessMap=new Map();
+  partsMap.forEach(function(part,key){
+    panels.forEach(function(p){
+      var rq=part.panelQtys[p.name]||0; if(!rq) return;
+      var mq=(mrsMap.has(key)&&mrsMap.get(key).has(p.name))?mrsMap.get(key).get(p.name):0;
+      if(mq>rq){
+        if(!excessMap.has(key)) excessMap.set(key,{partNum:part.partNum,make:part.make,desc:part.desc,totalReq:0,totalMrs:0});
+        excessMap.get(key).totalReq+=rq;
+        excessMap.get(key).totalMrs+=mq;
+      }
+    });
+  });
+  var excessParts=Array.from(excessMap.values()).map(function(p){return{partNum:p.partNum,make:p.make,desc:p.desc,totalReq:p.totalReq,totalMrs:p.totalMrs,excessQty:p.totalMrs-p.totalReq};});
 
+  // shortParts for stats
+  var shortParts=[];
+  partsMap.forEach(function(part,key){
+    panels.forEach(function(p){
+      var rq=part.panelQtys[p.name]||0; if(!rq) return;
+      var mq=(mrsMap.has(key)&&mrsMap.get(key).has(p.name))?mrsMap.get(key).get(p.name):0;
+      if(mq<rq) shortParts.push({partNum:part.partNum,make:part.make,desc:part.desc,panel:p.name,reqQty:rq,mrsQty:mq,shortage:rq-mq});
+    });
+  });
+
+  processedData={panels:panels,partsMap:partsMap,panelRows:panelRows,mrsMap:mrsMap,unmatchedMRS:unmatchedMRS,excessParts:excessParts,shortParts:shortParts,toOrderParts:toOrderParts};
+
+  document.getElementById('processBtn').disabled=false;
+  document.getElementById('processBtn').textContent='Process Data \u2192';
   renderVisualization();
   goTo(2);
 }
 
-// ── NAVIGATION ──
+// ── NAV ──
 function goTo(n) {
-  document.querySelectorAll('.screen').forEach((s, i) => {
-    s.classList.toggle('active', i === n - 1);
-  });
-  document.querySelectorAll('.step').forEach((s, i) => {
+  document.querySelectorAll('.screen').forEach(function(s,i){s.classList.toggle('active',i===n-1);});
+  document.querySelectorAll('.step').forEach(function(s,i){
     s.classList.remove('active','done');
-    if (i + 1 === n) s.classList.add('active');
-    else if (i + 1 < n) s.classList.add('done');
+    if(i+1===n) s.classList.add('active');
+    else if(i+1<n) s.classList.add('done');
   });
-  if (n === 3) renderExportSummary();
+  if(n===3) renderExportSummary();
 }
 
-// ── RENDER VISUALIZATION ──
-let activeSection = 'all';
+// ── VIZ ──
 function renderVisualization() {
-  const { sections } = processedData;
-
-  // Build section pills
-  const pillsEl = document.getElementById('sectionPills');
-  pillsEl.innerHTML = `<button class="section-pill active" onclick="filterSection('all',this)">All Sections</button>` +
-    sections.map(s => `<button class="section-pill" onclick="filterSection('${s.name}',this)">${s.name} <span style="opacity:.6;font-size:.65rem;">(${s.rows.length})</span></button>`).join('');
-
-  // Stats
-  let totalExcess = 0, totalShort = 0, totalExact = 0, totalNoMrs = 0;
-  sections.forEach(s => s.rows.forEach(r => {
-    if (r.statusType === 'excess') totalExcess++;
-    else if (r.statusType === 'short') totalShort++;
-    else if (r.statusType === 'exact') totalExact++;
-    else totalNoMrs++;
-  }));
-  document.getElementById('statsBar').innerHTML = `
-    <div class="stat-card"><span class="stat-icon">📋</span><div><div class="stat-val">${sections.reduce((a,s)=>a+s.rows.length,0)}</div><div class="stat-label">Total Parts</div></div></div>
-    <div class="stat-card"><span class="stat-icon">🟢</span><div><div class="stat-val" style="color:var(--success)">${totalExcess}</div><div class="stat-label">Excess</div></div></div>
-    <div class="stat-card"><span class="stat-icon">🔴</span><div><div class="stat-val" style="color:var(--danger)">${totalShort}</div><div class="stat-label">Shortage</div></div></div>
-    <div class="stat-card"><span class="stat-icon">✅</span><div><div class="stat-val" style="color:var(--warning)">${totalExact}</div><div class="stat-label">Exact</div></div></div>
-    <div class="stat-card"><span class="stat-icon">⚪</span><div><div class="stat-val">${totalNoMrs}</div><div class="stat-label">No MRS</div></div></div>`;
-
-  renderSections('all');
-}
-
-function filterSection(name, el) {
-  activeSection = name;
-  document.querySelectorAll('.section-pill').forEach(p => p.classList.remove('active'));
-  el.classList.add('active');
-  renderSections(name);
-}
-
-function renderSections(filter) {
-  const { sections } = processedData;
-  const toShow = filter === 'all' ? sections : sections.filter(s => s.name === filter);
-  const content = document.getElementById('vizContent');
-
-  if (!toShow.length) {
-    content.innerHTML = '<div class="empty-state">No data for this section.</div>';
-    return;
-  }
-
-  content.innerHTML = toShow.map(sec => `
-    <div class="section-block">
-      <div class="section-head">
-        <h3>${sec.name}</h3>
-        <span class="section-badge">${sec.panels.length} panel${sec.panels.length>1?'s':''}</span>
-        <span class="section-badge" style="background:var(--surface2);color:var(--text2);border-color:var(--border2);">${sec.rows.length} parts</span>
-      </div>
-      <div style="overflow-x:auto;">
-        <table class="viz-table">
-          <thead>
-            <tr>
-              <th rowspan="2" style="width:36px;">#</th>
-              <th rowspan="2">Make</th>
-              <th rowspan="2">Part Number</th>
-              <th rowspan="2">Description</th>
-              <th colspan="${sec.panels.length + 2}" class="section-col-head">${sec.name}</th>
-            </tr>
-            <tr>
-              ${sec.panels.map(p => `<th class="panel-head">${p}</th>`).join('')}
-              <th class="mrs-head">MRS Qty</th>
-              <th class="status-head">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${sec.rows.map(r => `
-              <tr>
-                <td class="sr-no td-mono">${String(r.srNo).padStart(2,'0')}</td>
-                <td style="font-size:.74rem;">${r.make || '—'}</td>
-                <td class="td-mono">${r.partNum}</td>
-                <td style="font-size:.74rem;max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${r.desc}">${r.desc || '—'}</td>
-                ${r.bomPanelQtys.map(q => `<td class="td-center td-mono" style="font-weight:${q>0?'600':'400'};color:${q>0?'var(--text)':'var(--muted)'};">${q > 0 ? q : '—'}</td>`).join('')}
-                <td class="td-center td-mono" style="color:var(--purple);font-weight:600;">${r.mrsQty > 0 ? r.mrsQty : '—'}</td>
-                <td class="td-center">${statusPill(r.statusType, r.status)}</td>
-              </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>`).join('');
-}
-
-function statusPill(type, text) {
-  const cls = {excess:'pill-excess',short:'pill-short',exact:'pill-exact',nomrs:'pill-nomrs'}[type] || 'pill-nomrs';
-  return `<span class="${cls}">${text}</span>`;
-}
-
-// ── EXPORT SUMMARY ──
-function renderExportSummary() {
-  const { sections } = processedData;
-  const totalParts = sections.reduce((a,s)=>a+s.rows.length,0);
-  document.getElementById('exportSummary').innerHTML = `
-    <div class="exp-item"><div class="exp-item-val">${sections.length}</div><div class="exp-item-label">Sections</div></div>
-    <div class="exp-item"><div class="exp-item-val">${processedData.panels.length}</div><div class="exp-item-label">Panels</div></div>
-    <div class="exp-item"><div class="exp-item-val">${totalParts}</div><div class="exp-item-label">Part Rows</div></div>
-    <div class="exp-item"><div class="exp-item-val">${todayStr()}</div><div class="exp-item-label">Export Date</div></div>`;
-}
-
-// ── EXPORT EXCEL ──
-async function exportExcel() {
-  const btn = document.querySelector('.s3-layout .btn-success');
-  btn.textContent = 'Generating…'; btn.disabled = true;
-
-  const wb = new ExcelJS.Workbook();
-  const ws = wb.addWorksheet('Procurement Plan');
-
-  const { sections } = processedData;
-
-  // Build header rows
-  // Row 1: SR | Make | Part No | Desc | [Section merged headers]
-  // Row 2:                             | [Panel cols] | MRS Qty | Status
-  const row1 = ws.addRow([]);
-  const row2 = ws.addRow([]);
-
-  // Fixed headers — row 1 cells, merged across 2 rows
-  const fixedHeaders = ['SR', 'Make', 'Part Number', 'Description'];
-  fixedHeaders.forEach((h, i) => {
-    const cell = row1.getCell(i + 1);
-    cell.value = h;
-    cell.font = { bold: true, size: 9, color: { argb: 'FF1E2235' } };
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFECEEF4' } };
-    cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
-    cell.border = { bottom: { style: 'thin', color: { argb: 'FFDDE0EA' } }, right: { style: 'thin', color: { argb: 'FFDDE0EA' } } };
-    ws.mergeCells(1, i + 1, 2, i + 1);
+  var p=processedData;
+  var pillsEl=document.getElementById('sectionPills');
+  var ph='<button class="section-pill active" onclick="filterSection(\'all\',this)">All Panels</button>';
+  p.panels.forEach(function(pl){
+    ph+='<button class="section-pill" onclick="filterSection(\''+pl.name+'\',this)">'+pl.name+' <span style="opacity:.6;font-size:.65rem;">('+((p.panelRows.get(pl.name)||[]).length)+')</span></button>';
   });
+  pillsEl.innerHTML=ph;
 
-  // Section headers starting from col 5
-  let currentCol = 5;
-  const sectionColRanges = []; // for data writing
+  var allRows=[];
+  p.panelRows.forEach(function(rows){rows.forEach(function(r){allRows.push(r);});});
+  var exact=allRows.filter(function(r){return r.statusType==='exact';}).length;
 
-  sections.forEach(sec => {
-    const colSpan = sec.panels.length + 2; // panels + MRS Qty + Status
-    const startCol = currentCol;
+  document.getElementById('statsBar').innerHTML=
+    '<div class="stat-card"><span class="stat-icon">&#128203;</span><div><div class="stat-val">'+p.panels.length+'</div><div class="stat-label">Panels</div></div></div>'+
+    '<div class="stat-card"><span class="stat-icon">&#128297;</span><div><div class="stat-val">'+p.partsMap.size+'</div><div class="stat-label">Unique Parts</div></div></div>'+
+    '<div class="stat-card"><span class="stat-icon">&#9989;</span><div><div class="stat-val" style="color:var(--success)">'+exact+'</div><div class="stat-label">Exact Match</div></div></div>'+
+    '<div class="stat-card"><span class="stat-icon">&#128722;</span><div><div class="stat-val" style="color:var(--danger)">'+p.shortParts.length+'</div><div class="stat-label">Need Order</div></div></div>'+
+    '<div class="stat-card"><span class="stat-icon">&#128230;</span><div><div class="stat-val">'+p.excessParts.length+'</div><div class="stat-label">Excess Parts</div></div></div>'+
+    '<div class="stat-card"><span class="stat-icon">&#9888;</span><div><div class="stat-val" style="color:var(--warning)">'+p.unmatchedMRS.length+'</div><div class="stat-label">Unmatched MRS</div></div></div>';
 
-    // Row 1: Section name merged across all its columns
-    const secCell = row1.getCell(startCol);
-    secCell.value = sec.name;
-    secCell.font = { bold: true, size: 9, color: { argb: 'FF1D4ED8' } };
-    secCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } };
-    secCell.alignment = { vertical: 'middle', horizontal: 'center' };
-    secCell.border = { bottom: { style: 'thin', color: { argb: 'FF93C5FD' } }, right: { style: 'medium', color: { argb: 'FF2563EB' } } };
-    if (colSpan > 1) ws.mergeCells(1, startCol, 1, startCol + colSpan - 1);
+  filterSection('all',document.querySelector('.section-pill'));
+}
 
-    // Row 2: Panel cols + MRS Qty + Status
-    sec.panels.forEach((pn, pi) => {
-      const cell = row2.getCell(startCol + pi);
-      cell.value = pn;
-      cell.font = { bold: true, size: 8, color: { argb: 'FF1D4ED8' } };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEFF6FF' } };
-      cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
-      cell.border = { bottom: { style: 'thin', color: { argb: 'FF93C5FD' } } };
+function filterSection(name,btn) {
+  document.querySelectorAll('.section-pill').forEach(function(p){p.classList.remove('active');});
+  if(btn) btn.classList.add('active');
+  var p=processedData;
+  var show=name==='all'?p.panels:p.panels.filter(function(pl){return pl.name===name;});
+  var html='';
+  show.forEach(function(pl){
+    var rows=p.panelRows.get(pl.name)||[];
+    if(!rows.length) return;
+    html+='<div class="section-block"><div class="section-head"><h3>'+pl.name+'</h3><span class="section-badge">'+rows.length+' parts</span></div>';
+    html+='<div style="overflow-x:auto;"><table class="viz-table"><thead><tr><th>#</th><th>Part Number</th><th>Make</th><th>Description</th><th class="panel-head">Req Qty</th><th class="mrs-head">MRS Qty</th><th class="status-head">Status</th></tr></thead><tbody>';
+    rows.forEach(function(r){
+      html+='<tr><td>'+r.srNo+'</td><td class="td-mono">'+r.partNum+'</td><td>'+(r.make||'&mdash;')+'</td><td>'+(r.desc||'&mdash;')+'</td><td class="td-center">'+r.reqQty+'</td><td class="td-center">'+(r.mrsQty||'&mdash;')+'</td><td class="td-center">'+statusPill(r.statusType,r.status)+'</td></tr>';
     });
-
-    // MRS Qty header
-    const mrsCell = row2.getCell(startCol + sec.panels.length);
-    mrsCell.value = 'MRS Qty';
-    mrsCell.font = { bold: true, size: 8, color: { argb: 'FF7C3AED' } };
-    mrsCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEDE9FE' } };
-    mrsCell.alignment = { vertical: 'middle', horizontal: 'center' };
-    mrsCell.border = { bottom: { style: 'thin', color: { argb: 'FFC4B5FD' } } };
-
-    // Status header
-    const statCell = row2.getCell(startCol + sec.panels.length + 1);
-    statCell.value = 'Status';
-    statCell.font = { bold: true, size: 8, color: { argb: 'FF4A5072' } };
-    statCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFECEEF4' } };
-    statCell.alignment = { vertical: 'middle', horizontal: 'center' };
-    statCell.border = { bottom: { style: 'thin', color: { argb: 'FFDDE0EA' } }, right: { style: 'medium', color: { argb: 'FF2563EB' } } };
-
-    sectionColRanges.push({ sec, startCol, colSpan });
-    currentCol += colSpan;
+    html+='</tbody></table></div></div>';
   });
+  document.getElementById('vizContent').innerHTML=html||'<div class="empty-state">No data for this panel</div>';
+}
 
-  row1.height = 22;
-  row2.height = 30;
+function statusPill(type,text){
+  var cls={excess:'pill-excess',short:'pill-short',exact:'pill-exact',nomrs:'pill-nomrs'}[type]||'pill-nomrs';
+  return '<span class="'+cls+'">'+text+'</span>';
+}
 
-  // ── Collect all unique parts across all sections (in order) ──
-  // Build a master part list maintaining BOM order
-  const allPartKeys = [];
-  const seenKeys = new Set();
-  for (const sec of sections) {
-    for (const row of sec.rows) {
-      const k = row.partNum.toLowerCase();
-      if (!seenKeys.has(k)) { seenKeys.add(k); allPartKeys.push(row); }
+function renderExportSummary(){
+  var p=processedData;
+  var total=0; p.panelRows.forEach(function(r){total+=r.length;});
+  document.getElementById('exportSummary').innerHTML=
+    '<div class="exp-item"><div class="exp-item-val">'+p.panels.length+'</div><div class="exp-item-label">Panels</div></div>'+
+    '<div class="exp-item"><div class="exp-item-val">'+total+'</div><div class="exp-item-label">Part Rows</div></div>'+
+    '<div class="exp-item"><div class="exp-item-val" style="color:var(--danger)">'+p.toOrderParts.length+'</div><div class="exp-item-label">Parts to Order</div></div>'+
+    '<div class="exp-item"><div class="exp-item-val">'+todayStr()+'</div><div class="exp-item-label">Export Date</div></div>';
+}
+
+// ── EXPORT ──
+async function exportExcel(){
+  var btn=document.getElementById('exportBtn');
+  btn.textContent='Generating...'; btn.disabled=true;
+  await new Promise(function(r){setTimeout(r,50);});
+  try {
+    var wb=new ExcelJS.Workbook();
+    var p=processedData;
+    var panels=p.panels, partsMap=p.partsMap, mrsMap=p.mrsMap;
+    var unmatchedMRS=p.unmatchedMRS, excessParts=p.excessParts, toOrderParts=p.toOrderParts;
+
+    var C={
+      DB:'FF1E3A5F',MB:'FF2563EB',PB:'FFD6E4F7',PH:'FF5B21B6',PP:'FFEDE9FE',
+      RL:'FFFAFBFE',RD:'FFF0F4FB',
+      GB:'FFDCFCE7',GF:'FF15803D',RRB:'FFFEE2E2',RF:'FFB91C1C',
+      AB:'FFFEF3C7',AF:'FF92400E',GB2:'FFF1F5F9',GF2:'FF64748B',WW:'FFFFFFFF'
+    };
+
+    function sc(cell,o){
+      o=o||{};
+      if(o.val!==undefined && o.val!=='') cell.value=o.val;
+      if(o.bg) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:o.bg}};
+      cell.font={bold:o.bold||false,size:o.sz||9,color:{argb:o.fg||'FF1F2937'},name:o.font||'Calibri'};
+      cell.alignment={vertical:'middle',horizontal:o.halign||'left',wrapText:o.wrap||false};
+      cell.border={bottom:{style:'thin',color:{argb:o.bc||'FFE5E7EB'}},right:{style:o.rm?'medium':'thin',color:{argb:o.rm?C.DB:(o.bc||'FFE5E7EB')}}};
     }
-  }
 
-  // Build lookup: sectionName → Map<partKey, rowData>
-  const secPartLookup = new Map();
-  for (const sec of sections) {
-    const m = new Map();
-    sec.rows.forEach(r => m.set(r.partNum.toLowerCase(), r));
-    secPartLookup.set(sec.name, m);
-  }
-
-  // ── Write data rows ──
-  let excelRowNum = 3;
-  allPartKeys.forEach((part, idx) => {
-    const dataRow = ws.addRow([]);
-    const partKey = part.partNum.toLowerCase();
-
-    // Fixed columns
-    dataRow.getCell(1).value = idx + 1;
-    dataRow.getCell(2).value = part.make || '';
-    dataRow.getCell(3).value = part.partNum;
-    dataRow.getCell(4).value = part.desc || '';
-
-    [1,2,3,4].forEach(c => {
-      const cell = dataRow.getCell(c);
-      cell.font = { size: 9 };
-      cell.alignment = { vertical: 'middle', wrapText: c === 4 };
-      cell.border = { bottom: { style: 'thin', color: { argb: 'FFDDE0EA' } } };
-      if (c === 3) { cell.font = { ...cell.font, name: 'Courier New' }; }
-    });
-
-    // Section data columns
-    sectionColRanges.forEach(({ sec, startCol }) => {
-      const rowData = secPartLookup.get(sec.name)?.get(partKey);
-
-      sec.panels.forEach((pn, pi) => {
-        const cell = dataRow.getCell(startCol + pi);
-        const qty = rowData ? (rowData.bomPanelQtys[pi] || 0) : 0;
-        cell.value = qty > 0 ? qty : '';
-        cell.alignment = { horizontal: 'center', vertical: 'middle' };
-        cell.font = { size: 9, bold: qty > 0 };
-        cell.border = { bottom: { style: 'thin', color: { argb: 'FFDDE0EA' } } };
+    function mkHdr(ws,labels,bg,widths){
+      widths.forEach(function(w,i){ws.getColumn(i+1).width=w;});
+      ws.views=[{state:'frozen',xSplit:0,ySplit:1}];
+      var hr=ws.addRow([]); hr.height=22;
+      labels.forEach(function(v,i){
+        var c=hr.getCell(i+1);
+        c.value=v;
+        c.font={bold:true,size:9,color:{argb:'FFFFFFFF'},name:'Calibri'};
+        c.fill={type:'pattern',pattern:'solid',fgColor:{argb:bg}};
+        c.alignment={vertical:'middle',horizontal:'center',wrapText:true};
+        c.border={bottom:{style:'medium',color:{argb:'FFD1D5DB'}},right:{style:'thin',color:{argb:'FFD1D5DB'}}};
       });
+    }
 
-      // MRS Qty
-      const mrsCell = dataRow.getCell(startCol + sec.panels.length);
-      mrsCell.value = rowData?.mrsQty || '';
-      mrsCell.alignment = { horizontal: 'center', vertical: 'middle' };
-      mrsCell.font = { size: 9, bold: true, color: { argb: 'FF7C3AED' } };
-      mrsCell.border = { bottom: { style: 'thin', color: { argb: 'FFDDE0EA' } } };
+    function dRow(ws,vals,ri,accentCol,accentFg,even,odd){
+      var r=ws.addRow(vals); r.height=17;
+      var bg=ri%2===0?even:odd;
+      vals.forEach(function(_,ci){
+        var c=r.getCell(ci+1);
+        c.fill={type:'pattern',pattern:'solid',fgColor:{argb:bg}};
+        var acc=(ci+1===accentCol);
+        c.font={size:9,name:ci===2?'Courier New':'Calibri',bold:acc,color:{argb:acc?accentFg:(ci===2?C.DB:'FF1F2937')}};
+        c.alignment={vertical:'middle',horizontal:ci>=4?'center':'left',wrapText:ci===3};
+        c.border={bottom:{style:'thin',color:{argb:'FFE5E7EB'}},right:{style:'thin',color:{argb:'FFE5E7EB'}}};
+      });
+    }
 
-      // Status
-      const stCell = dataRow.getCell(startCol + sec.panels.length + 1);
-      const statusType = rowData?.statusType || 'nomrs';
-      const statusText = rowData?.status || '—';
-      stCell.value = statusText;
-      stCell.alignment = { horizontal: 'center', vertical: 'middle' };
-      stCell.font = { size: 9, bold: true, color: { argb: statusType === 'excess' ? 'FF15803D' : statusType === 'short' ? 'FFB91C1C' : statusType === 'exact' ? 'FF92400E' : 'FF8890AA' } };
-      stCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: statusType === 'excess' ? 'FFDCFCE7' : statusType === 'short' ? 'FFFEE2E2' : statusType === 'exact' ? 'FFFEF3C7' : 'FFF7F8FB' } };
-      stCell.border = { bottom: { style: 'thin', color: { argb: 'FFDDE0EA' } }, right: { style: 'medium', color: { argb: 'FF2563EB' } } };
+    // SHEET 1 — Panel Comparison
+    var ws1=wb.addWorksheet('Panel Comparison',{views:[{state:'frozen',xSplit:4,ySplit:2,activeCell:'E3'}]});
+    ws1.getColumn(1).width=5;ws1.getColumn(2).width=18;ws1.getColumn(3).width=26;ws1.getColumn(4).width=38;
+    var cw=5;
+    panels.forEach(function(){ws1.getColumn(cw).width=10;ws1.getColumn(cw+1).width=10;ws1.getColumn(cw+2).width=14;cw+=3;});
+    var r1=ws1.addRow([]); r1.height=24;
+    var r2=ws1.addRow([]); r2.height=22;
+    ['SR','Make','Part Number','Description'].forEach(function(h,i){
+      sc(r1.getCell(i+1),{val:h,bg:C.DB,fg:C.WW,bold:true,sz:9,halign:'center',bc:'FFD1D5DB'});
+      ws1.mergeCells(1,i+1,2,i+1);
     });
+    var pcm=new Map(); var pc2=5;
+    panels.forEach(function(pl){
+      pcm.set(pl.name,pc2);
+      sc(r1.getCell(pc2),{val:pl.name,bg:C.MB,fg:C.WW,bold:true,sz:8,halign:'center',bc:'FF93C5FD',rm:true});
+      ws1.mergeCells(1,pc2,1,pc2+2);
+      var subs=['Req Qty','MRS Qty','Status'];
+      var sbg=[C.PB,C.PP,'FFECEEF4']; var sfg=[C.MB,C.PH,'FF374151'];
+      subs.forEach(function(s,si){sc(r2.getCell(pc2+si),{val:s,bg:sbg[si],fg:sfg[si],bold:true,sz:8,halign:'center',bc:'FFD1D5DB',rm:si===2});});
+      pc2+=3;
+    });
+    var allParts=Array.from(partsMap.values());
+    for(var idx=0;idx<allParts.length;idx++){
+      if(idx%100===0&&idx>0) await new Promise(function(r){setTimeout(r,0);});
+      var part=allParts[idx]; var key=part.partNum.toLowerCase();
+      var rbg=idx%2===0?C.RL:C.RD;
+      var dr=ws1.addRow([]); dr.height=17;
+      sc(dr.getCell(1),{val:idx+1,bg:rbg,sz:9,halign:'center'});
+      sc(dr.getCell(2),{val:part.make||'',bg:rbg,sz:9});
+      sc(dr.getCell(3),{val:part.partNum,bg:rbg,sz:9,bold:true,font:'Courier New',fg:C.DB});
+      sc(dr.getCell(4),{val:part.desc||'',bg:rbg,sz:9,wrap:true});
+      panels.forEach(function(pl){
+        var psc=pcm.get(pl.name);
+        var rq=part.panelQtys[pl.name]||0;
+        var mq=(mrsMap.has(key)&&mrsMap.get(key).has(pl.name))?mrsMap.get(key).get(pl.name):0;
+        var st,sb,sf;
+        if(rq===0)       {st='';           sb=rbg;   sf=C.GF2;}
+        else if(mq===0)  {st='No MRS';     sb=C.GB2;  sf=C.GF2;}
+        else if(mq>rq)   {st='+'+(mq-rq)+' Excess';sb=C.GB;sf=C.GF;}
+        else if(mq<rq)   {st='-'+(rq-mq)+' Short'; sb=C.RRB;sf=C.RF;}
+        else             {st='Exact \u2713';sb=C.AB;sf=C.AF;}
+        sc(dr.getCell(psc),  {val:rq||'',bg:rbg,sz:9,bold:rq>0,halign:'center'});
+        sc(dr.getCell(psc+1),{val:mq||'',bg:rbg,sz:9,bold:mq>0,halign:'center',fg:C.PH});
+        sc(dr.getCell(psc+2),{val:st,bg:sb,sz:9,bold:true,halign:'center',fg:sf,rm:true});
+      });
+    }
+    await new Promise(function(r){setTimeout(r,0);});
 
-    dataRow.height = 18;
-    excelRowNum++;
-  });
+    // SHEET 2 — Unmatched MRS
+    var ws2=wb.addWorksheet('Unmatched MRS Parts');
+    var uPanels=[];
+    unmatchedMRS.forEach(function(u){if(uPanels.indexOf(u.panel)===-1) uPanels.push(u.panel);});
+    uPanels.sort();
+    var u2w=[5,18,26,38].concat(uPanels.map(function(){return 14;}));
+    var u2h=['SR','Make','Part Number','Part Description'].concat(uPanels);
+    mkHdr(ws2,u2h,C.DB,u2w);
+    // recolor panel header cols to amber
+    var uh=ws2.getRow(1);
+    for(var ci=5;ci<=u2h.length;ci++) uh.getCell(ci).fill={type:'pattern',pattern:'solid',fgColor:{argb:C.AF}};
 
-  // Column widths
-  ws.getColumn(1).width = 5;
-  ws.getColumn(2).width = 20;
-  ws.getColumn(3).width = 28;
-  ws.getColumn(4).width = 40;
-  let c = 5;
-  sections.forEach(sec => {
-    sec.panels.forEach(() => { ws.getColumn(c).width = 14; c++; });
-    ws.getColumn(c).width = 10; c++; // MRS
-    ws.getColumn(c).width = 14; c++; // Status
-  });
+    var uByPart=new Map();
+    unmatchedMRS.forEach(function(u){
+      if(!uByPart.has(u.partNum)) uByPart.set(u.partNum,{partNum:u.partNum,make:u.make||'',desc:u.desc||'',panels:{}});
+      uByPart.get(u.partNum).panels[u.panel]=(uByPart.get(u.partNum).panels[u.panel]||0)+u.qty;
+    });
+    var usr2=1;
+    Array.from(uByPart.values()).forEach(function(up,ri){
+      var vals=[usr2++,up.make||'—',up.partNum,up.desc||'—'];
+      uPanels.forEach(function(pn){vals.push(up.panels[pn]||'');});
+      var r=ws2.addRow(vals); r.height=17;
+      var bg=ri%2===0?'FFFFFBEB':'FFFEF9C3';
+      vals.forEach(function(_,ci2){
+        var c=r.getCell(ci2+1);
+        c.fill={type:'pattern',pattern:'solid',fgColor:{argb:bg}};
+        c.font={size:9,name:ci2===2?'Courier New':'Calibri',bold:ci2>=4,color:{argb:ci2===2?C.DB:'FF1F2937'}};
+        c.alignment={vertical:'middle',horizontal:ci2<4?'left':'center',wrapText:ci2===3};
+        c.border={bottom:{style:'thin',color:{argb:'FFFDE68A'}},right:{style:'thin',color:{argb:'FFFDE68A'}}};
+      });
+    });
+    if(!uByPart.size){var nr2=ws2.addRow(['No unmatched MRS parts']);nr2.getCell(1).font={italic:true,size:9,color:{argb:C.GF2}};}
+    await new Promise(function(r){setTimeout(r,0);});
 
-  // Freeze panes
-  ws.views = [{ state: 'frozen', xSplit: 4, ySplit: 2, activeCell: 'E3' }];
+    // SHEET 3 — Parts to Order
+    var ws3=wb.addWorksheet('Parts to Order');
+    mkHdr(ws3,['SR','Make','Part Number','Part Description','Total Qty Required'],C.RF,[5,20,26,45,18]);
+    toOrderParts.forEach(function(pt,i){dRow(ws3,[i+1,pt.make||'—',pt.partNum,pt.desc||'—',pt.totalReq],i,5,C.RF,'FFFFF5F5','FFFEF2F2');});
+    if(!toOrderParts.length){var nr3=ws3.addRow(['No parts need ordering']);nr3.getCell(1).font={italic:true,size:9,color:{argb:C.GF}};}
+    await new Promise(function(r){setTimeout(r,0);});
 
-  const buffer = await wb.xlsx.writeBuffer();
-  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  saveAs(blob, `Procurement_Plan_${todayStr()}.xlsx`);
+    // SHEET 4 — Excess Parts
+    var ws4=wb.addWorksheet('Excess Parts');
+    mkHdr(ws4,['SR','Make','Part Number','Part Description','Total Req Qty','Total MRS Qty','Excess Qty'],C.GF,[5,20,26,45,14,14,14]);
+    excessParts.forEach(function(pt,i){dRow(ws4,[i+1,pt.make||'—',pt.partNum,pt.desc||'—',pt.totalReq,pt.totalMrs,pt.excessQty],i,7,C.GF,'FFF0FDF4','FFECFDF5');});
+    if(!excessParts.length){var nr4=ws4.addRow(['No excess parts']);nr4.getCell(1).font={italic:true,size:9,color:{argb:C.GF2}};}
 
-  btn.textContent = '⬇ Download Excel';
-  btn.disabled = false;
+    var buffer=await wb.xlsx.writeBuffer();
+    var blob=new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    var fname=(document.getElementById('exportFileName').value||'Procurement_Plan').trim().replace(/[^a-zA-Z0-9_\-. ]/g,'_');
+    saveAs(blob,fname+'_'+todayStr()+'.xlsx');
+
+    btn.textContent='\u2193 Download Excel'; btn.disabled=false;
+  } catch(err){
+    console.error(err);
+    alert('Export failed: '+err.message);
+    btn.textContent='\u2193 Download Excel'; btn.disabled=false;
+  }
 }
 
 // ── DARK MODE ──
-function toggleDark() {
-  const isDark = document.body.classList.toggle('dark');
-  document.getElementById('darkIcon').textContent  = isDark ? '☀️' : '🌙';
-  document.getElementById('darkLabel').textContent = isDark ? 'Light Mode' : 'Dark Mode';
-  localStorage.setItem('wz-dark', isDark ? '1' : '0');
+function toggleDark(){
+  var isDark=document.body.classList.toggle('dark');
+  document.getElementById('darkIcon').textContent = isDark?'\u2600\uFE0F':'\uD83C\uDF19';
+  document.getElementById('darkLabel').textContent = isDark?'Light Mode':'Dark Mode';
+  try{localStorage.setItem('wz-dark',isDark?'1':'0');}catch(e){}
 }
+
+// ── INIT ──
 (function(){
-  try {
-    if (localStorage.getItem('wz-dark') === '1') {
+  try{
+    if(localStorage.getItem('wz-dark')==='1'){
       document.body.classList.add('dark');
-      document.getElementById('darkIcon').textContent  = '☀️';
-      document.getElementById('darkLabel').textContent = 'Light Mode';
+      document.getElementById('darkIcon').textContent='\u2600\uFE0F';
+      document.getElementById('darkLabel').textContent='Light Mode';
     }
-  } catch(e) {}
+  }catch(e){}
+  loadSettings();
 })();
 </script>
 </body>
