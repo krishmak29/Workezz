@@ -4,12 +4,60 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="css/mrs_style.css">
-<title>Workezz — MRS Merger</title>
+<title>Workezz &mdash; MRS Merger</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-
+<style>
+.card-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  margin-bottom: 6px;
+}
+.card-section-title { display: flex; align-items: center; gap: 8px; }
+.ver-badge {
+  font-size: .64rem;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 100px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.ver-badge.active  { background: #dcfce7; color: #15803d; border-color: #86efac; }
+.ver-badge.ignored { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+.count-pill {
+  font-size: .7rem;
+  color: var(--muted);
+  background: var(--surface2);
+  padding: 2px 10px;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+.superseded-card { display: none; flex-shrink: 0; margin-top: 14px; }
+.superseded-table-wrap { border: 1px solid #fca5a5 !important; border-radius: var(--radius-sm); overflow: hidden; }
+.superseded-table-wrap thead tr { background: #fff1f2; }
+.superseded-table-wrap thead th { color: #b91c1c !important; background: #fff1f2 !important; }
+body.dark .superseded-table-wrap thead th { background: #3b1212 !important; color: #fca5a5 !important; }
+.ver-tag {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: .64rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: #ede9fe;
+  color: #5b21b6;
+  border: 1px solid #c4b5fd;
+  letter-spacing: .04em;
+}
+.ver-tag.old  { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+.ver-tag.none { background: var(--surface2); color: var(--muted); border-color: var(--border); }
+.superseded-by { font-family: 'IBM Plex Mono', monospace; font-size: .63rem; color: #15803d; font-weight: 700; }
+</style>
 </head>
 <body>
 
@@ -27,7 +75,7 @@
   </div>
   <div style="display:flex;align-items:center;gap:10px;">
     <button class="dark-toggle" onclick="toggleDark()">
-      <span class="dark-toggle-icon" id="darkIcon">🌙</span>
+      <span class="dark-toggle-icon" id="darkIcon">&#127769;</span>
       <span id="darkLabel">Dark Mode</span>
     </button>
     <a class="home-btn" href="index.html">
@@ -42,59 +90,51 @@
   <!-- LEFT PANEL -->
   <div class="left">
 
-    <!-- ① MASTER SHEET -->
     <div>
-      <div class="section-label">① Master Sheet</div>
+      <div class="section-label">&#9312; Master Sheet</div>
       <input type="file" id="masterInput" accept=".xls,.xlsx" style="display:none;" onchange="handleMasterFile(this)">
       <div id="masterEmptyZone" class="master-upload-zone" onclick="document.getElementById('masterInput').click()">
-        <span class="muz-icon">🗂️</span>
+        <span class="muz-icon">&#128193;</span>
         <div class="muz-text"><strong>Click to upload Master Sheet</strong></div>
-        <div class="muz-sub">Blank template with formatting — .xls or .xlsx</div>
+        <div class="muz-sub">Blank template with formatting &mdash; .xls or .xlsx</div>
       </div>
       <div id="masterFileChip" class="master-chip" style="display:none;">
         <div class="master-chip-icon" id="masterChipExt">XLS</div>
         <div class="master-chip-info">
-          <div class="master-chip-name" id="masterChipName">—</div>
-          <div class="master-chip-sub" id="masterChipSize">—</div>
+          <div class="master-chip-name" id="masterChipName">&mdash;</div>
+          <div class="master-chip-sub" id="masterChipSize">&mdash;</div>
         </div>
         <span class="master-badge">Master</span>
-        <button class="btn btn-danger-outline btn-sm" onclick="clearMaster()">✕</button>
+        <button class="btn btn-danger-outline btn-sm" onclick="clearMaster()">&#10005;</button>
       </div>
     </div>
 
     <div class="divider"></div>
 
-    <!-- ② FILES TO MERGE -->
     <div>
-      <div class="section-label">② Files to Merge</div>
+      <div class="section-label">&#9313; Files to Merge</div>
       <input type="file" id="mergeInput" accept=".xls,.xlsx" multiple style="display:none;">
       <div id="mergeDropZone" class="drop-zone" onclick="document.getElementById('mergeInput').click()">
-        <span class="dz-icon">📂</span>
-        <div class="dz-text" id="mergeDzText"><strong>Click to browse</strong> or drag & drop</div>
-        <div class="dz-sub" id="mergeDzSub">Select files to merge into master — .xls or .xlsx</div>
+        <span class="dz-icon">&#128194;</span>
+        <div class="dz-text" id="mergeDzText"><strong>Click to browse</strong> or drag &amp; drop</div>
+        <div class="dz-sub" id="mergeDzSub">Select MRS files &mdash; older versions auto-detected &amp; separated</div>
       </div>
       <div style="margin-top:10px;">
-        <button class="btn btn-primary btn-full" onclick="addStagedFiles()">＋ Add Files to List</button>
+        <button class="btn btn-primary btn-full" onclick="addStagedFiles()">&#65291; Add Files to List</button>
       </div>
     </div>
 
-    <!-- MERGE BUTTON -->
     <div style="margin-top:auto;padding-top:8px;">
       <div style="margin-bottom:10px;">
         <label style="font-size:.68rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;">Export File Name</label>
-        <div style="display:flex;align-items:center;gap:0;border:1px solid var(--border2);border-radius:var(--radius-sm);overflow:hidden;background:var(--white);">
-          <input 
-            id="exportFileName" 
-            type="text" 
-            placeholder="MRS_Merged" 
-            value="MRS_Merged"
-            style="flex:1;border:none;outline:none;padding:8px 12px;font-family:'IBM Plex Sans',sans-serif;font-size:.82rem;color:var(--text);background:transparent;"
-          >
+        <div style="display:flex;align-items:center;border:1px solid var(--border2);border-radius:var(--radius-sm);overflow:hidden;background:var(--white);">
+          <input id="exportFileName" type="text" placeholder="MRS_Merged" value="MRS_Merged"
+            style="flex:1;border:none;outline:none;padding:8px 12px;font-family:'IBM Plex Sans',sans-serif;font-size:.82rem;color:var(--text);background:transparent;">
           <span style="padding:8px 12px;font-size:.75rem;font-weight:600;color:var(--muted);background:var(--surface2);border-left:1px solid var(--border);white-space:nowrap;">.xlsx</span>
         </div>
       </div>
       <button class="btn btn-success btn-full btn-lg" id="mergeBtn" onclick="runMRSMerge()" disabled>
-        🔀 Merge & Download
+        &#128256; Merge &amp; Download
       </button>
       <p style="font-size:.68rem;color:var(--muted);text-align:center;margin-top:8px;line-height:1.5;" id="mergeHint">Upload master + at least 1 file to merge</p>
     </div>
@@ -104,39 +144,65 @@
   <!-- RIGHT PANEL -->
   <div class="right">
 
-    <div class="info-card">
-      <strong>How it works:</strong><br>
-      For each merge file — <strong>Sheet 1</strong> is pasted first, then <strong>Sheet 2</strong> is pasted right after.<br>
-      Each file's data starts from where the previous file's data ended. Master formatting is preserved.
-    </div>
-
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-      <div class="section-label" style="margin-bottom:0;">Files to Merge</div>
-      <span id="mergeFileCount" style="font-size:.72rem;color:var(--muted);background:var(--surface2);padding:2px 10px;border-radius:100px;border:1px solid var(--border);">0 files</span>
+    <!-- ACTIVE FILES CARD -->
+    <div class="card-section-head">
+      <div class="card-section-title">
+        <div class="section-label" style="margin-bottom:0;">Active Files</div>
+        <span class="ver-badge active">&#10003; Will be merged</span>
+      </div>
+      <span class="count-pill" id="mergeFileCount">0 files</span>
     </div>
 
     <div class="file-table-wrap">
       <table>
         <thead>
           <tr>
-            <th style="width:40px">#</th>
+            <th style="width:34px;">#</th>
             <th>File Name</th>
-            <th>Size</th>
-            <th style="text-align:right;">Action</th>
+            <th style="width:68px;text-align:center;">Version</th>
+            <th style="text-align:right;width:90px;">Action</th>
           </tr>
         </thead>
       </table>
       <div class="table-scroll">
         <table style="width:100%">
           <tbody id="mergeFileTable">
-            <tr><td colspan="4"><div class="empty-table">📋 No files added yet.<br>Upload merge files above and click Add Files to List.</div></td></tr>
+            <tr><td colspan="4"><div class="empty-table">&#128203; No files added yet.<br>Upload MRS files and click Add Files to List.</div></td></tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <div id="statusLog" class="status-log">
-      <span class="log-muted">Waiting to start…</span>
+    <!-- SUPERSEDED FILES CARD -->
+    <div class="superseded-card" id="supersededCard">
+      <div class="card-section-head">
+        <div class="card-section-title">
+          <div class="section-label" style="margin-bottom:0;color:#b91c1c;">Superseded Files</div>
+          <span class="ver-badge ignored">&#10005; Ignored &mdash; older version</span>
+        </div>
+        <span class="count-pill" id="ignoredFileCount">0 files</span>
+      </div>
+      <div class="file-table-wrap superseded-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:34px;">#</th>
+              <th>File Name</th>
+              <th style="width:68px;text-align:center;">Version</th>
+              <th>Superseded by</th>
+            </tr>
+          </thead>
+        </table>
+        <div class="table-scroll" style="max-height:88px;overflow-y:auto;">
+          <table style="width:100%">
+            <tbody id="ignoredFileTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="statusLog" class="status-log" style="margin-top:10px;">
+      <span class="log-muted">Waiting to start&#8230;</span>
     </div>
 
   </div>
@@ -150,18 +216,21 @@
       <circle cx="16" cy="13" r="1.5" fill="white"/>
     </svg>
     <span style="font-size:.72rem;font-weight:700;font-family:'Syne',sans-serif;">Workezz</span>
-    <span style="font-size:.68rem;color:var(--muted);">— MRS Merger</span>
+    <span style="font-size:.68rem;color:var(--muted);">&mdash; MRS Merger</span>
   </div>
   <div style="font-size:.68rem;color:var(--muted);">
-    Designed & built by <strong style="color:var(--text2);">Krish Makwane</strong> &nbsp;·&nbsp; MVP v2.0
+    Designed &amp; built by <strong style="color:var(--text2);">Krish Makwane</strong> &nbsp;&middot;&nbsp; MVP v2.0
   </div>
 </footer>
 
 <script>
-// ── STATE ──
-let masterFile = null;
-let mergeFiles = [];
-let stagedFiles = [];
+// ══════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════
+var masterFile   = null;
+var mergeFiles   = [];   // full pool — all files added by user
+var ignoredFiles = [];   // computed: superseded entries { file, version, supersededBy, supersededVer }
+var stagedFiles  = [];   // picked but not yet confirmed
 
 function formatSize(b) {
   if (b < 1024) return b + ' B';
@@ -170,12 +239,96 @@ function formatSize(b) {
 }
 function todayStr() { return new Date().toISOString().slice(0, 10); }
 
-// ── MASTER FILE ──
+// ══════════════════════════════════════════════════
+// VERSION PARSING & COMPARISON
+// Filename format: BASE_NAME_V0A.xlsx  (version = _V followed by digit+alpha at end)
+// Examples: MRS_FSL_2425_PUN_OR115_01_V0B.xlsx  -> base=mrs_fsl_2425_pun_or115_01, ver=V0B
+// ══════════════════════════════════════════════════
+function parseVersion(filename) {
+  var bare = filename.replace(/\.(xlsx|xls)$/i, '');
+  // Match _V<digit><alphanumeric>* at the very end (case-insensitive)
+  var m = bare.match(/^(.*?)_(V[0-9][A-Z0-9]*)$/i);
+  if (!m) return { base: bare.toLowerCase(), version: '', versionRaw: '' };
+  return {
+    base:       m[1].toLowerCase(),
+    version:    m[2].toUpperCase(),
+    versionRaw: m[2]
+  };
+}
+
+// Positive = a is newer, Negative = b is newer, 0 = same
+function compareVersions(a, b) {
+  if (a === b) return 0;
+  if (!a) return -1;
+  if (!b) return  1;
+  // Strip leading V, split into numeric prefix + alpha suffix
+  var sa = a.replace(/^V/i, '');
+  var sb = b.replace(/^V/i, '');
+  var pa = sa.match(/^([0-9]+)([A-Z0-9]*)$/i) || ['','0',''];
+  var pb = sb.match(/^([0-9]+)([A-Z0-9]*)$/i) || ['','0',''];
+  var numA = parseInt(pa[1]) || 0;
+  var numB = parseInt(pb[1]) || 0;
+  if (numA !== numB) return numA - numB;
+  var alpA = (pa[2] || '').toUpperCase();
+  var alpB = (pb[2] || '').toUpperCase();
+  if (alpA < alpB) return -1;
+  if (alpA > alpB) return  1;
+  return 0;
+}
+
+// ══════════════════════════════════════════════════
+// DEDUPLICATE BY VERSION
+// Groups all files by base name. Within each group,
+// keeps only the latest version as active.
+// Returns: { active: [{file, version}], ignored: [{file, version, supersededBy, supersededVer}] }
+// ══════════════════════════════════════════════════
+function deduplicateByVersion(allFiles) {
+  var groups = {}; // base -> [ {file, version} ]
+  allFiles.forEach(function(f) {
+    var p = parseVersion(f.name);
+    if (!groups[p.base]) groups[p.base] = [];
+    groups[p.base].push({ file: f, version: p.version });
+  });
+
+  var active  = [];
+  var ignored = [];
+
+  Object.keys(groups).forEach(function(base) {
+    var grp = groups[base];
+    if (grp.length === 1) {
+      active.push(grp[0]);
+      return;
+    }
+    // Sort descending — latest first
+    grp.sort(function(a, b) { return compareVersions(b.version, a.version); });
+    var winner = grp[0];
+    active.push(winner);
+    for (var i = 1; i < grp.length; i++) {
+      ignored.push({
+        file:          grp[i].file,
+        version:       grp[i].version,
+        supersededBy:  winner.file.name,
+        supersededVer: winner.version
+      });
+    }
+  });
+
+  // Preserve original insertion order for active files
+  var order = {};
+  allFiles.forEach(function(f, idx) { order[f.name] = idx; });
+  active.sort(function(a, b) { return order[a.file.name] - order[b.file.name]; });
+
+  return { active: active, ignored: ignored };
+}
+
+// ══════════════════════════════════════════════════
+// MASTER FILE
+// ══════════════════════════════════════════════════
 function handleMasterFile(input) {
   if (!input.files.length) return;
   masterFile = input.files[0];
   input.value = '';
-  const ext = masterFile.name.split('.').pop().toUpperCase();
+  var ext = masterFile.name.split('.').pop().toUpperCase();
   document.getElementById('masterEmptyZone').style.display = 'none';
   document.getElementById('masterFileChip').style.display = 'flex';
   document.getElementById('masterChipExt').textContent = ext;
@@ -183,7 +336,6 @@ function handleMasterFile(input) {
   document.getElementById('masterChipSize').textContent = formatSize(masterFile.size);
   checkReady();
 }
-
 function clearMaster() {
   masterFile = null;
   document.getElementById('masterEmptyZone').style.display = '';
@@ -192,259 +344,338 @@ function clearMaster() {
   checkReady();
 }
 
-// ── MERGE FILES ──
+// ══════════════════════════════════════════════════
+// FILE PICKING
+// ══════════════════════════════════════════════════
 document.getElementById('mergeInput').addEventListener('change', function() {
-  for (const file of this.files) {
-    if (mergeFiles.find(f => f.name === file.name)) continue;
-    if (stagedFiles.find(f => f.name === file.name)) continue;
-    stagedFiles.push(file);
+  for (var i = 0; i < this.files.length; i++) {
+    var f = this.files[i];
+    if (mergeFiles.find(function(x) { return x.name === f.name; })) continue;
+    if (stagedFiles.find(function(x) { return x.name === f.name; })) continue;
+    stagedFiles.push(f);
   }
   this.value = '';
   updateMergeDz();
 });
 
-const mdz = document.getElementById('mergeDropZone');
-mdz.addEventListener('dragover', e => { e.preventDefault(); mdz.classList.add('dragover'); });
-mdz.addEventListener('dragleave', () => mdz.classList.remove('dragover'));
-mdz.addEventListener('drop', e => {
+var mdz = document.getElementById('mergeDropZone');
+mdz.addEventListener('dragover',  function(e) { e.preventDefault(); mdz.classList.add('dragover'); });
+mdz.addEventListener('dragleave', function()  { mdz.classList.remove('dragover'); });
+mdz.addEventListener('drop', function(e) {
   e.preventDefault(); mdz.classList.remove('dragover');
-  for (const file of e.dataTransfer.files) {
-    if (!file.name.match(/\.(xls|xlsx)$/i)) continue;
-    if (mergeFiles.find(f => f.name === file.name)) continue;
-    if (stagedFiles.find(f => f.name === file.name)) continue;
-    stagedFiles.push(file);
+  for (var i = 0; i < e.dataTransfer.files.length; i++) {
+    var f = e.dataTransfer.files[i];
+    if (!f.name.match(/\.(xls|xlsx)$/i)) continue;
+    if (mergeFiles.find(function(x) { return x.name === f.name; })) continue;
+    if (stagedFiles.find(function(x) { return x.name === f.name; })) continue;
+    stagedFiles.push(f);
   }
   updateMergeDz();
 });
 
 function updateMergeDz() {
-  const txt = document.getElementById('mergeDzText');
-  const sub = document.getElementById('mergeDzSub');
+  var txt = document.getElementById('mergeDzText');
+  var sub = document.getElementById('mergeDzSub');
   if (stagedFiles.length) {
-    txt.innerHTML = `<strong>${stagedFiles.length} file(s) selected</strong>`;
+    txt.innerHTML = '<strong>' + stagedFiles.length + ' file(s) selected</strong>';
     sub.textContent = 'Click "Add Files to List" to confirm';
   } else {
     txt.innerHTML = '<strong>Click to browse</strong> or drag & drop';
-    sub.textContent = 'Select files to merge into master — .xls or .xlsx';
+    sub.textContent = 'Select MRS files — older versions auto-detected & separated';
   }
 }
 
 function addStagedFiles() {
   if (!stagedFiles.length) { alert('Please select files first.'); return; }
-  for (const file of stagedFiles) {
-    if (!mergeFiles.find(f => f.name === file.name)) mergeFiles.push(file);
-  }
+  stagedFiles.forEach(function(f) {
+    if (!mergeFiles.find(function(x) { return x.name === f.name; })) mergeFiles.push(f);
+  });
   stagedFiles = [];
   updateMergeDz();
-  renderMergeTable();
-  checkReady();
+  applyAndRender();
 }
 
 function removeFile(name) {
-  mergeFiles = mergeFiles.filter(f => f.name !== name);
-  renderMergeTable();
+  mergeFiles = mergeFiles.filter(function(f) { return f.name !== name; });
+  applyAndRender();
+}
+
+// ══════════════════════════════════════════════════
+// APPLY VERSION LOGIC + RENDER BOTH CARDS
+// ══════════════════════════════════════════════════
+function applyAndRender() {
+  var result  = deduplicateByVersion(mergeFiles);
+  ignoredFiles = result.ignored;
+  renderActiveTable(result.active);
+  renderIgnoredTable(result.ignored);
   checkReady();
 }
 
-// ── DRAG AND DROP REORDER ──
-let mrsDragSrc = null;
+// ── ACTIVE TABLE ──
+var mrsDragSrc = null;
 
-function renderMergeTable() {
-  const tbody = document.getElementById('mergeFileTable');
-  const count = mergeFiles.length;
+function renderActiveTable(activeEntries) {
+  var tbody = document.getElementById('mergeFileTable');
+  var count = activeEntries.length;
   document.getElementById('mergeFileCount').textContent = count + ' file' + (count !== 1 ? 's' : '');
+
   if (!count) {
-    tbody.innerHTML = `<tr><td colspan="4"><div class="empty-table">📋 No files added yet.<br>Upload merge files above and click Add Files to List.</div></td></tr>`;
+    tbody.innerHTML = '<tr><td colspan="4"><div class="empty-table">&#128203; No files added yet.<br>Upload MRS files and click Add Files to List.</div></td></tr>';
     return;
   }
-  tbody.innerHTML = mergeFiles.map((f, i) => {
-    const ext = f.name.split('.').pop().toUpperCase();
-    return `<tr draggable="true" data-index="${i}"
-        ondragstart="mrsDragStart(event,${i})"
-        ondragover="mrsDragOver(event)"
-        ondragenter="mrsDragEnter(event)"
-        ondragleave="mrsDragLeave(event)"
-        ondrop="mrsDrop(event,${i})"
-        ondragend="mrsDragEnd(event)"
-        style="cursor:grab;">
-      <td class="sr-no" style="cursor:grab;">
-        <span style="display:inline-flex;flex-direction:column;gap:1px;opacity:0.4;pointer-events:none;user-select:none;">
-          <span style="display:block;width:14px;height:2px;background:currentColor;border-radius:1px;"></span>
-          <span style="display:block;width:14px;height:2px;background:currentColor;border-radius:1px;"></span>
-          <span style="display:block;width:14px;height:2px;background:currentColor;border-radius:1px;"></span>
-        </span>
-      </td>
-      <td><div class="file-chip">
-        <div class="file-chip-icon">${ext}</div>
-        <div><div class="file-chip-name">${f.name}</div><div class="file-chip-size">${String(i + 1).padStart(2, '0')} · ${formatSize(f.size)}</div></div>
-      </div></td>
-      <td style="font-size:.76rem;color:var(--muted);">${formatSize(f.size)}</td>
-      <td style="text-align:right;"><button class="btn btn-danger-outline btn-sm" onclick="removeFile('${f.name}')">✕ Remove</button></td>
-    </tr>`;
+
+  tbody.innerHTML = activeEntries.map(function(entry, i) {
+    var f   = entry.file;
+    var ext = f.name.split('.').pop().toUpperCase();
+    var verHtml = entry.version
+      ? '<span class="ver-tag">' + entry.version + '</span>'
+      : '<span class="ver-tag none">no ver</span>';
+    // Escape single quotes in filename for onclick
+    var safeName = f.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    return '<tr draggable="true" data-index="' + i + '"' +
+      ' ondragstart="mrsDragStart(event,' + i + ')"' +
+      ' ondragover="mrsDragOver(event)"' +
+      ' ondragenter="mrsDragEnter(event)"' +
+      ' ondragleave="mrsDragLeave(event)"' +
+      ' ondrop="mrsDrop(event,' + i + ')"' +
+      ' ondragend="mrsDragEnd(event)"' +
+      ' style="cursor:grab;">' +
+      '<td class="sr-no" style="cursor:grab;">' +
+        '<span style="display:inline-flex;flex-direction:column;gap:1px;opacity:.4;pointer-events:none;user-select:none;">' +
+          '<span style="display:block;width:14px;height:2px;background:currentColor;border-radius:1px;"></span>' +
+          '<span style="display:block;width:14px;height:2px;background:currentColor;border-radius:1px;"></span>' +
+          '<span style="display:block;width:14px;height:2px;background:currentColor;border-radius:1px;"></span>' +
+        '</span>' +
+      '</td>' +
+      '<td><div class="file-chip">' +
+        '<div class="file-chip-icon">' + ext + '</div>' +
+        '<div><div class="file-chip-name">' + f.name + '</div>' +
+        '<div class="file-chip-size">' + String(i+1).padStart(2,'0') + ' &middot; ' + formatSize(f.size) + '</div></div>' +
+      '</div></td>' +
+      '<td style="text-align:center;">' + verHtml + '</td>' +
+      '<td style="text-align:right;"><button class="btn btn-danger-outline btn-sm" onclick="removeFile(\'' + safeName + '\')">&#10005; Remove</button></td>' +
+      '</tr>';
   }).join('');
 }
 
+// ── SUPERSEDED TABLE ──
+function renderIgnoredTable(ignored) {
+  var card  = document.getElementById('supersededCard');
+  var tbody = document.getElementById('ignoredFileTable');
+  var pill  = document.getElementById('ignoredFileCount');
+
+  if (!ignored.length) { card.style.display = 'none'; return; }
+
+  card.style.display = 'block';
+  pill.textContent = ignored.length + ' file' + (ignored.length !== 1 ? 's' : '');
+
+  tbody.innerHTML = ignored.map(function(entry, i) {
+    var f   = entry.file;
+    var ext = f.name.split('.').pop().toUpperCase();
+    var verHtml = entry.version
+      ? '<span class="ver-tag old">' + entry.version + '</span>'
+      : '<span class="ver-tag none">no ver</span>';
+    // Trim supersededBy name to keep it compact
+    var supShort = entry.supersededBy.replace(/\.(xlsx|xls)$/i, '');
+    if (supShort.length > 28) supShort = '...' + supShort.slice(-25);
+    return '<tr>' +
+      '<td class="sr-no">' + (i+1) + '</td>' +
+      '<td><div class="file-chip">' +
+        '<div class="file-chip-icon" style="background:#fee2e2;color:#b91c1c;">' + ext + '</div>' +
+        '<div>' +
+          '<div class="file-chip-name" style="color:var(--muted);text-decoration:line-through;">' + f.name + '</div>' +
+          '<div class="file-chip-size">' + formatSize(f.size) + '</div>' +
+        '</div>' +
+      '</div></td>' +
+      '<td style="text-align:center;">' + verHtml + '</td>' +
+      '<td>' +
+        '<span class="superseded-by">' + entry.supersededVer + '</span>' +
+        '<div style="font-size:.6rem;color:var(--muted);margin-top:1px;" title="' + entry.supersededBy + '">' + supShort + '</div>' +
+      '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+// ── DRAG REORDER ──
 function mrsDragStart(e, i) {
   mrsDragSrc = i;
   e.dataTransfer.effectAllowed = 'move';
   e.currentTarget.style.opacity = '0.45';
 }
-function mrsDragOver(e) {
-  e.preventDefault();
-  e.dataTransfer.dropEffect = 'move';
-}
-function mrsDragEnter(e) {
-  e.currentTarget.classList.add('drag-over');
-}
-function mrsDragLeave(e) {
-  e.currentTarget.classList.remove('drag-over');
-}
+function mrsDragOver(e)  { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+function mrsDragEnter(e) { e.currentTarget.classList.add('drag-over'); }
+function mrsDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
 function mrsDrop(e, toIndex) {
   e.preventDefault();
   e.currentTarget.classList.remove('drag-over');
   if (mrsDragSrc === null || mrsDragSrc === toIndex) return;
-  const moved = mergeFiles.splice(mrsDragSrc, 1)[0];
-  mergeFiles.splice(toIndex, 0, moved);
+  // Reorder active entries in mergeFiles
+  var active = deduplicateByVersion(mergeFiles).active;
+  var fromName = active[mrsDragSrc].file.name;
+  var toName   = active[toIndex].file.name;
+  var fromIdx  = mergeFiles.findIndex(function(f) { return f.name === fromName; });
+  var toIdx    = mergeFiles.findIndex(function(f) { return f.name === toName;   });
+  var moved    = mergeFiles.splice(fromIdx, 1)[0];
+  mergeFiles.splice(toIdx, 0, moved);
   mrsDragSrc = null;
-  renderMergeTable();
+  applyAndRender();
 }
 function mrsDragEnd(e) {
   e.currentTarget.style.opacity = '';
-  document.querySelectorAll('#mergeFileTable tr').forEach(r => r.classList.remove('drag-over'));
+  document.querySelectorAll('#mergeFileTable tr').forEach(function(r) { r.classList.remove('drag-over'); });
 }
 
+// ══════════════════════════════════════════════════
+// READY CHECK
+// ══════════════════════════════════════════════════
 function checkReady() {
-  const ready = masterFile !== null && mergeFiles.length >= 1;
+  var activeCount = deduplicateByVersion(mergeFiles).active.length;
+  var ready = masterFile !== null && activeCount >= 1;
   document.getElementById('mergeBtn').disabled = !ready;
-  const hint = document.getElementById('mergeHint');
-  if (!masterFile) hint.textContent = 'Upload master sheet to continue';
-  else if (!mergeFiles.length) hint.textContent = 'Add at least 1 file to merge';
-  else hint.textContent = `Ready — master + ${mergeFiles.length} file(s) queued`;
+  var hint = document.getElementById('mergeHint');
+  if (!masterFile)      hint.textContent = 'Upload master sheet to continue';
+  else if (!activeCount) hint.textContent = 'Add at least 1 file to merge';
+  else hint.textContent  = 'Ready \u2014 master + ' + activeCount + ' active file(s) queued';
 }
 
-// ── LOG ──
-function log(msg, type = '') {
-  const el = document.getElementById('statusLog');
-  if (el.innerHTML.includes('Waiting')) el.innerHTML = '';
-  const cls = {new:'log-new', inserted:'log-inserted', error:'log-error'}[type] || 'log-muted';
-  el.innerHTML += `<div class="log-item"><span class="${cls}">▸ ${msg}</span></div>`;
+// ══════════════════════════════════════════════════
+// LOG
+// ══════════════════════════════════════════════════
+function log(msg, type) {
+  type = type || '';
+  var el = document.getElementById('statusLog');
+  if (el.innerHTML.indexOf('Waiting') !== -1) el.innerHTML = '';
+  var cls = { new:'log-new', inserted:'log-inserted', error:'log-error' }[type] || 'log-muted';
+  el.innerHTML += '<div class="log-item"><span class="' + cls + '">&#9656; ' + msg + '</span></div>';
   el.scrollTop = el.scrollHeight;
 }
 function clearLog() { document.getElementById('statusLog').innerHTML = ''; }
 
-// ── READ BOTH SHEETS FROM A FILE AS RAW ARRAYS ──
+// ══════════════════════════════════════════════════
+// READ BOTH SHEETS
+// ══════════════════════════════════════════════════
 function readBothSheets(file) {
-  return new Promise(resolve => {
-    const reader = new FileReader();
-    reader.onload = e => {
+  return new Promise(function(resolve) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
       try {
-        const wb = XLSX.read(e.target.result, { type: 'array' });
-        const sheet1 = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '', raw: true });
-        const sheet2 = wb.SheetNames.length >= 2
-          ? XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[1]], { header: 1, defval: '', raw: true })
+        var wb = XLSX.read(e.target.result, { type: 'array' });
+        var s1 = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1, defval:'', raw:true });
+        var s2 = wb.SheetNames.length >= 2
+          ? XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[1]], { header:1, defval:'', raw:true })
           : [];
-        resolve({ sheet1, sheet2, names: wb.SheetNames });
-      } catch(err) { console.error(err); resolve({ sheet1: [], sheet2: [], names: [] }); }
+        resolve({ sheet1: s1, sheet2: s2, names: wb.SheetNames });
+      } catch(err) { console.error(err); resolve({ sheet1:[], sheet2:[], names:[] }); }
     };
     reader.readAsArrayBuffer(file);
   });
 }
 
-// ── FIND LAST NON-EMPTY ROW INDEX (0-based) ──
 function lastDataRow(rows) {
-  for (let i = rows.length - 1; i >= 0; i--) {
-    if (rows[i].some(v => v !== '' && v !== null && v !== undefined)) return i;
+  for (var i = rows.length - 1; i >= 0; i--) {
+    if (rows[i].some(function(v) { return v !== '' && v !== null && v !== undefined; })) return i;
   }
   return -1;
 }
 
-// ── MAIN MERGE ──
+// ══════════════════════════════════════════════════
+// MAIN MERGE — only merges active (latest version) files
+// ══════════════════════════════════════════════════
 async function runMRSMerge() {
   clearLog();
   document.getElementById('mergeBtn').disabled = true;
 
-  log('Loading master file…');
-  const masterSheets = await readBothSheets(masterFile);
-  // Master result starts as Sheet 1 of master
-  let result = masterSheets.sheet1.map(row => [...row]);
-  log(`Master loaded — ${result.length} rows in Sheet 1`, 'new');
+  var activeEntries = deduplicateByVersion(mergeFiles).active;
+  var activeFiles   = activeEntries.map(function(e) { return e.file; });
 
-  for (const file of mergeFiles) {
-    log(`Processing: <strong>${file.name}</strong>`);
-    const { sheet1, sheet2, names } = await readBothSheets(file);
-
-    // Use Sheet 2 if it exists, otherwise Sheet 1
-    const sourceSheet = sheet2.length ? sheet2 : sheet1;
-    const sheetName = sheet2.length ? (names[1] || 'Sheet2') : (names[0] || 'Sheet1');
-
-    // Skip first 8 rows (rows 1-8 are headers/info), data starts from row 9 (index 8)
-    const dataRows = sourceSheet.slice(8).filter(row => row.some(v => v !== '' && v !== null && v !== undefined));
-
-    // Find where current result ends and paste after
-    const lastRow = lastDataRow(result);
-    const insertFrom = lastRow + 1;
-
-    for (let i = 0; i < dataRows.length; i++) {
-      result[insertFrom + i] = [...dataRows[i]];
-    }
-
-    log(`✓ ${file.name} — ${sheetName}, ${dataRows.length} rows merged`, 'new');
+  // Log version summary
+  if (ignoredFiles.length) {
+    log('Version check: <strong>' + ignoredFiles.length + ' superseded file(s) will be skipped</strong>', 'inserted');
+    ignoredFiles.forEach(function(e) {
+      log('&nbsp;&nbsp;&#10005; Skipped <em>' + e.file.name + '</em>' +
+        (e.version ? ' (' + e.version + ')' : '') +
+        ' &rarr; ' + e.supersededVer + ' is newer', '');
+    });
   }
 
-  log(`<strong>All files merged!</strong> Total rows: ${result.length}`, 'new');
+  log('Loading master file\u2026');
+  var ms = await readBothSheets(masterFile);
+  var result = ms.sheet1.map(function(row) { return row.slice(); });
+  log('Master loaded &mdash; ' + result.length + ' rows', 'new');
+
+  for (var fi = 0; fi < activeFiles.length; fi++) {
+    var file = activeFiles[fi];
+    log('Processing: <strong>' + file.name + '</strong>');
+    var sheets = await readBothSheets(file);
+    var src    = sheets.sheet2.length ? sheets.sheet2 : sheets.sheet1;
+    var sname  = sheets.sheet2.length ? (sheets.names[1]||'Sheet2') : (sheets.names[0]||'Sheet1');
+
+    var dataRows = src.slice(8).filter(function(row) {
+      return row.some(function(v) { return v !== '' && v !== null && v !== undefined; });
+    });
+
+    var insertFrom = lastDataRow(result) + 1;
+    for (var i = 0; i < dataRows.length; i++) {
+      result[insertFrom + i] = dataRows[i].slice();
+    }
+    log('&#10003; ' + file.name + ' &mdash; ' + sname + ', ' + dataRows.length + ' rows merged', 'new');
+  }
+
+  log('<strong>All files merged!</strong> Total rows: ' + result.length, 'new');
   await exportResult(result);
   document.getElementById('mergeBtn').disabled = false;
 }
 
-// ── EXPORT — write into master ExcelJS workbook from row 8, NO style copying ──
+// ══════════════════════════════════════════════════
+// EXPORT
+// ══════════════════════════════════════════════════
 async function exportResult(result) {
-  log('Writing output file…');
+  log('Writing output file\u2026');
   try {
-    const masterBuffer = await masterFile.arrayBuffer();
-    const wb = new ExcelJS.Workbook();
+    var masterBuffer = await masterFile.arrayBuffer();
+    var wb = new ExcelJS.Workbook();
     await wb.xlsx.load(masterBuffer);
-    const ws = wb.getWorksheet(1);
-
-    // Data rows start at index 7 (row 8 in Excel)
-    // Write each result row into the worksheet directly — values only, no style override
-    const dataRows = result.slice(7); // skip first 7 rows (master header rows 1-7)
-
-    for (let i = 0; i < dataRows.length; i++) {
-      const excelRowNum = 8 + i; // row 8, 9, 10...
-      const rowData = dataRows[i];
-      const exRow = ws.getRow(excelRowNum);
-      rowData.forEach((val, ci) => {
-        exRow.getCell(ci + 1).value = (val === '' || val === null || val === undefined) ? null : val;
+    var ws = wb.getWorksheet(1);
+    var dataRows = result.slice(7);
+    for (var i = 0; i < dataRows.length; i++) {
+      var exRow = ws.getRow(8 + i);
+      dataRows[i].forEach(function(val, ci) {
+        exRow.getCell(ci+1).value = (val===''||val===null||val===undefined) ? null : val;
       });
       exRow.commit();
     }
-
-    const buffer = await wb.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const exportName = (document.getElementById('exportFileName').value.trim() || 'MRS_Merged').replace(/[^a-zA-Z0-9_\-. ]/g, '_');
-    const finalName = `${exportName}_${todayStr()}.xlsx`;
+    var buffer = await wb.xlsx.writeBuffer();
+    var blob   = new Blob([buffer], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    var exportName = (document.getElementById('exportFileName').value.trim()||'MRS_Merged').replace(/[^a-zA-Z0-9_\-. ]/g,'_');
+    var finalName  = exportName + '_' + todayStr() + '.xlsx';
     saveAs(blob, finalName);
-    log(`✅ Downloaded: ${finalName}`, 'new');
+    log('&#9989; Downloaded: ' + finalName, 'new');
   } catch(err) {
     log('Export error: ' + err.message, 'error');
     console.error(err);
   }
 }
 
-// ── DARK MODE ──
+// ══════════════════════════════════════════════════
+// DARK MODE — unified key with index.html (wz-theme)
+// ══════════════════════════════════════════════════
 function toggleDark() {
-  const isDark = document.body.classList.toggle('dark');
-  document.getElementById('darkIcon').textContent = isDark ? '☀️' : '🌙';
+  var isDark = document.body.classList.toggle('dark');
+  document.getElementById('darkIcon').textContent  = isDark ? '\u2600\uFE0F' : '\uD83C\uDF19';
   document.getElementById('darkLabel').textContent = isDark ? 'Light Mode' : 'Dark Mode';
   try { localStorage.setItem('wz-theme', isDark ? 'dark' : 'light'); } catch(e) {}
 }
-(function(){
+(function() {
   try {
-    if (localStorage.getItem('wz-theme') === 'dark') {
+    var theme  = localStorage.getItem('wz-theme');
+    var isDark = (theme === null || theme === 'dark');
+    if (isDark) {
       document.body.classList.add('dark');
-      document.getElementById('darkIcon').textContent = '☀️';
+      document.getElementById('darkIcon').textContent  = '\u2600\uFE0F';
       document.getElementById('darkLabel').textContent = 'Light Mode';
     }
   } catch(e) {}
 })();
 </script>
+</body>
+</html>
