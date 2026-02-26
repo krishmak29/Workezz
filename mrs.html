@@ -132,6 +132,7 @@ body.dark .superseded-table-wrap thead th { background: #3b1212 !important; colo
             style="flex:1;border:none;outline:none;padding:8px 12px;font-family:'IBM Plex Sans',sans-serif;font-size:.82rem;color:var(--text);background:transparent;">
           <span style="padding:8px 12px;font-size:.75rem;font-weight:600;color:var(--muted);background:var(--surface2);border-left:1px solid var(--border);white-space:nowrap;">.xlsx</span>
         </div>
+        <div style="font-size:.62rem;color:var(--muted);margin-top:4px;">✦ Auto-filled from MRS filename · edit freely</div>
       </div>
       <button class="btn btn-success btn-full btn-lg" id="mergeBtn" onclick="runMRSMerge()" disabled>
         &#128256; Merge &amp; Download
@@ -401,13 +402,41 @@ function removeFile(name) {
 }
 
 // ══════════════════════════════════════════════════
-// APPLY VERSION LOGIC + RENDER BOTH CARDS
+// PARSE OR NUMBER FROM MRS FILENAME
+// Format: MRS_FSL_2425_PUN_OR062_02_V0A.xlsx
+// Strategy: strip MRS_ prefix + version suffix + mrs-number suffix → rest is OR part
 // ══════════════════════════════════════════════════
+function parseOrFromFilename(filename) {
+  // Strip extension
+  var bare = filename.replace(/\.(xlsx|xls)$/i, '');
+  // Strip leading MRS_ (case insensitive)
+  bare = bare.replace(/^MRS_/i, '');
+  // Strip trailing _V<digit><alphanumeric> version tag
+  bare = bare.replace(/_(V[0-9][A-Z0-9]*)$/i, '');
+  // Strip trailing _<1-3 digits> mrs number  e.g. _02
+  bare = bare.replace(/_(\d{1,3})$/, '');
+  // What remains is the OR part e.g. FSL_2425_PUN_OR062
+  return bare || '';
+}
+
+function autoSuggestMergedName() {
+  if (!mergeFiles.length) return;
+  // Use the first active file's name
+  var active = deduplicateByVersion(mergeFiles).active;
+  if (!active.length) return;
+  var fname = active[0].file.name;
+  var orPart = parseOrFromFilename(fname);
+  if (!orPart) return;
+  var suggested = 'MRS_' + orPart + '_Merged';
+  var inp = document.getElementById('exportFileName');
+  if (inp) inp.value = suggested;
+}
 function applyAndRender() {
   var result  = deduplicateByVersion(mergeFiles);
   ignoredFiles = result.ignored;
   renderActiveTable(result.active);
   renderIgnoredTable(result.ignored);
+  autoSuggestMergedName();
   checkReady();
 }
 
@@ -647,7 +676,7 @@ async function exportResult(result) {
     var buffer = await wb.xlsx.writeBuffer();
     var blob   = new Blob([buffer], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     var exportName = (document.getElementById('exportFileName').value.trim()||'MRS_Merged').replace(/[^a-zA-Z0-9_\-. ]/g,'_');
-    var finalName  = exportName + '_' + todayStr() + '.xlsx';
+    var finalName  = exportName + '.xlsx';
     saveAs(blob, finalName);
     log('&#9989; Downloaded: ' + finalName, 'new');
   } catch(err) {
