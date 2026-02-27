@@ -42,8 +42,8 @@
     <p class="logo-sub">Browser-based tools for electrical engineering procurement — no installs, no server uploads.</p>
   </div>
 
-
-  <div class="cards">
+  <!-- ROW 1: BOM Generation + MRS Generation (2 cols) -->
+  <div class="cards cards-top">
 
     <a class="tool-card bom" href="bom.html">
       <div class="tool-card-top">
@@ -54,6 +54,21 @@
       <div class="tool-desc">Merge multiple panel sheets, clean part numbers, and export a unified Bill of Materials with MRS quantity matching.</div>
       <div class="tool-arrow">Open Tool →</div>
     </a>
+
+    <a class="tool-card filler" href="mrsgenerator.html">
+      <div class="tool-card-top">
+        <div class="tool-icon">⚡</div>
+        <span class="tool-tag">New</span>
+      </div>
+      <div class="tool-name">MRS Generation</div>
+      <div class="tool-desc">Import EPLAN files and a blank MRS Master — auto-fill the template with part data, quantities and section mapping in one click.</div>
+      <div class="tool-arrow">Open Tool →</div>
+    </a>
+
+  </div>
+
+  <!-- ROW 2: MRS Merger + Procurement Planner + Stock Check (3 cols) -->
+  <div class="cards cards-bottom">
 
     <a class="tool-card mrs" href="mrs.html">
       <div class="tool-card-top">
@@ -75,13 +90,13 @@
       <div class="tool-arrow">Open Tool →</div>
     </a>
 
-    <a class="tool-card filler" href="mrsgenerator.html">
+    <a class="tool-card stock" href="stockcheck.html">
       <div class="tool-card-top">
-        <div class="tool-icon">⚡</div>
+        <div class="tool-icon">🏭</div>
         <span class="tool-tag">New</span>
       </div>
-      <div class="tool-name">MRS Generation</div>
-      <div class="tool-desc">Import EPLAN files and a blank MRS Master — auto-fill the template with part data, quantities and section mapping in one click.</div>
+      <div class="tool-name">Stock Check</div>
+      <div class="tool-desc">Upload your BOM and Open Stock file — see which BOM parts are available in warehouse stock. Export a highlighted BOM and a filtered stock sheet.</div>
       <div class="tool-arrow">Open Tool →</div>
     </a>
 
@@ -104,7 +119,8 @@
       <p class="how-sub">Everything you need to know — inputs, formats, and what you get out.</p>
     </div>
 
-    <div class="how-cards">
+    <!-- ROW 1: BOM Generator + MRS Generation (2 cols) -->
+    <div class="how-cards how-cards-top">
 
       <!-- BOM GENERATOR -->
       <div class="how-card bom">
@@ -147,6 +163,53 @@
           <a class="open-btn" href="bom.html">Open BOM Generator →</a>
         </div>
       </div>
+
+      <!-- MRS GENERATION -->
+      <div class="how-card filler">
+        <div class="how-card-head">
+          <div class="how-card-icon">⚡</div>
+          <div class="how-card-title">MRS Generation</div>
+          <span class="how-card-tag">New</span>
+        </div>
+        <div class="how-card-body filler">
+          <div class="info-block">
+            <div class="info-block-label what"><span>What It Does</span></div>
+            <p>Takes your EPLAN export files and a blank MRS Master template, extracts all part data, and writes it directly into the MRS format — producing a filled, ready-to-use MRS file.</p>
+          </div>
+          <div class="divider"></div>
+          <div class="info-block">
+            <div class="info-block-label req"><span>Requirements</span></div>
+            <p>One or more EPLAN files (.xls / .xlsx) as data source. One blank MRS Master template to fill. Additional field values entered manually in Step 2.</p>
+            <div class="tag-row">
+              <span class="tag amber">1+ EPLAN files</span><span class="tag amber">1 Blank Master</span>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="info-block">
+            <div class="info-block-label fmt"><span>Excel Format Expected</span></div>
+            <p>EPLAN files: configurable column mapping (Part No, Description, Make, Qty). MRS Master: your standard blank template — format and headers preserved as-is.</p>
+            <div class="tag-row">
+              <span class="tag">EPLAN col mapping</span><span class="tag">MRS col mapping</span>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="info-block">
+            <div class="info-block-label out"><span>What You Get</span></div>
+            <p>A fully filled MRS file built on your master template — all EPLAN parts mapped in, section info filled, ready to drop straight into the MRS Merger tool.</p>
+            <div class="tag-row">
+              <span class="tag green">Filled MRS</span><span class="tag green">Master format kept</span><span class="tag green">MRS Merger ready</span>
+            </div>
+          </div>
+        </div>
+        <div class="how-card-footer">
+          <a class="open-btn" href="mrsfiller.html">Open MRS Generation →</a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ROW 2: MRS Merger + Procurement Planner + Stock Check (3 cols) -->
+    <div class="how-cards how-cards-bottom">
 
       <!-- MRS MERGER -->
       <div class="how-card mrs">
@@ -232,45 +295,45 @@
         </div>
       </div>
 
-      <!-- MRS FILLER -->
-      <div class="how-card filler">
+      <!-- STOCK CHECK -->
+      <div class="how-card stock">
         <div class="how-card-head">
-          <div class="how-card-icon">⚡</div>
-          <div class="how-card-title">MRS Generation</div>
+          <div class="how-card-icon">🏭</div>
+          <div class="how-card-title">Stock Check</div>
           <span class="how-card-tag">New</span>
         </div>
-        <div class="how-card-body filler">
+        <div class="how-card-body stock">
           <div class="info-block">
             <div class="info-block-label what"><span>What It Does</span></div>
-            <p>Takes your EPLAN export files and a blank MRS Master template, extracts all part data, and writes it directly into the MRS format — producing a filled, ready-to-use MRS file.</p>
+            <p>Cross-references your BOM part numbers against your Open Stock file. Instantly shows which parts are already available in the warehouse so you know what doesn't need to be ordered.</p>
           </div>
           <div class="divider"></div>
           <div class="info-block">
             <div class="info-block-label req"><span>Requirements</span></div>
-            <p>One or more EPLAN files (.xls / .xlsx) as data source. One blank MRS Master template to fill. Additional field values entered manually in Step 2.</p>
+            <p>One BOM file (.xls / .xlsx) with part numbers in a configurable column. One Open Stock file in the standard format — Part No in col F, Qty in col H, Status in col D.</p>
             <div class="tag-row">
-              <span class="tag amber">1+ EPLAN files</span><span class="tag amber">1 Blank Master</span>
+              <span class="tag blue">1 BOM file</span><span class="tag blue">1 Open Stock file</span><span class="tag amber">Col D = OPEN filter</span>
             </div>
           </div>
           <div class="divider"></div>
           <div class="info-block">
-            <div class="info-block-label fmt"><span>Excel Format Expected</span></div>
-            <p>EPLAN files: configurable column mapping (Part No, Description, Make, Qty). MRS Master: your standard blank template — format and headers preserved as-is.</p>
+            <div class="info-block-label fmt"><span>Stock File Format</span></div>
+            <p>Standard Open Stock format: Col D = Office status (only "OPEN" rows counted), Col F = Type No (Part Number), Col H = In Stock Qty. Data starts from row 3.</p>
             <div class="tag-row">
-              <span class="tag">EPLAN col mapping</span><span class="tag">MRS col mapping</span>
+              <span class="tag">Col F → Part No</span><span class="tag">Col H → Qty</span><span class="tag">Col D → OPEN</span>
             </div>
           </div>
           <div class="divider"></div>
           <div class="info-block">
             <div class="info-block-label out"><span>What You Get</span></div>
-            <p>A fully filled MRS file built on your master template — all EPLAN parts mapped in, section info filled, ready to drop straight into the MRS Merger tool.</p>
+            <p>A 2-sheet Excel export. Sheet 1 is your full BOM with matching parts highlighted. Sheet 2 is the Open Stock — filtered to only rows whose part number appears in your BOM.</p>
             <div class="tag-row">
-              <span class="tag green">Filled MRS</span><span class="tag green">Master format kept</span><span class="tag green">MRS Merger ready</span>
+              <span class="tag blue">BOM highlighted</span><span class="tag blue">Filtered stock sheet</span><span class="tag blue">In-stock qty column</span>
             </div>
           </div>
         </div>
         <div class="how-card-footer">
-          <a class="open-btn" href="mrsfiller.html">Open MRS Filler →</a>
+          <a class="open-btn" href="stockcheck.html">Open Stock Check →</a>
         </div>
       </div>
 
@@ -284,24 +347,19 @@
 
 <script>
 function toggleMode(){
-  // index.html: dark=default(no class), light=body.light
-  // toggle: if currently light, go dark; if dark, go light
   var isLight=document.body.classList.toggle('light');
   document.getElementById('modeIcon').textContent=isLight?'🌙':'☀️';
   document.getElementById('modeLbl').textContent=isLight?'Dark':'Light';
-  // Shared key 'wz-theme' read by all tools — always write so cross-page sync works
   try{localStorage.setItem('wz-theme',isLight?'light':'dark');}catch(e){}
 }
 (function(){
   try{
     var saved=localStorage.getItem('wz-theme');
-    // Default is dark. Only apply light class if explicitly set to light.
     if(saved==='light'){
       document.body.classList.add('light');
       document.getElementById('modeIcon').textContent='🌙';
       document.getElementById('modeLbl').textContent='Dark';
     }
-    // If 'dark' or null → default dark, button shows ☀️ Light (already in HTML)
   }catch(e){}
 })();
 </script>

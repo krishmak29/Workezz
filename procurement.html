@@ -48,9 +48,10 @@
 
 <!-- SCREEN 1 -->
 <div class="screen active" id="screen1">
-  <div class="s1-layout">
+  <div class="s1-layout" style="grid-template-columns:1fr 1fr;gap:0;">
 
-    <div class="s1-panel">
+    <!-- LEFT COLUMN: BOM -->
+    <div class="s1-panel" style="border-right:1px solid var(--border);">
       <div>
         <div class="panel-title">&#128202; BOM Sheet</div>
         <div class="panel-sub">Bill of Materials — panel quantities per part</div>
@@ -101,6 +102,7 @@
       </div>
     </div>
 
+    <!-- RIGHT COLUMN: MRS panel -->
     <div class="s1-panel">
       <div>
         <div class="panel-title">&#128256; MRS Sheet</div>
@@ -155,10 +157,12 @@
       </div>
     </div>
 
-  </div>
-  <div class="s1-footer">
-    <span id="s1hint" style="font-size:.74rem;color:var(--muted);">Upload both BOM and MRS sheets to continue</span>
-    <button class="btn btn-primary btn-lg" id="processBtn" onclick="processData()" disabled>Process Data &#8594;</button>
+  </div><!-- end s1-layout -->
+  <div class="s1-footer" style="position:sticky;bottom:0;z-index:10;background:var(--white);border-top:2px solid var(--border);box-shadow:0 -4px 16px rgba(30,34,53,.10);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+    <div style="display:flex;flex-direction:column;gap:2px;">
+      <span id="s1hint" style="font-size:.74rem;color:var(--muted);">Upload both BOM and MRS sheets to continue</span>
+    </div>
+    <button class="btn btn-primary btn-lg" id="processBtn" onclick="processData()" disabled style="min-width:160px;font-size:.85rem;padding:10px 24px;border-radius:8px;box-shadow:0 2px 8px rgba(37,99,235,.25);">Process Data &#8594;</button>
   </div>
 </div>
 
@@ -188,7 +192,7 @@
     <div class="export-card">
       <div style="font-size:2.5rem;margin-bottom:12px;">&#128229;</div>
       <h2>Export Procurement Plan</h2>
-      <p>Exports 4 sheets: Panel Comparison &middot; Unmatched MRS &middot; Parts to Order &middot; Excess Parts.</p>
+      <p id="exportSheetDesc">Exports 4 sheets: Panel Comparison &middot; Unmatched MRS &middot; Parts to Order &middot; Excess Parts.</p>
       <div class="export-summary" id="exportSummary"></div>
       <div style="margin-bottom:16px;text-align:left;">
         <div style="font-size:.68rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Output File Name</div>
@@ -213,7 +217,8 @@ function fmtSz(b) { if(b<1024)return b+' B'; if(b<1048576)return (b/1024).toFixe
 function todayStr() { return new Date().toISOString().slice(0,10); }
 
 // ── PERSIST ──
-var PKEYS = ['bomColPart','bomColDesc','bomColMake','bomStartRow','bomColPanelStart','bomPanelCount','mrsColPart','mrsColSection','mrsColQty','mrsColMake','mrsColDesc','mrsStartRow'];
+var PKEYS = ['bomColPart','bomColDesc','bomColMake','bomStartRow','bomColPanelStart','bomPanelCount',
+             'mrsColPart','mrsColSection','mrsColQty','mrsColMake','mrsColDesc','mrsStartRow'];
 function saveSettings() {
   try {
     var obj = {};
@@ -286,6 +291,7 @@ function clearMRS() {
   if (expInp) expInp.value = 'Procurement_Plan';
   checkReady();
 }
+
 function checkReady() {
   var ok = !!(bomFile && mrsFile);
   document.getElementById('processBtn').disabled = !ok;
@@ -330,9 +336,12 @@ async function processData() {
   var mCM     = colIdx(document.getElementById('mrsColMake').value||'E');
   var mCDesc  = colIdx(document.getElementById('mrsColDesc').value||'D');
   var bPC     = parseInt(document.getElementById('bomPanelCount').value)||0;
-
   var res = await Promise.all([readExcel(bomFile), readExcel(mrsFile)]);
   var bomData=res[0], mrsData=res[1];
+
+  // empty stockMap — kept as no-op so downstream references to stockMap.has() are safe
+  var stockMap = new Map();
+  var stockRawRows = [];
 
   // panels from BOM row 1
   var hdr = bomData[0]||[];
@@ -358,7 +367,7 @@ async function processData() {
     });
   }
 
-  // MRS rows — store {make, desc, sections: Map(section->qty)} per part key
+  // MRS rows
   var mrsMap=new Map();
   for(var j=mrsSR-1;j<mrsData.length;j++){
     var mr=mrsData[j];
@@ -377,13 +386,11 @@ async function processData() {
       });
     }
     var mrsEntry=mrsMap.get(mk);
-    // Fill make/desc from first row that has them if not already set
     if(!mrsEntry.make) mrsEntry.make=String(mr[mCM]||'').trim();
     if(!mrsEntry.desc) mrsEntry.desc=String(mr[mCDesc]||'').trim();
     mrsEntry.sections.set(ms,(mrsEntry.sections.get(ms)||0)+mq);
   }
 
-  // panelRows for viz
   var panelRows=new Map();
   panels.forEach(function(p){panelRows.set(p.name,[]);});
   var gsr=1;
@@ -400,18 +407,15 @@ async function processData() {
     });
   });
 
-  // Unmatched MRS — parts in MRS with no match in BOM
+  // Unmatched MRS
   var unmatchedMRS=[];
   mrsMap.forEach(function(mrsEntry,key){
     if(!partsMap.has(key)){
       mrsEntry.sections.forEach(function(qty,panel){
         unmatchedMRS.push({
-          partNum: mrsEntry.desc ? key : key,  // keep original key as part number lookup
-          partNumDisplay: key,
-          make: mrsEntry.make||'',
-          desc: mrsEntry.desc||'',
-          panel: panel,
-          qty: qty
+          partNum: key, partNumDisplay: key,
+          make: mrsEntry.make||'', desc: mrsEntry.desc||'',
+          panel: panel, qty: qty
         });
       });
     }
@@ -456,10 +460,18 @@ async function processData() {
     });
   });
 
-  processedData={panels:panels,partsMap:partsMap,panelRows:panelRows,mrsMap:mrsMap,unmatchedMRS:unmatchedMRS,excessParts:excessParts,shortParts:shortParts,toOrderParts:toOrderParts};
+  // count stock matches for stats card — always 0 (no stock file)
+  var stockMatchCount = 0;
+
+  processedData={panels:panels,partsMap:partsMap,panelRows:panelRows,mrsMap:mrsMap,unmatchedMRS:unmatchedMRS,excessParts:excessParts,shortParts:shortParts,toOrderParts:toOrderParts,stockMap:stockMap,stockRawRows:stockRawRows,stockMatchCount:stockMatchCount};
 
   document.getElementById('processBtn').disabled=false;
   document.getElementById('processBtn').textContent='Process Data \u2192';
+
+  // fixed: always 4 sheets
+  var desc = document.getElementById('exportSheetDesc');
+  if (desc) desc.textContent = 'Exports 4 sheets: Panel Comparison · Unmatched MRS · Parts to Order · Excess Parts.';
+
   renderVisualization();
   goTo(2);
 }
@@ -613,7 +625,7 @@ async function exportExcel(){
     for(var idx=0;idx<allParts.length;idx++){
       if(idx%100===0&&idx>0) await new Promise(function(r){setTimeout(r,0);});
       var part=allParts[idx]; var key=part.partNum.toLowerCase();
-      var rbg=idx%2===0?C.RL:C.RD;
+      var rbg = idx%2===0 ? C.RL : C.RD;
       var dr=ws1.addRow([]); dr.height=17;
       sc(dr.getCell(1),{val:idx+1,bg:rbg,sz:9,halign:'center'});
       sc(dr.getCell(2),{val:part.make||'',bg:rbg,sz:9});
@@ -624,11 +636,11 @@ async function exportExcel(){
         var rq=part.panelQtys[pl.name]||0;
         var mq=(mrsMap.has(key)&&mrsMap.get(key).sections.has(pl.name))?mrsMap.get(key).sections.get(pl.name):0;
         var st,sb,sf;
-        if(rq===0)       {st='';           sb=rbg;   sf=C.GF2;}
-        else if(mq===0)  {st='No MRS';     sb=C.GB2;  sf=C.GF2;}
-        else if(mq>rq)   {st='+'+(mq-rq)+' Excess';sb=C.GB;sf=C.GF;}
-        else if(mq<rq)   {st='-'+(rq-mq)+' Short'; sb=C.RRB;sf=C.RF;}
-        else             {st='Exact \u2713';sb=C.AB;sf=C.AF;}
+        if(rq===0)       {st='';             sb=rbg;    sf=C.GF2;}
+        else if(mq===0)  {st='No MRS';       sb=C.GB2;  sf=C.GF2;}
+        else if(mq>rq)   {st='+'+(mq-rq)+' Excess';    sb=C.GB;   sf=C.GF;}
+        else if(mq<rq)   {st='-'+(rq-mq)+' Short';     sb=C.RRB;  sf=C.RF;}
+        else             {st='Exact \u2713';            sb=C.AB;   sf=C.AF;}
         sc(dr.getCell(psc),  {val:rq||'',bg:rbg,sz:9,bold:rq>0,halign:'center'});
         sc(dr.getCell(psc+1),{val:mq||'',bg:rbg,sz:9,bold:mq>0,halign:'center',fg:C.PH});
         sc(dr.getCell(psc+2),{val:st,bg:sb,sz:9,bold:true,halign:'center',fg:sf,rm:true});
@@ -675,11 +687,82 @@ async function exportExcel(){
     if(!uByPart.size){var nr2=ws2.addRow(['No unmatched MRS parts']);nr2.getCell(1).font={italic:true,size:9,color:{argb:C.GF2}};}
     await new Promise(function(r){setTimeout(r,0);});
 
-    // SHEET 3 — Parts to Order
-    var ws3=wb.addWorksheet('Parts to Order');
-    mkHdr(ws3,['SR','Make','Part Number','Part Description','Total Qty Required'],C.RF,[5,20,26,45,18]);
-    toOrderParts.forEach(function(pt,i){dRow(ws3,[i+1,pt.make||'—',pt.partNum,pt.desc||'—',pt.totalReq],i,5,C.RF,'FFFFF5F5','FFFEF2F2');});
-    if(!toOrderParts.length){var nr3=ws3.addRow(['No parts need ordering']);nr3.getCell(1).font={italic:true,size:9,color:{argb:C.GF}};}
+    // SHEET 3 — Parts to Order (with per-panel qty breakdown, only short parts)
+    var ws3 = wb.addWorksheet('Parts to Order');
+    // Collect only the panels where each part is SHORT (mrsQty < reqQty)
+    // Build a map: partKey → { partNum, make, desc, panelQtys:{panelName→reqQty}, total }
+    var orderDetailMap = new Map();
+    partsMap.forEach(function(part, key) {
+      panels.forEach(function(pl) {
+        var rq = part.panelQtys[pl.name] || 0; if (!rq) return;
+        var mq = (mrsMap.has(key) && mrsMap.get(key).sections.has(pl.name)) ? mrsMap.get(key).sections.get(pl.name) : 0;
+        if (mq < rq) { // only short panels
+          if (!orderDetailMap.has(key)) orderDetailMap.set(key, { partNum: part.partNum, make: part.make, desc: part.desc, panelQtys: {}, total: 0 });
+          orderDetailMap.get(key).panelQtys[pl.name] = rq;
+          orderDetailMap.get(key).total += rq;
+        }
+      });
+    });
+    var orderDetailParts = Array.from(orderDetailMap.values());
+    // Column headers: SR, Make, Part Number, Part Description, [panel names...], Total Required
+    var s3PanelNames = panels.map(function(pl) { return pl.name; });
+    var s3Headers = ['SR','Make','Part Number','Part Description'].concat(s3PanelNames).concat(['Total Required']);
+    var s3Widths  = [5,20,26,45].concat(s3PanelNames.map(function(){ return 14; })).concat([16]);
+    mkHdr(ws3, s3Headers, C.RF, s3Widths);
+    // recolour panel header cols amber so they stand out
+    var s3hr = ws3.getRow(1);
+    for (var s3ci = 5; s3ci <= 4 + s3PanelNames.length; s3ci++) {
+      s3hr.getCell(s3ci).fill = { type:'pattern', pattern:'solid', fgColor:{ argb: C.AF } };
+      s3hr.getCell(s3ci).font = { bold:true, size:9, color:{ argb:'FFFFFFFF' }, name:'Calibri' };
+    }
+    // Last "Total" col stays red
+    var s3TotalCol = ws3.getRow(1).getCell(5 + s3PanelNames.length);
+    s3TotalCol.fill = { type:'pattern', pattern:'solid', fgColor:{ argb: C.RF } };
+    s3TotalCol.font = { bold:true, size:9, color:{ argb:'FFFFFFFF' }, name:'Calibri' };
+
+    if (orderDetailParts.length) {
+      orderDetailParts.forEach(function(pt, ri) {
+        var vals = [ri+1, pt.make||'—', pt.partNum, pt.desc||'—'];
+        s3PanelNames.forEach(function(pn) { vals.push(pt.panelQtys[pn] || ''); });
+        vals.push(pt.total);
+        var r3 = ws3.addRow(vals); r3.height = 17;
+        var bg = ri%2===0 ? 'FFFFF5F5' : 'FFFEF2F2';
+        vals.forEach(function(_, ci) {
+          var c = r3.getCell(ci+1);
+          c.fill = { type:'pattern', pattern:'solid', fgColor:{ argb: bg } };
+          var isPartCol   = (ci === 2);
+          var isTotalCol  = (ci === vals.length - 1);
+          var isPanelCol  = (ci >= 4 && ci < vals.length - 1);
+          c.font = {
+            size: 9,
+            name: isPartCol ? 'Courier New' : 'Calibri',
+            bold: isTotalCol || isPanelCol,
+            color: { argb: isTotalCol ? C.RF : (isPartCol ? C.DB : 'FF1F2937') }
+          };
+          c.alignment = { vertical:'middle', horizontal: (ci < 4 ? 'left' : 'center'), wrapText: ci===3 };
+          c.border = { bottom:{style:'thin',color:{argb:'FFE5E7EB'}}, right:{style:'thin',color:{argb:'FFE5E7EB'}} };
+        });
+      });
+      // Total row at bottom
+      var totalRowVals = ['', '', '', 'TOTAL'];
+      var grandTotal = 0;
+      s3PanelNames.forEach(function(pn) {
+        var pSum = orderDetailParts.reduce(function(acc, pt) { return acc + (pt.panelQtys[pn] || 0); }, 0);
+        grandTotal += pSum;
+        totalRowVals.push(pSum || '');
+      });
+      totalRowVals.push(grandTotal);
+      var tr3 = ws3.addRow(totalRowVals); tr3.height = 19;
+      totalRowVals.forEach(function(_, ci) {
+        var c = tr3.getCell(ci+1);
+        c.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFFEE2E2' } };
+        c.font = { bold:true, size:9, color:{ argb: C.RF }, name:'Calibri' };
+        c.alignment = { vertical:'middle', horizontal: ci < 4 ? 'left' : 'center' };
+        c.border = { top:{style:'medium',color:{argb:C.RF}}, bottom:{style:'medium',color:{argb:C.RF}}, right:{style:'thin',color:{argb:'FFE5E7EB'}} };
+      });
+    } else {
+      var nr3 = ws3.addRow(['No parts need ordering']); nr3.getCell(1).font = { italic:true, size:9, color:{ argb:C.GF } };
+    }
     await new Promise(function(r){setTimeout(r,0);});
 
     // SHEET 4 — Excess Parts

@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workezz — Stock Check</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#eef0f5;--white:#fff;--surface:#f7f8fb;--surface2:#eceef4;
+  --border:#dde0ea;--border2:#c8ccda;
+  --text:#1e2235;--text2:#4a5072;--muted:#8890aa;
+  --success:#15803d;--success-bg:#dcfce7;--success-border:#86efac;
+  --danger:#b91c1c;--danger-bg:#fee2e2;--danger-border:#fca5a5;
+  --shadow:0 1px 3px rgba(30,34,53,.07),0 1px 2px rgba(30,34,53,.05);
+  --shadow-md:0 4px 16px rgba(30,34,53,.09);
+  --radius:10px;--radius-sm:6px;
+  --bom:#059669;--bom-light:#d1fae5;--bom-mid:#6ee7b7;--bom-dark:#065f46;
+  --stk:#0369a1;--stk-light:#e0f2fe;--stk-mid:#7dd3fc;--stk-dark:#075985;
+}
+html,body{height:100%;font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;}
+header{background:var(--white);border-bottom:1px solid var(--border);padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow-md);flex-shrink:0;}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.3rem;letter-spacing:-.02em;color:var(--text);}
+.logo span{color:var(--bom);}
+.logo-sub{font-size:.62rem;color:var(--muted);font-weight:500;letter-spacing:.04em;margin-top:-2px;}
+.home-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--radius-sm);font-size:.78rem;font-weight:600;color:var(--text2);background:var(--surface2);border:1px solid var(--border2);cursor:pointer;text-decoration:none;transition:all .15s;}
+.home-btn:hover{background:var(--bom-light);color:var(--bom);border-color:var(--bom);}
+.dark-toggle{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:100px;padding:5px 12px;cursor:pointer;font-size:.75rem;font-weight:600;color:var(--text2);transition:all .2s;font-family:'IBM Plex Sans',sans-serif;}
+.dark-toggle:hover{background:var(--bom-light);color:var(--bom);border-color:var(--bom);}
+.main{display:grid;grid-template-columns:1fr 1fr;flex:1;overflow:hidden;}
+.panel{padding:28px 24px;display:flex;flex-direction:column;gap:18px;overflow-y:auto;}
+.panel-bom{border-right:1px solid var(--border);}
+.panel-title{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:2px;}
+.panel-sub{font-size:.74rem;color:var(--muted);}
+.upload-zone{border:2px dashed var(--border2);border-radius:var(--radius);padding:32px 16px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface);}
+.bom-zone{border-color:var(--bom-mid);background:#f0fdf4;}
+.bom-zone:hover{border-color:var(--bom);background:var(--bom-light);}
+.stk-zone{border-color:var(--stk-mid);background:var(--stk-light);}
+.stk-zone:hover{border-color:var(--stk);background:#bae6fd;}
+.uz-icon{font-size:2.2rem;margin-bottom:10px;display:block;}
+.uz-text{font-size:.82rem;line-height:1.6;}
+.uz-sub{font-size:.68rem;color:var(--muted);margin-top:4px;}
+.file-chip{display:flex;align-items:center;gap:10px;border-radius:var(--radius-sm);padding:10px 14px;border:1px solid;}
+.bom-chip{background:var(--bom-light);border-color:var(--bom-mid);}
+.stk-chip{background:var(--stk-light);border-color:var(--stk-mid);}
+.fc-icon{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:700;font-family:'IBM Plex Mono',monospace;flex-shrink:0;color:#fff;}
+.bom-chip .fc-icon{background:var(--bom);}
+.stk-chip .fc-icon{background:var(--stk);}
+.fc-info{flex:1;min-width:0;}
+.fc-name{font-size:.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bom-chip .fc-name{color:var(--bom);}
+.stk-chip .fc-name{color:var(--stk);}
+.fc-sub{font-size:.68rem;color:var(--muted);}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;border-radius:var(--radius-sm);font-family:'IBM Plex Sans',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .15s;border:none;white-space:nowrap;}
+.btn-green{background:var(--bom);color:#fff;box-shadow:0 1px 3px rgba(5,150,105,.3);}
+.btn-green:hover:not(:disabled){background:var(--bom-dark);transform:translateY(-1px);}
+.btn-green:disabled{background:var(--border2);color:var(--muted);cursor:not-allowed;box-shadow:none;transform:none;}
+.btn-danger-outline{background:transparent;color:var(--danger);border:1px solid var(--danger-border);}
+.btn-danger-outline:hover{background:var(--danger-bg);}
+.btn-lg{padding:11px 22px;font-size:.9rem;}
+.btn-sm{padding:4px 10px;font-size:.72rem;}
+.col-map-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);}
+.section-label{font-size:.68rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.col-map-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
+.col-map-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);}
+.col-map-label{font-size:.74rem;font-weight:600;color:var(--text2);}
+.col-input{width:52px;padding:4px 7px;border:1px solid var(--border);border-radius:4px;font-family:'IBM Plex Mono',monospace;font-size:.78rem;text-align:center;outline:none;background:var(--white);color:var(--text);}
+.col-input:focus{border-color:var(--bom);}
+.badge{border-radius:var(--radius-sm);padding:8px 14px;font-size:.72rem;line-height:1.7;}
+.badge-green{background:var(--success-bg);border:1px solid var(--success-border);color:var(--success);}
+.badge-teal{background:var(--stk-light);border:1px solid var(--stk-mid);color:var(--stk);}
+.info-note{border-radius:var(--radius-sm);padding:12px 14px;font-size:.73rem;line-height:1.7;}
+.note-green{background:var(--bom-light);border:1px solid var(--bom-mid);color:var(--bom-dark);}
+.note-teal{background:var(--stk-light);border:1px solid var(--stk-mid);color:var(--stk-dark);}
+.footer-bar{padding:16px 24px;background:var(--white);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:16px;flex-shrink:0;box-shadow:0 -1px 4px rgba(30,34,53,.05);}
+.fname-wrap{display:flex;align-items:center;border:1px solid var(--border2);border-radius:var(--radius-sm);overflow:hidden;}
+.fname-wrap input{border:none;outline:none;padding:8px 12px;font-family:'IBM Plex Sans',sans-serif;font-size:.82rem;color:var(--text);background:transparent;width:180px;}
+.fname-wrap span{padding:8px 12px;font-size:.74rem;font-weight:600;color:var(--muted);background:var(--surface2);border-left:1px solid var(--border);}
+body.dark{
+  --bg:#13151f;--white:#1e2235;--surface:#252840;--surface2:#2d3148;
+  --border:#363b58;--border2:#444968;--text:#e8eaf2;--text2:#9ba3c0;--muted:#6b7494;
+  --success:#22c55e;--success-bg:#0f2d1a;--success-border:#166334;
+  --danger:#f87171;--danger-bg:#2d0f0f;--danger-border:#991b1b;
+  --bom:#34d399;--bom-light:#052e16;--bom-mid:#065f46;--bom-dark:#6ee7b7;
+  --stk:#38bdf8;--stk-light:#0c1f2e;--stk-mid:#0369a1;--stk-dark:#bae6fd;
+  --shadow:0 1px 3px rgba(0,0,0,.3);--shadow-md:0 4px 16px rgba(0,0,0,.4);
+}
+body.dark header,body.dark .footer-bar{background:#1a1d2e;border-color:#2a2e45;}
+body.dark .col-map-card{background:var(--surface);}
+body.dark .col-input,body.dark .fname-wrap input{background:var(--surface2);color:var(--text);}
+</style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center;gap:14px;">
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+      <rect width="32" height="32" rx="8" fill="#059669"/>
+      <path d="M7 10L12 22L16 13L20 22L25 10" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="16" cy="13" r="1.5" fill="white"/>
+    </svg>
+    <div>
+      <div class="logo">Work<span>ezz</span></div>
+      <div class="logo-sub">Stock Check</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <button class="dark-toggle" onclick="toggleDark()">
+      <span id="darkIcon">🌙</span>
+      <span id="darkLabel">Dark Mode</span>
+    </button>
+    <a class="home-btn" href="index.html">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Home
+    </a>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- ═══ LEFT: BOM ═══ -->
+  <div class="panel panel-bom">
+    <div>
+      <div class="panel-title" style="color:var(--bom);">📊 BOM File</div>
+      <div class="panel-sub">Your Bill of Materials — all parts to cross-check against stock</div>
+    </div>
+
+    <input type="file" id="bomInput" accept=".xls,.xlsx" style="display:none;" onchange="handleBOM(this)">
+    <div id="bomEmptyZone" class="upload-zone bom-zone" onclick="document.getElementById('bomInput').click()">
+      <span class="uz-icon">📊</span>
+      <div class="uz-text"><strong style="color:var(--bom);">Click to upload BOM File</strong></div>
+      <div class="uz-sub">.xls or .xlsx</div>
+    </div>
+    <div id="bomChip" class="file-chip bom-chip" style="display:none;">
+      <div class="fc-icon" id="bomExt">XLS</div>
+      <div class="fc-info">
+        <div class="fc-name" id="bomName">—</div>
+        <div class="fc-sub" id="bomSize">—</div>
+      </div>
+      <button class="btn btn-danger-outline btn-sm" onclick="clearBOM()">✕</button>
+    </div>
+    <div id="bomPreview" class="badge badge-green" style="display:none;"><span id="bomPreviewTxt"></span></div>
+
+    <div class="col-map-card">
+      <div class="section-label">BOM Column Mapping</div>
+      <div style="font-size:.72rem;color:var(--muted);margin-bottom:10px;">Which column holds the Part Number?</div>
+      <div class="col-map-grid">
+        <div class="col-map-item">
+          <span class="col-map-label">Part Number Col</span>
+          <input class="col-input" id="bomColPart" value="C" maxlength="2" oninput="this.value=this.value.toUpperCase()">
+        </div>
+        <div class="col-map-item">
+          <span class="col-map-label">Data Start Row</span>
+          <input class="col-input" id="bomStartRow" value="2" maxlength="4" type="number" min="1">
+        </div>
+      </div>
+    </div>
+
+    <div class="info-note note-green">
+      ℹ️&nbsp; <strong>Sheet 1</strong> of the export = your full BOM. Rows whose Part Number is found in the Open Stock (status = OPEN) are <strong>highlighted green</strong>, with available qty shown in an extra column.
+    </div>
+  </div>
+
+  <!-- ═══ RIGHT: Open Stock ═══ -->
+  <div class="panel">
+    <div>
+      <div class="panel-title" style="color:var(--stk);">🏭 Open Stock File</div>
+      <div class="panel-sub">Warehouse inventory — only rows where Status col = <strong>OPEN</strong> are used</div>
+    </div>
+
+    <input type="file" id="stockInput" accept=".xls,.xlsx" style="display:none;" onchange="handleStock(this)">
+    <div id="stockEmptyZone" class="upload-zone stk-zone" onclick="document.getElementById('stockInput').click()">
+      <span class="uz-icon">🏭</span>
+      <div class="uz-text"><strong style="color:var(--stk);">Click to upload Open Stock File</strong></div>
+      <div class="uz-sub">.xls or .xlsx</div>
+    </div>
+    <div id="stockChip" class="file-chip stk-chip" style="display:none;">
+      <div class="fc-icon" id="stockExt">XLS</div>
+      <div class="fc-info">
+        <div class="fc-name" id="stockName">—</div>
+        <div class="fc-sub" id="stockSize">—</div>
+      </div>
+      <button class="btn btn-danger-outline btn-sm" onclick="clearStock()">✕</button>
+    </div>
+    <div id="stockPreview" class="badge badge-teal" style="display:none;"><span id="stockPreviewTxt"></span></div>
+
+    <div class="col-map-card" style="border-color:var(--stk-mid);">
+      <div class="section-label" style="color:var(--stk);">Stock Column Mapping</div>
+      <div style="font-size:.72rem;color:var(--muted);margin-bottom:10px;">Pre-set to standard Open Stock format</div>
+      <div class="col-map-grid">
+        <div class="col-map-item">
+          <span class="col-map-label">Part No. col <span style="font-size:.6rem;color:var(--muted);">(Type No)</span></span>
+          <input class="col-input" id="stockColPart" value="F" maxlength="2" oninput="this.value=this.value.toUpperCase()" style="border-color:var(--stk-mid);">
+        </div>
+        <div class="col-map-item">
+          <span class="col-map-label">Status col <span style="font-size:.6rem;color:var(--stk);">(OPEN filter)</span></span>
+          <input class="col-input" id="stockColStatus" value="D" maxlength="2" oninput="this.value=this.value.toUpperCase()" style="border-color:var(--stk-mid);">
+        </div>
+        <div class="col-map-item">
+          <span class="col-map-label">In-Stock qty col</span>
+          <input class="col-input" id="stockColQty" value="H" maxlength="2" oninput="this.value=this.value.toUpperCase()" style="border-color:var(--stk-mid);">
+        </div>
+        <div class="col-map-item">
+          <span class="col-map-label">Data start row</span>
+          <input class="col-input" id="stockStartRow" value="3" maxlength="4" type="number" min="1" style="border-color:var(--stk-mid);">
+        </div>
+      </div>
+    </div>
+
+    <div class="info-note note-teal">
+      ℹ️&nbsp; <strong>Sheet 2</strong> of the export = Open Stock filtered to only rows whose Part Number appears in your BOM. Every other stock row is excluded.
+    </div>
+  </div>
+
+</div><!-- end main -->
+
+<!-- FOOTER BAR -->
+<div class="footer-bar">
+  <div style="display:flex;flex-direction:column;gap:4px;">
+    <span id="hint" style="font-size:.74rem;color:var(--muted);">Upload BOM and Open Stock files to continue</span>
+    <span id="matchHint" style="font-size:.72rem;color:var(--success);font-weight:600;display:none;"></span>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div>
+      <div style="font-size:.65rem;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;">Output filename</div>
+      <div class="fname-wrap">
+        <input id="exportFileName" type="text" value="Stock_Check" placeholder="Stock_Check">
+        <span>.xlsx</span>
+      </div>
+    </div>
+    <button class="btn btn-green btn-lg" id="runBtn" onclick="runCheck()" disabled>&#8595; Export Excel</button>
+  </div>
+</div>
+
+<script>
+var bomFile = null, stockFile = null;
+function colIdx(l){ return l.toUpperCase().charCodeAt(0)-65; }
+function fmtSz(b){ if(b<1024)return b+' B'; if(b<1048576)return (b/1024).toFixed(1)+' KB'; return (b/1048576).toFixed(1)+' MB'; }
+
+function readExcel(file){
+  return new Promise(function(resolve){
+    var r=new FileReader();
+    r.onload=function(e){
+      try{
+        var wb=XLSX.read(e.target.result,{type:'array'});
+        var best=[],bestN=0;
+        for(var i=0;i<wb.SheetNames.length;i++){
+          var ws=wb.Sheets[wb.SheetNames[i]];
+          var data=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true});
+          var n=data.filter(function(r){return r.some(function(v){return v!=='';});}).length;
+          if(n>bestN){bestN=n;best=data;}
+        }
+        resolve(best);
+      }catch(e){resolve([]);}
+    };
+    r.readAsArrayBuffer(file);
+  });
+}
+
+function handleBOM(input){
+  if(!input.files.length)return;
+  bomFile=input.files[0]; input.value='';
+  document.getElementById('bomEmptyZone').style.display='none';
+  document.getElementById('bomChip').style.display='flex';
+  document.getElementById('bomExt').textContent=bomFile.name.split('.').pop().toUpperCase();
+  document.getElementById('bomName').textContent=bomFile.name;
+  document.getElementById('bomSize').textContent=fmtSz(bomFile.size);
+  readExcel(bomFile).then(function(data){
+    var sr=parseInt(document.getElementById('bomStartRow').value)||2;
+    var cp=colIdx(document.getElementById('bomColPart').value||'C');
+    var c=0; for(var i=sr-1;i<data.length;i++){if(String(data[i][cp]||'').trim())c++;}
+    document.getElementById('bomPreviewTxt').innerHTML='&#10003; <strong>'+c+' part rows</strong> detected in BOM';
+    document.getElementById('bomPreview').style.display='';
+  });
+  checkReady();
+}
+function clearBOM(){
+  bomFile=null;
+  document.getElementById('bomEmptyZone').style.display='';
+  document.getElementById('bomChip').style.display='none';
+  document.getElementById('bomPreview').style.display='none';
+  document.getElementById('bomInput').value='';
+  checkReady();
+}
+
+function handleStock(input){
+  if(!input.files.length)return;
+  stockFile=input.files[0]; input.value='';
+  document.getElementById('stockEmptyZone').style.display='none';
+  document.getElementById('stockChip').style.display='flex';
+  document.getElementById('stockExt').textContent=stockFile.name.split('.').pop().toUpperCase();
+  document.getElementById('stockName').textContent=stockFile.name;
+  document.getElementById('stockSize').textContent=fmtSz(stockFile.size);
+  readExcel(stockFile).then(function(data){
+    var sr=parseInt(document.getElementById('stockStartRow').value)||3;
+    var cp=colIdx(document.getElementById('stockColPart').value||'F');
+    var cs=colIdx(document.getElementById('stockColStatus').value||'D');
+    var c=0; for(var i=sr-1;i<data.length;i++){
+      if(String(data[i][cs]||'').trim().toUpperCase()!=='OPEN')continue;
+      if(String(data[i][cp]||'').trim())c++;
+    }
+    document.getElementById('stockPreviewTxt').innerHTML='&#10003; <strong>'+c+' OPEN</strong> parts in stock file';
+    document.getElementById('stockPreview').style.display='';
+  });
+  checkReady();
+}
+function clearStock(){
+  stockFile=null;
+  document.getElementById('stockEmptyZone').style.display='';
+  document.getElementById('stockChip').style.display='none';
+  document.getElementById('stockPreview').style.display='none';
+  document.getElementById('stockInput').value='';
+  checkReady();
+}
+
+function checkReady(){
+  var ok=!!(bomFile&&stockFile);
+  document.getElementById('runBtn').disabled=!ok;
+  document.getElementById('hint').textContent=
+    !bomFile?'Upload BOM file to continue':
+    !stockFile?'Upload Open Stock file to continue':
+    '\u2713 Both files ready \u2014 click Export Excel';
+  document.getElementById('matchHint').style.display='none';
+}
+
+async function runCheck(){
+  var btn=document.getElementById('runBtn');
+  btn.textContent='Generating\u2026'; btn.disabled=true;
+  await new Promise(function(r){setTimeout(r,50);});
+  try{
+    var bomSR=parseInt(document.getElementById('bomStartRow').value)||2;
+    var bomCP=colIdx(document.getElementById('bomColPart').value||'C');
+    var stkSR=parseInt(document.getElementById('stockStartRow').value)||3;
+    var stkCP=colIdx(document.getElementById('stockColPart').value||'F');
+    var stkCS=colIdx(document.getElementById('stockColStatus').value||'D');
+    var stkCQ=colIdx(document.getElementById('stockColQty').value||'H');
+
+    var res=await Promise.all([readExcel(bomFile),readExcel(stockFile)]);
+    var bomData=res[0], stkData=res[1];
+
+    // Build stock map: partNum.lower → {displayPart, qty, rows[]}
+    var stockMap=new Map();
+    var stkMaxCols=0;
+    for(var si=stkSR-1;si<stkData.length;si++){
+      var srow=stkData[si];
+      if(String(srow[stkCS]||'').trim().toUpperCase()!=='OPEN')continue;
+      var spn=String(srow[stkCP]||'').trim(); if(!spn)continue;
+      var sk=spn.toLowerCase();
+      var rawQ=srow[stkCQ];
+      var sq=typeof rawQ==='number'?rawQ:(parseFloat(String(rawQ||'').replace(/,/g,''))||0);
+      if(!stockMap.has(sk))stockMap.set(sk,{displayPart:spn,qty:0,rows:[]});
+      stockMap.get(sk).qty+=sq;
+      stockMap.get(sk).rows.push(srow);
+      if(srow.length>stkMaxCols)stkMaxCols=srow.length;
+    }
+    stkMaxCols=Math.min(Math.max(stkMaxCols,8),12);
+
+    // Parse BOM rows (skip blank rows)
+    var bomHdr=bomData[0]||[];
+    var bomMaxCols=Math.max(bomHdr.length,8);
+    var bomRows=[];
+    for(var bi=bomSR-1;bi<bomData.length;bi++){
+      var brow=bomData[bi];
+      if(!brow.some(function(v){return v!=='';}))continue;
+      var pn=String(brow[bomCP]||'').trim();
+      var matched=pn&&stockMap.has(pn.toLowerCase());
+      bomRows.push({raw:brow,pn:pn,matched:matched,stockQty:matched?stockMap.get(pn.toLowerCase()).qty:0});
+    }
+    var matchCount=bomRows.filter(function(r){return r.matched;}).length;
+
+    var wb=new ExcelJS.Workbook();
+
+    // Color palette
+    var BH='FF065F46',BL='FFD1FAE5',BL2='FFBBF7D0';
+    var GR1='FFF7F8FB',GR2='FFECEEf4';
+    var SH='FF075985',SL='FFE0F2FE',SL2='FFbae6fd';
+    var W='FFFFFFFF',T='FF1E2235',M='FF8890AA';
+    var GF='FF15803D',SF='FF0369A1';
+
+    function cellStyle(cell,bg,fg,bold,mono,alignH,bc){
+      cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:bg}};
+      cell.font={bold:bold||false,size:9,color:{argb:fg||T},name:mono?'Courier New':'Calibri'};
+      cell.alignment={vertical:'middle',horizontal:alignH||'left'};
+      cell.border={bottom:{style:'thin',color:{argb:bc||'FFE5E7EB'}},right:{style:'thin',color:{argb:bc||'FFE5E7EB'}}};
+    }
+
+    // ═══ SHEET 1: Full BOM highlighted ═══
+    var ws1=wb.addWorksheet('BOM \u2014 Stock Check');
+    ws1.views=[{state:'frozen',xSplit:0,ySplit:2}];
+    for(var ci=0;ci<bomMaxCols;ci++) ws1.getColumn(ci+1).width=ci===bomCP?28:(ci<4?18:12);
+    ws1.getColumn(bomMaxCols+1).width=14;
+
+    // Row 1: Legend
+    var legR=ws1.addRow([]); legR.height=20;
+    ws1.mergeCells(1,1,1,bomMaxCols+1);
+    var lc=legR.getCell(1);
+    lc.value='\u2746  Parts highlighted GREEN are available in Open Stock (OPEN status)  \xb7  '+matchCount+' of '+bomRows.length+' BOM parts matched';
+    lc.font={italic:true,size:8,color:{argb:GF},name:'Calibri'};
+    lc.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFD1FAE5'}};
+    lc.alignment={vertical:'middle',horizontal:'left'};
+
+    // Row 2: BOM header
+    var hdr1=ws1.addRow([]); hdr1.height=22;
+    for(var hi=0;hi<bomMaxCols;hi++){
+      var hv=(bomHdr[hi]!==undefined&&bomHdr[hi]!=='')?bomHdr[hi]:'';
+      var hc=hdr1.getCell(hi+1);
+      hc.value=hv;
+      cellStyle(hc,BH,W,true,false,'center','FFD1D5DB');
+    }
+    var extraHdr=hdr1.getCell(bomMaxCols+1);
+    extraHdr.value='In-Stock Qty';
+    cellStyle(extraHdr,'FF059669',W,true,false,'center','FF6EE7B7');
+
+    // Data rows
+    for(var ri=0;ri<bomRows.length;ri++){
+      if(ri%100===0&&ri>0)await new Promise(function(r){setTimeout(r,0);});
+      var entry=bomRows[ri];
+      var dr=ws1.addRow([]); dr.height=17;
+      var isM=entry.matched;
+      var bg=isM?(ri%2===0?BL:BL2):(ri%2===0?GR1:GR2);
+      for(var ci2=0;ci2<bomMaxCols;ci2++){
+        var val=entry.raw[ci2]!==undefined&&entry.raw[ci2]!==''?entry.raw[ci2]:null;
+        var isPN=(ci2===bomCP);
+        var c2=dr.getCell(ci2+1);
+        c2.value=val;
+        cellStyle(c2,bg,isM&&isPN?GF:(isPN?'FF1E3A5F':T),isM&&isPN,isPN,ci2>=4?'center':'left');
+      }
+      var qtyC=dr.getCell(bomMaxCols+1);
+      qtyC.value=isM?entry.stockQty:null;
+      cellStyle(qtyC,bg,isM?GF:M,isM,false,'center');
+    }
+    await new Promise(function(r){setTimeout(r,0);});
+
+    // ═══ SHEET 2: Matching Open Stock rows only ═══
+    var ws2=wb.addWorksheet('Open Stock \u2014 Required');
+    ws2.views=[{state:'frozen',xSplit:0,ySplit:2}];
+    var stkW=[24,6,16,9,14,22,24,13];
+    for(var si2=0;si2<stkMaxCols;si2++) ws2.getColumn(si2+1).width=stkW[si2]||14;
+
+    // Build BOM part set
+    var bomSet=new Set();
+    bomRows.forEach(function(e){if(e.pn)bomSet.add(e.pn.toLowerCase());});
+    var matchedUnique=0;
+    stockMap.forEach(function(_,k){if(bomSet.has(k))matchedUnique++;});
+
+    // Row 1: Legend
+    var legR2=ws2.addRow([]); legR2.height=20;
+    ws2.mergeCells(1,1,1,stkMaxCols);
+    var lc2=legR2.getCell(1);
+    lc2.value='\u2746  Only OPEN rows whose Part Number appears in the BOM are shown  \xb7  '+matchedUnique+' unique parts matched';
+    lc2.font={italic:true,size:8,color:{argb:SF},name:'Calibri'};
+    lc2.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFE0F2FE'}};
+    lc2.alignment={vertical:'middle',horizontal:'left'};
+
+    // Row 2: Stock header (from original file if possible)
+    var stkHdrSrc=(stkSR>=2)?(stkData[stkSR-2]||[]):[];
+    var stkFallback=['PO No.','RM','Rack No.','Office','Remark','Type No. (Part)','OR No.','In Stock Qty'];
+    var hdr2=ws2.addRow([]); hdr2.height=22;
+    for(var hi2=0;hi2<stkMaxCols;hi2++){
+      var hv2=(stkHdrSrc[hi2]!==undefined&&stkHdrSrc[hi2]!=='')?stkHdrSrc[hi2]:(stkFallback[hi2]||'');
+      var hc2=hdr2.getCell(hi2+1);
+      hc2.value=hv2;
+      cellStyle(hc2,SH,W,true,false,'center','FF7DD3FC');
+    }
+
+    // Data: only matching parts
+    var s2ri=0;
+    stockMap.forEach(function(entry,key){
+      if(!bomSet.has(key))return;
+      entry.rows.forEach(function(raw){
+        var dr2=ws2.addRow([]); dr2.height=17;
+        var bg2=s2ri%2===0?SL:SL2;
+        for(var ci3=0;ci3<stkMaxCols;ci3++){
+          var v=raw[ci3]!==undefined&&raw[ci3]!==''?raw[ci3]:null;
+          var isPC=(ci3===stkCP), isQC=(ci3===stkCQ);
+          var c3=dr2.getCell(ci3+1);
+          c3.value=v;
+          cellStyle(c3,bg2,isPC?SF:T,isPC||isQC,isPC,isQC?'center':'left','FF7DD3FC');
+        }
+        s2ri++;
+      });
+    });
+    if(s2ri===0){
+      var noR=ws2.addRow(['No Open Stock parts matched this BOM.']);
+      noR.getCell(1).font={italic:true,size:9,color:{argb:M}};
+      ws2.mergeCells(noR.number,1,noR.number,stkMaxCols);
+    }
+
+    // Save
+    var buffer=await wb.xlsx.writeBuffer();
+    var blob=new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    var fname=(document.getElementById('exportFileName').value||'Stock_Check').trim().replace(/[^a-zA-Z0-9_\-. ]/g,'_');
+    saveAs(blob,fname+'.xlsx');
+
+    document.getElementById('matchHint').textContent=
+      '\u2713 '+matchCount+' of '+bomRows.length+' BOM parts found in stock \u00b7 '+matchedUnique+' unique part numbers';
+    document.getElementById('matchHint').style.display='';
+    btn.textContent='\u2193 Export Excel'; btn.disabled=false;
+    checkReady();
+  }catch(err){
+    console.error(err);
+    alert('Export failed: '+err.message);
+    btn.textContent='\u2193 Export Excel'; btn.disabled=false;
+    checkReady();
+  }
+}
+
+function toggleDark(){
+  var d=document.body.classList.toggle('dark');
+  document.getElementById('darkIcon').textContent=d?'\u2600\uFE0F':'\uD83C\uDF19';
+  document.getElementById('darkLabel').textContent=d?'Light Mode':'Dark Mode';
+  try{localStorage.setItem('wz-theme',d?'dark':'light');}catch(e){}
+}
+(function(){
+  try{
+    if(localStorage.getItem('wz-theme')==='dark'){
+      document.body.classList.add('dark');
+      document.getElementById('darkIcon').textContent='\u2600\uFE0F';
+      document.getElementById('darkLabel').textContent='Light Mode';
+    }
+  }catch(e){}
+})();
+</script>
+</body>
+</html>

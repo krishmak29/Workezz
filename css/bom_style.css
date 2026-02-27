@@ -290,6 +290,19 @@ body.dark .dark-toggle-icon{transform:rotate(180deg);}
 .filter-btn.filter-nomrs.active{border-color:var(--accent);background:var(--accent-light);}
 .filter-btn.filter-nomrs.active .filter-btn-label,.filter-btn.filter-nomrs.active .filter-btn-count{color:var(--accent);}
 
+/* ── SHORTAGE FILTER BUTTON ── */
+.filter-btn.filter-shortage.active{border-color:#ea580c;background:#fff7ed;}
+.filter-btn.filter-shortage.active .filter-btn-label,.filter-btn.filter-shortage.active .filter-btn-count{color:#c2410c;}
+
+/* ── SHORTAGE COL-ITEM ── */
+.col-item.shortage{border-color:#fed7aa;background:#fff7ed;}
+.col-item.shortage.checked{border-color:#ea580c;background:#ffedd5;}
+.col-item.shortage.checked .col-checkbox{background:#ea580c;border-color:#ea580c;}
+.col-item.shortage.checked .col-name{color:#c2410c;}
+.col-item.shortage .col-badge{background:#ffedd5;color:#c2410c;}
+body.dark .col-item.shortage{background:#2c1810;border-color:#9a3412;}
+body.dark .col-item.shortage.checked{background:#3d1f10;}
+
 /* ── SCREEN 4 REDESIGN ── */
 .s4-layout{display:flex;flex-direction:column;align-items:center;flex:1;padding:24px;gap:14px;overflow-y:auto;justify-content:flex-start;}
 .s4-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);padding:24px;width:100%;max-width:640px;}

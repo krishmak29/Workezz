@@ -82,6 +82,25 @@
         </div>
       </div>
 
+      <!-- Shortage List Upload -->
+      <div>
+        <div class="section-label">Shortage List (Optional)</div>
+        <div class="mrs-strip" style="flex-wrap:wrap;gap:8px;">
+          <div class="mrs-strip-info">
+            <div class="mrs-strip-title">Upload Shortage Parts File</div>
+            <div id="shortageFileName" class="mrs-strip-sub">No file selected — shortage qty will not be added</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
+            <input type="file" id="shortageInput" accept=".xls,.xlsx" style="display:none;">
+            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('shortageInput').click()">📋 Browse</button>
+            <button class="btn btn-danger-outline btn-sm" id="shortageClearBtn" onclick="clearShortage()" style="display:none;">✕ Cancel</button>
+          </div>
+        </div>
+        <div style="font-size:.68rem;color:var(--muted);margin-top:6px;line-height:1.5;">
+          ℹ️ Same format as BOM output: <strong>Col A</strong> SR · <strong>Col B</strong> Make · <strong>Col C</strong> Part No · <strong>Col D</strong> Description · <strong>Col E</strong> Total Qty. Shortage qty is added on top of panel quantities in the merged BOM.
+        </div>
+      </div>
+
       <div class="info-box">
         ℹ️ Data is read from <strong>Row 9 onwards</strong> by default. Adjustable in Operations.
       </div>
@@ -247,6 +266,11 @@
         <span class="filter-btn-label">No MRS Match</span>
         <span class="filter-btn-count" id="countNoMrs">0</span>
       </button>
+      <button class="filter-btn filter-shortage" id="btnShortage" onclick="setFilter('shortage')" style="display:none;">
+        <span class="filter-btn-icon">🟠</span>
+        <span class="filter-btn-label">Has Shortage</span>
+        <span class="filter-btn-count" id="countShortage">0</span>
+      </button>
     </div>
 
     <div id="warnPanel" class="warn-panel" style="display:none;">
@@ -263,6 +287,7 @@
             <th>Part Number</th>
             <th>Part Description</th>
             <th>Total Qty</th>
+            <th id="thShortage" style="display:none;">Shortage Qty</th>
             <th>Status</th>
           </tr>
         </thead>

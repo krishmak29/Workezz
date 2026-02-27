@@ -160,6 +160,58 @@ function clearMRS() {
   document.getElementById('mrsClearBtn').style.display = 'none';
 }
 
+// ══ SHORTAGE FILE ══
+document.getElementById('shortageInput').addEventListener('change', function() {
+  if (!this.files.length) return;
+  const file = this.files[0];
+  state.shortageFile = file;
+  parseShortage(file);
+  document.getElementById('shortageFileName').innerHTML = `<span class="mrs-file-name">✓ ${file.name}</span>`;
+  document.getElementById('shortageClearBtn').style.display = '';
+  this.value = '';
+});
+
+function clearShortage() {
+  state.shortageFile = null;
+  state.shortageData = null;
+  document.getElementById('shortageFileName').textContent = 'No file selected — shortage qty will not be added';
+  document.getElementById('shortageClearBtn').style.display = 'none';
+}
+
+async function parseShortage(file) {
+  // BOM output format: Row 2 onwards (row 1 = header)
+  // Col A (idx 0) = SR, Col B (idx 1) = Make, Col C (idx 2) = Part Number,
+  // Col D (idx 3) = Description, Col E (idx 4) = Total Qty
+  const data = await readExcelFile(file, 2);
+  const shortageMap = new Map();
+  // Start from row index 1 (row 2 in Excel) — row 0 is the header
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    const rawPart = String(row[2] ?? '').trim();
+    if (!rawPart) continue;
+    // Use raw numeric qty (Col E = index 4)
+    const rawQty = (row._raw && row._raw[4] !== undefined) ? row._raw[4] : row[4];
+    let qty = typeof rawQty === 'number' ? rawQty : parseFloat(String(rawQty ?? '').replace(/,/g, ''));
+    if (isNaN(qty) || qty <= 0) qty = 0;
+    // Store by cleaned part number (lowercase) — apply same prefix/suffix stripping as BOM
+    let cleaned = rawPart;
+    for (const p of state.prefixes) {
+      const pt = p.trim();
+      if (pt && cleaned.startsWith(pt)) { cleaned = cleaned.slice(pt.length).trim(); break; }
+    }
+    for (const s of state.suffixes) {
+      const st = s.trim();
+      if (st && cleaned.endsWith(st)) { cleaned = cleaned.slice(0, cleaned.length - st.length).trim(); break; }
+    }
+    const key = cleaned.toLowerCase();
+    shortageMap.set(key, (shortageMap.get(key) || 0) + qty);
+    // Also store raw key in case prefixes haven't been applied
+    const rawKey = rawPart.toLowerCase();
+    if (rawKey !== key) shortageMap.set(rawKey, (shortageMap.get(rawKey) || 0) + qty);
+  }
+  state.shortageData = shortageMap;
+}
+
 async function parseMRS(file) {
   const data = await readExcelFile(file, 8);
   // MRS: data from row 8 (index 7)
@@ -312,15 +364,17 @@ function setFilter(filter) {
 }
 
 function renderPreview() {
-  const counts = { new: 0, updated: 0, mismatch: 0, nomrs: 0 };
+  const counts = { new: 0, updated: 0, mismatch: 0, nomrs: 0, shortage: 0 };
   state.merged.forEach(r => {
     if (r.status === 'new') counts.new++;
     else if (r.status === 'updated') counts.updated++;
     else if (r.status === 'mismatch') counts.mismatch++;
-    // Count no MRS match
     if (state.mrsData) {
       const mrsQty = state.mrsData.get(r.partNum.toLowerCase()) || 0;
       if (!mrsQty) counts.nomrs++;
+    }
+    if (state.shortageData && (state.shortageData.get(r.partNum.toLowerCase()) || 0) > 0) {
+      counts.shortage++;
     }
   });
 
@@ -329,12 +383,23 @@ function renderPreview() {
   document.getElementById('countUpdated').textContent  = counts.updated;
   document.getElementById('countMismatch').textContent = counts.mismatch;
   document.getElementById('countSkipped').textContent  = state.errors.length;
-  // Show/hide No MRS Match button
+
   const noMrsBtn = document.getElementById('btnNoMrs');
   if (noMrsBtn) {
     noMrsBtn.style.display = state.mrsData ? '' : 'none';
     document.getElementById('countNoMrs').textContent = counts.nomrs;
   }
+
+  // Show/hide Shortage filter button
+  const shortageBtn = document.getElementById('btnShortage');
+  if (shortageBtn) {
+    shortageBtn.style.display = state.shortageData ? '' : 'none';
+    document.getElementById('countShortage').textContent = counts.shortage;
+  }
+
+  // Show/hide shortage column header in preview table
+  const thShortage = document.getElementById('thShortage');
+  if (thShortage) thShortage.style.display = state.shortageData ? '' : 'none';
 
   const wp = document.getElementById('warnPanel');
   if (state.warnings.length) {
@@ -351,9 +416,8 @@ function renderPreviewTable() {
 
   let rows;
   if (filter === 'skipped') {
-    // Show skipped/error rows
     if (!state.errors.length) {
-      tbody.innerHTML = `<tr><td colspan="6"><div class="empty-table">No skipped rows.</div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7"><div class="empty-table">No skipped rows.</div></td></tr>`;
       return;
     }
     tbody.innerHTML = state.errors.map((r, i) => `
@@ -362,7 +426,8 @@ function renderPreviewTable() {
         <td style="font-size:.78rem;">${r.make}</td>
         <td style="font-family:'IBM Plex Mono',monospace;font-size:.75rem;">${r.partNum || '<span style="color:var(--muted)">—</span>'}</td>
         <td style="font-size:.78rem;">${r.partName}</td>
-        <td style="font-size:.78rem;">${r.qty}</td>
+        <td style="font-family:'IBM Plex Mono',monospace;font-size:.78rem;font-weight:600;">${r.qty}</td>
+        ${state.shortageData ? `<td>—</td>` : ''}
         <td><span class="status-pill pill-skipped">⚠️ ${r.reason}</span></td>
       </tr>`).join('');
     return;
@@ -373,12 +438,16 @@ function renderPreviewTable() {
       const mrsQty = state.mrsData ? (state.mrsData.get(r.partNum.toLowerCase()) || 0) : 0;
       return !mrsQty;
     });
+  } else if (filter === 'shortage') {
+    rows = state.merged.filter(r => {
+      return state.shortageData && (state.shortageData.get(r.partNum.toLowerCase()) || 0) > 0;
+    });
   } else {
     rows = filter === 'all' ? state.merged : state.merged.filter(r => r.status === filter);
   }
 
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-table">No rows for this filter.</div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-table">No rows for this filter.</div></td></tr>`;
     return;
   }
 
@@ -388,15 +457,23 @@ function renderPreviewTable() {
     mismatch: `<span class="status-pill pill-mismatch">🔴 Mismatch</span>`
   };
 
-  tbody.innerHTML = rows.map((r, i) => `
-    <tr class="${r.mismatch ? 'row-mismatch' : ''}">
+  tbody.innerHTML = rows.map((r, i) => {
+    const shortageQty = state.shortageData ? (state.shortageData.get(r.partNum.toLowerCase()) || 0) : null;
+    const shortageCell = state.shortageData
+      ? (shortageQty > 0
+          ? `<td style="font-family:'IBM Plex Mono',monospace;font-size:.78rem;font-weight:600;color:#c2410c;background:rgba(234,88,12,.07);">+${shortageQty}</td>`
+          : `<td style="font-size:.75rem;color:var(--muted);">—</td>`)
+      : '';
+    return `<tr class="${r.mismatch ? 'row-mismatch' : ''}">
       <td class="sr-no">${String(i + 1).padStart(2, '0')}</td>
       <td style="font-size:.78rem;">${r.make}</td>
       <td style="font-family:'IBM Plex Mono',monospace;font-size:.75rem;">${r.partNum}</td>
       <td style="font-size:.78rem;">${r.resolvedName}</td>
       <td style="font-family:'IBM Plex Mono',monospace;font-size:.78rem;font-weight:600;">${r.totalQty}</td>
+      ${shortageCell}
       <td>${pills[r.status] || ''}</td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 }
 
 // ══ EXPORT ══
@@ -427,10 +504,13 @@ function renderColSelector() {
     ...(state.mrsData ? [
       { id: 'col_mrsqty',   label: 'MRS Qty',      badge: 'MRS', mrs: true },
       { id: 'col_mrsorder', label: 'Qty to Order', badge: 'MRS', mrs: true }
+    ] : []),
+    ...(state.shortageData ? [
+      { id: 'col_shortage', label: 'Shortage Qty', badge: 'SHT', shortage: true }
     ] : [])
   ];
   grid.innerHTML = cols.map(c => `
-    <div class="col-item ${c.mrs ? 'mrs' : ''} checked" id="${c.id}" onclick="toggleColItem(this)">
+    <div class="col-item ${c.mrs ? 'mrs' : ''} ${c.shortage ? 'shortage' : ''} checked" id="${c.id}" onclick="toggleColItem(this)">
       <div class="col-checkbox">
         <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
           <path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -469,16 +549,21 @@ async function exportMerged() {
   const sheetName = (nameInput && nameInput.value.trim()) || `Master Sheet – ${todayStr()}`;
 
   const isChecked = id => { const el = document.getElementById(id); return el ? el.classList.contains('checked') : true; };
-  const allHeaders = ['SR', 'Make', 'Part Number', 'Part Description', ...fileNames, 'Total Qty'];
-  const allHeaderIds = ['col_sr','col_make','col_part','col_desc',...fileNames.map((_,i)=>`col_file_${i}`),'col_total'];
-  if (state.mrsData) { allHeaders.push('MRS Qty','Qty to Order'); allHeaderIds.push('col_mrsqty','col_mrsorder'); }
+  const allHeaders    = ['SR', 'Make', 'Part Number', 'Part Description', ...fileNames, 'Total Qty'];
+  const allHeaderIds  = ['col_sr','col_make','col_part','col_desc',...fileNames.map((_,i)=>`col_file_${i}`),'col_total'];
+  if (state.mrsData)      { allHeaders.push('MRS Qty','Qty to Order'); allHeaderIds.push('col_mrsqty','col_mrsorder'); }
+  if (state.shortageData) { allHeaders.push('Shortage Qty');           allHeaderIds.push('col_shortage'); }
 
   const selectedIdx = allHeaderIds.map((id,i)=>({id,i})).filter(({id})=>isChecked(id)).map(({i})=>i);
   const header = selectedIdx.map(i => allHeaders[i]);
 
-  const mrsColPos   = state.mrsData ? selectedIdx.indexOf(4 + fileNames.length + 1) : -1;
-  const orderColPos = state.mrsData ? selectedIdx.indexOf(4 + fileNames.length + 2) : -1;
-  const allWidths   = [5,20,28,42,...fileNames.map(()=>14),12,...(state.mrsData?[12,14]:[])];
+  const baseOffset   = 4 + fileNames.length; // SR + Make + Part + Desc + files
+  const mrsColPos    = state.mrsData      ? selectedIdx.indexOf(baseOffset + 1) : -1;
+  const orderColPos  = state.mrsData      ? selectedIdx.indexOf(baseOffset + 2) : -1;
+  const shortageOffset = baseOffset + 1 + (state.mrsData ? 2 : 0);
+  const shortageColPos = state.shortageData ? selectedIdx.indexOf(shortageOffset) : -1;
+
+  const allWidths = [5,20,28,42,...fileNames.map(()=>14),12,...(state.mrsData?[12,14]:[]),...(state.shortageData?[14]:[])];
 
   const dataRows = [];
   state.merged.forEach((r, ri) => {
@@ -489,6 +574,9 @@ async function exportMerged() {
       const mrsQty = state.mrsData.get(r.partNum.toLowerCase()) || 0;
       fullRow.push(mrsQty);
       fullRow.push(r.totalQty - mrsQty);
+    }
+    if (state.shortageData) {
+      fullRow.push(state.shortageData.get(r.partNum.toLowerCase()) || 0);
     }
     dataRows.push(selectedIdx.map(i => fullRow[i]));
   });
@@ -534,6 +622,17 @@ async function exportMerged() {
           cell.font = { bold:true, color:{ argb:'FFB91C1C' }, name:'Calibri', size:10 };
         }
         cell.alignment = { horizontal:'center', vertical:'middle' };
+      } else if (shortageColPos >= 0 && ci === shortageColPos) {
+        // Shortage column — orange highlight if > 0, muted if 0
+        const val = cell.value;
+        if (typeof val === 'number' && val > 0) {
+          cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFFFF7ED' } };
+          cell.font = { bold:true, color:{ argb:'FFC2410C' }, name:'Calibri', size:10 };
+        } else {
+          cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFF8FAFC' } };
+          cell.font = { color:{ argb:'FF94A3B8' }, name:'Calibri', size:10 };
+        }
+        cell.alignment = { horizontal:'center', vertical:'middle' };
       } else if (isAlt) {
         cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFF7F8FB' } };
       }
@@ -570,9 +669,12 @@ async function exportErrors() {
 function resetApp() {
   state.files = []; state.prefixes = []; state.suffixes = [];
   state.findReplace = []; state.merged = []; state.errors = []; state.warnings = [];
-  state.mrsFile = null; state.mrsData = null; state.currentFilter = 'all';
+  state.mrsFile = null; state.mrsData = null;
+  state.shortageFile = null; state.shortageData = null;
+  state.currentFilter = 'all';
   renderFileTable(); renderTags(); renderFRRows();
   clearMRS();
+  clearShortage();
   goTo(1);
 }
 

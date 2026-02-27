@@ -8,5 +8,7 @@ window.state = {
   warnings: [],
   mrsFile: null,
   mrsData: null,
+  shortageFile: null,
+  shortageData: null,   // Map<partNum_lower, qty>  — shortage qty per part
   currentFilter: 'all'
 };
