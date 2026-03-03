@@ -158,11 +158,9 @@
     </div>
 
   </div><!-- end s1-layout -->
-  <div class="s1-footer" style="position:sticky;bottom:0;z-index:10;background:var(--white);border-top:2px solid var(--border);box-shadow:0 -4px 16px rgba(30,34,53,.10);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-    <div style="display:flex;flex-direction:column;gap:2px;">
-      <span id="s1hint" style="font-size:.74rem;color:var(--muted);">Upload both BOM and MRS sheets to continue</span>
-    </div>
-    <button class="btn btn-primary btn-lg" id="processBtn" onclick="processData()" disabled style="min-width:160px;font-size:.85rem;padding:10px 24px;border-radius:8px;box-shadow:0 2px 8px rgba(37,99,235,.25);">Process Data &#8594;</button>
+  <div class="s1-footer" style="position:sticky;bottom:0;z-index:10;background:var(--white);border-top:1px solid var(--border);box-shadow:0 -2px 8px rgba(30,34,53,.07);padding:8px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+    <span id="s1hint" style="font-size:.72rem;color:var(--muted);">Upload both BOM and MRS sheets to continue</span>
+    <button class="btn btn-primary" id="processBtn" onclick="processData()" disabled style="min-width:130px;font-size:.78rem;padding:7px 18px;border-radius:7px;box-shadow:0 2px 6px rgba(37,99,235,.2);">Process Data &#8594;</button>
   </div>
 </div>
 
@@ -213,10 +211,28 @@
 var bomFile = null, mrsFile = null, processedData = null;
 
 function colIdx(l) { return l.toUpperCase().charCodeAt(0) - 65; }
+
+// -- NORMALIZATION --
+// Strip all non-alphanumeric chars + leading zeros, compare only alphanumeric values
+function normKey(str) {
+  return String(str||'').replace(/[^a-zA-Z0-9]/g,'').replace(/^0+(?=[a-zA-Z0-9])/,'').toLowerCase();
+}
+
+// Global MRS lookup - exact first, then normalized
+// Returns {entry, resolvedKey, isNormalized} or null
+function mrsLookup(bomKey, mrsMap, mrsNormMap) {
+  if(mrsMap.has(bomKey)) return {entry:mrsMap.get(bomKey), resolvedKey:bomKey, isNormalized:false};
+  var nk=normKey(bomKey);
+  if(nk && mrsNormMap.has(nk)){
+    var rk=mrsNormMap.get(nk);
+    if(mrsMap.has(rk)) return {entry:mrsMap.get(rk), resolvedKey:rk, isNormalized:true};
+  }
+  return null;
+}
 function fmtSz(b) { if(b<1024)return b+' B'; if(b<1048576)return (b/1024).toFixed(1)+' KB'; return (b/1048576).toFixed(1)+' MB'; }
 function todayStr() { return new Date().toISOString().slice(0,10); }
 
-// ── PERSIST ──
+// -- PERSIST --
 var PKEYS = ['bomColPart','bomColDesc','bomColMake','bomStartRow','bomColPanelStart','bomPanelCount',
              'mrsColPart','mrsColSection','mrsColQty','mrsColMake','mrsColDesc','mrsStartRow'];
 function saveSettings() {
@@ -238,8 +254,8 @@ function loadSettings() {
   } catch(e){}
 }
 
-// ── Parse OR number from MRS filename ──
-// Format: MRS_FSL_2425_PUN_OR062_02_V0A.xlsx → FSL_2425_PUN_OR062
+// -- Parse OR number from MRS filename --
+// Format: MRS_FSL_2425_PUN_OR062_02_V0A.xlsx -> FSL_2425_PUN_OR062
 function parseOrFromMrsFilename(filename) {
   var bare = filename.replace(/\.(xlsx|xls)$/i, '');
   bare = bare.replace(/^MRS_/i, '');
@@ -248,7 +264,7 @@ function parseOrFromMrsFilename(filename) {
   return bare || '';
 }
 
-// ── FILES ──
+// -- FILES --
 function handleBOM(input) {
   if (!input.files.length) return;
   bomFile = input.files[0]; input.value='';
@@ -295,10 +311,10 @@ function clearMRS() {
 function checkReady() {
   var ok = !!(bomFile && mrsFile);
   document.getElementById('processBtn').disabled = !ok;
-  document.getElementById('s1hint').textContent = !bomFile ? 'Upload BOM sheet to continue' : !mrsFile ? 'Upload MRS sheet to continue' : 'Both files ready — click Process Data';
+  document.getElementById('s1hint').textContent = !bomFile ? 'Upload BOM sheet to continue' : !mrsFile ? 'Upload MRS sheet to continue' : 'Both files ready - click Process Data';
 }
 
-// ── READ EXCEL ──
+// -- READ EXCEL --
 function readExcel(file) {
   return new Promise(function(resolve) {
     var reader = new FileReader();
@@ -319,7 +335,7 @@ function readExcel(file) {
   });
 }
 
-// ── PROCESS ──
+// -- PROCESS --
 async function processData() {
   document.getElementById('processBtn').disabled=true;
   document.getElementById('processBtn').textContent='Processing...';
@@ -339,16 +355,19 @@ async function processData() {
   var res = await Promise.all([readExcel(bomFile), readExcel(mrsFile)]);
   var bomData=res[0], mrsData=res[1];
 
-  // empty stockMap — kept as no-op so downstream references to stockMap.has() are safe
+  // empty stockMap - kept as no-op so downstream references to stockMap.has() are safe
   var stockMap = new Map();
   var stockRawRows = [];
 
-  // panels from BOM row 1
+  // panels from BOM row 1 - skip Total Qty and MRS Qty columns wherever they appear
+  var SKIP_PANEL_HEADERS=['total qty','mrs qty'];
   var hdr = bomData[0]||[];
   var panels=[];
   for(var c=bPS;c<hdr.length;c++){
     var h=String(hdr[c]||'').trim();
-    if(h) panels.push({name:h,col:c});
+    if(!h) continue;
+    if(SKIP_PANEL_HEADERS.indexOf(h.toLowerCase())!==-1) continue;
+    panels.push({name:h,col:c});
     if(bPC>0 && panels.length>=bPC) break;
   }
 
@@ -367,53 +386,74 @@ async function processData() {
     });
   }
 
-  // MRS rows
+  // MRS rows - build mrsMap (exact lowercase key) + mrsNormMap (normalized key -> exact key)
+  // Parts are registered regardless of qty so normalization lookup always works
   var mrsMap=new Map();
+  var mrsNormMap=new Map();
   for(var j=mrsSR-1;j<mrsData.length;j++){
     var mr=mrsData[j];
     var mp=String(mr[mCP]||'').trim();
     var ms=String(mr[mCS]||'').trim();
     if(!mp||!ms) continue;
-    var mraw=mr[mCQ];
-    var mq=typeof mraw==='number'?mraw:(parseFloat(String(mraw||'').replace(/,/g,''))||0);
-    if(!mq) continue;
     var mk=mp.toLowerCase();
+    var mnk=normKey(mp);
+    // Register part regardless of qty so normKey lookup never misses
     if(!mrsMap.has(mk)){
       mrsMap.set(mk,{
+        partNumOriginal: mp,
         make: String(mr[mCM]||'').trim(),
         desc: String(mr[mCDesc]||'').trim(),
         sections: new Map()
       });
     }
+    if(mnk && !mrsNormMap.has(mnk)) mrsNormMap.set(mnk, mk);
     var mrsEntry=mrsMap.get(mk);
     if(!mrsEntry.make) mrsEntry.make=String(mr[mCM]||'').trim();
     if(!mrsEntry.desc) mrsEntry.desc=String(mr[mCDesc]||'').trim();
+    // Only accumulate qty if non-zero
+    var mraw=mr[mCQ];
+    var mq=typeof mraw==='number'?mraw:(parseFloat(String(mraw||'').replace(/,/g,''))||0);
+    if(!mq) continue;
     mrsEntry.sections.set(ms,(mrsEntry.sections.get(ms)||0)+mq);
   }
+
+  // normalizedMatchMap: bomKey -> mrsPartNumOriginal (for audit modal)
+  var normalizedMatchMap=new Map();
 
   var panelRows=new Map();
   panels.forEach(function(p){panelRows.set(p.name,[]);});
   var gsr=1;
   partsMap.forEach(function(part,key){
+    var lk=mrsLookup(key,mrsMap,mrsNormMap);
+    var mrsEntry=lk?lk.entry:null;
+    var isNorm=lk?lk.isNormalized:false;
+    if(isNorm && !normalizedMatchMap.has(key)){
+      normalizedMatchMap.set(key, mrsEntry.partNumOriginal||lk.resolvedKey);
+    }
     panels.forEach(function(p){
       var rq=part.panelQtys[p.name]||0; if(!rq) return;
-      var mq=(mrsMap.has(key)&&mrsMap.get(key).sections.has(p.name))?mrsMap.get(key).sections.get(p.name):0;
-      var st,stype;
+      var mq=(mrsEntry&&mrsEntry.sections.has(p.name))?mrsEntry.sections.get(p.name):0;
+      var st,stype,nsfx=isNorm?' (N)':'';
       if(mq===0)       {st='No MRS';                          stype='nomrs';}
-      else if(mq>rq)   {st='+'+(mq-rq)+' Excess';            stype='excess';}
-      else if(mq<rq)   {st='-'+(rq-mq)+' Short';             stype='short';}
-      else             {st='Exact \u2713';                    stype='exact';}
-      panelRows.get(p.name).push({srNo:gsr++,make:part.make,partNum:part.partNum,desc:part.desc,reqQty:rq,mrsQty:mq,status:st,statusType:stype});
+      else if(mq>rq)   {st='+'+(mq-rq)+' Excess'+nsfx;       stype='excess';}
+      else if(mq<rq)   {st='-'+(rq-mq)+' Short'+nsfx;        stype='short';}
+      else             {st='Exact \u2713'+nsfx;              stype='exact';}
+      panelRows.get(p.name).push({srNo:gsr++,make:part.make,partNum:part.partNum,desc:part.desc,reqQty:rq,mrsQty:mq,status:st,statusType:stype,isNorm:isNorm,mrsPartNum:isNorm?(mrsEntry.partNumOriginal||''):''});
     });
   });
 
-  // Unmatched MRS
+  // Unmatched MRS - only parts not matched by any BOM key (exact or normalized)
+  var matchedMrsKeys=new Set();
+  partsMap.forEach(function(part,key){
+    var lk=mrsLookup(key,mrsMap,mrsNormMap);
+    if(lk) matchedMrsKeys.add(lk.resolvedKey);
+  });
   var unmatchedMRS=[];
-  mrsMap.forEach(function(mrsEntry,key){
-    if(!partsMap.has(key)){
+  mrsMap.forEach(function(mrsEntry,mk){
+    if(!matchedMrsKeys.has(mk)){
       mrsEntry.sections.forEach(function(qty,panel){
         unmatchedMRS.push({
-          partNum: key, partNumDisplay: key,
+          partNum: mk, partNumDisplay: mrsEntry.partNumOriginal||mk,
           make: mrsEntry.make||'', desc: mrsEntry.desc||'',
           panel: panel, qty: qty
         });
@@ -424,9 +464,10 @@ async function processData() {
   // Parts to order (consolidated)
   var toOrderMap=new Map();
   partsMap.forEach(function(part,key){
+    var lk=mrsLookup(key,mrsMap,mrsNormMap); var me=lk?lk.entry:null;
     panels.forEach(function(p){
       var rq=part.panelQtys[p.name]||0; if(!rq) return;
-      var mq=(mrsMap.has(key)&&mrsMap.get(key).sections.has(p.name))?mrsMap.get(key).sections.get(p.name):0;
+      var mq=(me&&me.sections.has(p.name))?me.sections.get(p.name):0;
       if(mq<rq){
         if(!toOrderMap.has(key)) toOrderMap.set(key,{partNum:part.partNum,make:part.make,desc:part.desc,totalReq:0});
         toOrderMap.get(key).totalReq+=rq;
@@ -438,9 +479,10 @@ async function processData() {
   // Excess (consolidated)
   var excessMap=new Map();
   partsMap.forEach(function(part,key){
+    var lk=mrsLookup(key,mrsMap,mrsNormMap); var me=lk?lk.entry:null;
     panels.forEach(function(p){
       var rq=part.panelQtys[p.name]||0; if(!rq) return;
-      var mq=(mrsMap.has(key)&&mrsMap.get(key).sections.has(p.name))?mrsMap.get(key).sections.get(p.name):0;
+      var mq=(me&&me.sections.has(p.name))?me.sections.get(p.name):0;
       if(mq>rq){
         if(!excessMap.has(key)) excessMap.set(key,{partNum:part.partNum,make:part.make,desc:part.desc,totalReq:0,totalMrs:0});
         excessMap.get(key).totalReq+=rq;
@@ -453,30 +495,30 @@ async function processData() {
   // shortParts for stats
   var shortParts=[];
   partsMap.forEach(function(part,key){
+    var lk=mrsLookup(key,mrsMap,mrsNormMap); var me=lk?lk.entry:null;
     panels.forEach(function(p){
       var rq=part.panelQtys[p.name]||0; if(!rq) return;
-      var mq=(mrsMap.has(key)&&mrsMap.get(key).sections.has(p.name))?mrsMap.get(key).sections.get(p.name):0;
+      var mq=(me&&me.sections.has(p.name))?me.sections.get(p.name):0;
       if(mq<rq) shortParts.push({partNum:part.partNum,make:part.make,desc:part.desc,panel:p.name,reqQty:rq,mrsQty:mq,shortage:rq-mq});
     });
   });
 
-  // count stock matches for stats card — always 0 (no stock file)
   var stockMatchCount = 0;
 
-  processedData={panels:panels,partsMap:partsMap,panelRows:panelRows,mrsMap:mrsMap,unmatchedMRS:unmatchedMRS,excessParts:excessParts,shortParts:shortParts,toOrderParts:toOrderParts,stockMap:stockMap,stockRawRows:stockRawRows,stockMatchCount:stockMatchCount};
+  processedData={panels:panels,partsMap:partsMap,panelRows:panelRows,mrsMap:mrsMap,mrsNormMap:mrsNormMap,unmatchedMRS:unmatchedMRS,excessParts:excessParts,shortParts:shortParts,toOrderParts:toOrderParts,stockMap:stockMap,stockRawRows:stockRawRows,stockMatchCount:stockMatchCount,normalizedMatchMap:normalizedMatchMap};
 
   document.getElementById('processBtn').disabled=false;
   document.getElementById('processBtn').textContent='Process Data \u2192';
 
   // fixed: always 4 sheets
   var desc = document.getElementById('exportSheetDesc');
-  if (desc) desc.textContent = 'Exports 4 sheets: Panel Comparison · Unmatched MRS · Parts to Order · Excess Parts.';
+  if (desc) desc.textContent = 'Exports 4 sheets: Panel Comparison &middot; Unmatched MRS &middot; Parts to Order &middot; Excess Parts.';
 
   renderVisualization();
   goTo(2);
 }
 
-// ── NAV ──
+// -- NAV --
 function goTo(n) {
   document.querySelectorAll('.screen').forEach(function(s,i){s.classList.toggle('active',i===n-1);});
   document.querySelectorAll('.step').forEach(function(s,i){
@@ -487,7 +529,7 @@ function goTo(n) {
   if(n===3) renderExportSummary();
 }
 
-// ── VIZ ──
+// -- VIZ --
 function renderVisualization() {
   var p=processedData;
   var pillsEl=document.getElementById('sectionPills');
@@ -507,7 +549,8 @@ function renderVisualization() {
     '<div class="stat-card"><span class="stat-icon">&#9989;</span><div><div class="stat-val" style="color:var(--success)">'+exact+'</div><div class="stat-label">Exact Match</div></div></div>'+
     '<div class="stat-card"><span class="stat-icon">&#128722;</span><div><div class="stat-val" style="color:var(--danger)">'+p.shortParts.length+'</div><div class="stat-label">Need Order</div></div></div>'+
     '<div class="stat-card"><span class="stat-icon">&#128230;</span><div><div class="stat-val">'+p.excessParts.length+'</div><div class="stat-label">Excess Parts</div></div></div>'+
-    '<div class="stat-card"><span class="stat-icon">&#9888;</span><div><div class="stat-val" style="color:var(--warning)">'+p.unmatchedMRS.length+'</div><div class="stat-label">Unmatched MRS</div></div></div>';
+    '<div class="stat-card"><span class="stat-icon">&#9888;</span><div><div class="stat-val" style="color:var(--warning)">'+p.unmatchedMRS.length+'</div><div class="stat-label">Unmatched MRS</div></div></div>'+
+    (p.normalizedMatchMap.size>0?'<div class="stat-card" onclick="openNormModal()" style="cursor:pointer;border:1.5px solid #7c3aed;background:#faf5ff;"><span class="stat-icon">&#128259;</span><div><div class="stat-val" style="color:#7c3aed">'+p.normalizedMatchMap.size+'</div><div class="stat-label" style="color:#7c3aed">Normalized <span style="font-size:.58rem;background:#ede9fe;color:#7c3aed;padding:1px 5px;border-radius:4px;margin-left:2px;">View</span></div></div></div>':'');
 
   filterSection('all',document.querySelector('.section-pill'));
 }
@@ -524,7 +567,10 @@ function filterSection(name,btn) {
     html+='<div class="section-block"><div class="section-head"><h3>'+pl.name+'</h3><span class="section-badge">'+rows.length+' parts</span></div>';
     html+='<div style="overflow-x:auto;"><table class="viz-table"><thead><tr><th>#</th><th>Part Number</th><th>Make</th><th>Description</th><th class="panel-head">Req Qty</th><th class="mrs-head">MRS Qty</th><th class="status-head">Status</th></tr></thead><tbody>';
     rows.forEach(function(r){
-      html+='<tr><td>'+r.srNo+'</td><td class="td-mono">'+r.partNum+'</td><td>'+(r.make||'&mdash;')+'</td><td>'+(r.desc||'&mdash;')+'</td><td class="td-center">'+r.reqQty+'</td><td class="td-center">'+(r.mrsQty||'&mdash;')+'</td><td class="td-center">'+statusPill(r.statusType,r.status)+'</td></tr>';
+      var pnCell=r.isNorm
+        ? '<span class="td-mono">'+r.partNum+'</span><br><span style="font-size:.62rem;color:#7c3aed;font-family:monospace;">-> MRS: '+r.mrsPartNum+'</span>'
+        : '<span class="td-mono">'+r.partNum+'</span>';
+      html+='<tr'+(r.isNorm?' style="background:#faf5ff;"':'')+'><td>'+r.srNo+'</td><td>'+pnCell+'</td><td>'+(r.make||'&mdash;')+'</td><td>'+(r.desc||'&mdash;')+'</td><td class="td-center">'+r.reqQty+'</td><td class="td-center">'+(r.mrsQty||'&mdash;')+'</td><td class="td-center">'+statusPill(r.statusType,r.status)+'</td></tr>';
     });
     html+='</tbody></table></div></div>';
   });
@@ -546,7 +592,7 @@ function renderExportSummary(){
     '<div class="exp-item"><div class="exp-item-val">'+todayStr()+'</div><div class="exp-item-label">Export Date</div></div>';
 }
 
-// ── EXPORT ──
+// -- EXPORT --
 async function exportExcel(){
   var btn=document.getElementById('exportBtn');
   btn.textContent='Generating...'; btn.disabled=true;
@@ -554,7 +600,7 @@ async function exportExcel(){
   try {
     var wb=new ExcelJS.Workbook();
     var p=processedData;
-    var panels=p.panels, partsMap=p.partsMap, mrsMap=p.mrsMap;
+    var panels=p.panels, partsMap=p.partsMap, mrsMap=p.mrsMap, mrsNormMap=p.mrsNormMap||new Map();
     var unmatchedMRS=p.unmatchedMRS, excessParts=p.excessParts, toOrderParts=p.toOrderParts;
 
     var C={
@@ -600,7 +646,7 @@ async function exportExcel(){
       });
     }
 
-    // SHEET 1 — Panel Comparison
+    // SHEET 1 - Panel Comparison
     var ws1=wb.addWorksheet('Panel Comparison',{views:[{state:'frozen',xSplit:4,ySplit:2,activeCell:'E3'}]});
     ws1.getColumn(1).width=5;ws1.getColumn(2).width=18;ws1.getColumn(3).width=26;ws1.getColumn(4).width=38;
     var cw=5;
@@ -625,6 +671,9 @@ async function exportExcel(){
     for(var idx=0;idx<allParts.length;idx++){
       if(idx%100===0&&idx>0) await new Promise(function(r){setTimeout(r,0);});
       var part=allParts[idx]; var key=part.partNum.toLowerCase();
+      var exLk=mrsLookup(key,mrsMap,mrsNormMap);
+      var exMe=exLk?exLk.entry:null;
+      var isNormPart=exLk?exLk.isNormalized:false;
       var rbg = idx%2===0 ? C.RL : C.RD;
       var dr=ws1.addRow([]); dr.height=17;
       sc(dr.getCell(1),{val:idx+1,bg:rbg,sz:9,halign:'center'});
@@ -634,13 +683,14 @@ async function exportExcel(){
       panels.forEach(function(pl){
         var psc=pcm.get(pl.name);
         var rq=part.panelQtys[pl.name]||0;
-        var mq=(mrsMap.has(key)&&mrsMap.get(key).sections.has(pl.name))?mrsMap.get(key).sections.get(pl.name):0;
+        var mq=(exMe&&exMe.sections.has(pl.name))?exMe.sections.get(pl.name):0;
+        var nsfx=isNormPart?' (N)':'';
         var st,sb,sf;
-        if(rq===0)       {st='';             sb=rbg;    sf=C.GF2;}
-        else if(mq===0)  {st='No MRS';       sb=C.GB2;  sf=C.GF2;}
-        else if(mq>rq)   {st='+'+(mq-rq)+' Excess';    sb=C.GB;   sf=C.GF;}
-        else if(mq<rq)   {st='-'+(rq-mq)+' Short';     sb=C.RRB;  sf=C.RF;}
-        else             {st='Exact \u2713';            sb=C.AB;   sf=C.AF;}
+        if(rq===0)       {st='';                          sb=rbg;    sf=C.GF2;}
+        else if(mq===0)  {st='No MRS';                    sb=C.GB2;  sf=C.GF2;}
+        else if(mq>rq)   {st='+'+(mq-rq)+' Excess'+nsfx; sb=C.GB;   sf=C.GF;}
+        else if(mq<rq)   {st='-'+(rq-mq)+' Short'+nsfx;  sb=C.RRB;  sf=C.RF;}
+        else             {st='Exact \u2713'+nsfx;        sb=C.AB;   sf=C.AF;}
         sc(dr.getCell(psc),  {val:rq||'',bg:rbg,sz:9,bold:rq>0,halign:'center'});
         sc(dr.getCell(psc+1),{val:mq||'',bg:rbg,sz:9,bold:mq>0,halign:'center',fg:C.PH});
         sc(dr.getCell(psc+2),{val:st,bg:sb,sz:9,bold:true,halign:'center',fg:sf,rm:true});
@@ -648,7 +698,7 @@ async function exportExcel(){
     }
     await new Promise(function(r){setTimeout(r,0);});
 
-    // SHEET 2 — Unmatched MRS
+    // SHEET 2 - Unmatched MRS
     var ws2=wb.addWorksheet('Unmatched MRS Parts');
     var uPanels=[];
     unmatchedMRS.forEach(function(u){if(uPanels.indexOf(u.panel)===-1) uPanels.push(u.panel);});
@@ -672,7 +722,7 @@ async function exportExcel(){
     });
     var usr2=1;
     Array.from(uByPart.values()).forEach(function(up,ri){
-      var vals=[usr2++,up.make||'—',up.partNum,up.desc||'—'];
+      var vals=[usr2++,up.make||'-',up.partNum,up.desc||'-'];
       uPanels.forEach(function(pn){vals.push(up.panels[pn]||'');});
       var r=ws2.addRow(vals); r.height=17;
       var bg=ri%2===0?'FFFFFBEB':'FFFEF9C3';
@@ -687,15 +737,16 @@ async function exportExcel(){
     if(!uByPart.size){var nr2=ws2.addRow(['No unmatched MRS parts']);nr2.getCell(1).font={italic:true,size:9,color:{argb:C.GF2}};}
     await new Promise(function(r){setTimeout(r,0);});
 
-    // SHEET 3 — Parts to Order (with per-panel qty breakdown, only short parts)
+    // SHEET 3 - Parts to Order (with per-panel qty breakdown, only short parts)
     var ws3 = wb.addWorksheet('Parts to Order');
     // Collect only the panels where each part is SHORT (mrsQty < reqQty)
-    // Build a map: partKey → { partNum, make, desc, panelQtys:{panelName→reqQty}, total }
+    // Build a map: partKey -> { partNum, make, desc, panelQtys:{panelName->reqQty}, total }
     var orderDetailMap = new Map();
     partsMap.forEach(function(part, key) {
+      var s3lk=mrsLookup(key,mrsMap,mrsNormMap); var s3me=s3lk?s3lk.entry:null;
       panels.forEach(function(pl) {
         var rq = part.panelQtys[pl.name] || 0; if (!rq) return;
-        var mq = (mrsMap.has(key) && mrsMap.get(key).sections.has(pl.name)) ? mrsMap.get(key).sections.get(pl.name) : 0;
+        var mq = (s3me&&s3me.sections.has(pl.name)) ? s3me.sections.get(pl.name) : 0;
         if (mq < rq) { // only short panels
           if (!orderDetailMap.has(key)) orderDetailMap.set(key, { partNum: part.partNum, make: part.make, desc: part.desc, panelQtys: {}, total: 0 });
           orderDetailMap.get(key).panelQtys[pl.name] = rq;
@@ -722,7 +773,7 @@ async function exportExcel(){
 
     if (orderDetailParts.length) {
       orderDetailParts.forEach(function(pt, ri) {
-        var vals = [ri+1, pt.make||'—', pt.partNum, pt.desc||'—'];
+        var vals = [ri+1, pt.make||'-', pt.partNum, pt.desc||'-'];
         s3PanelNames.forEach(function(pn) { vals.push(pt.panelQtys[pn] || ''); });
         vals.push(pt.total);
         var r3 = ws3.addRow(vals); r3.height = 17;
@@ -765,10 +816,10 @@ async function exportExcel(){
     }
     await new Promise(function(r){setTimeout(r,0);});
 
-    // SHEET 4 — Excess Parts
+    // SHEET 4 - Excess Parts
     var ws4=wb.addWorksheet('Excess Parts');
     mkHdr(ws4,['SR','Make','Part Number','Part Description','Total Req Qty','Total MRS Qty','Excess Qty'],C.GF,[5,20,26,45,14,14,14]);
-    excessParts.forEach(function(pt,i){dRow(ws4,[i+1,pt.make||'—',pt.partNum,pt.desc||'—',pt.totalReq,pt.totalMrs,pt.excessQty],i,7,C.GF,'FFF0FDF4','FFECFDF5');});
+    excessParts.forEach(function(pt,i){dRow(ws4,[i+1,pt.make||'-',pt.partNum,pt.desc||'-',pt.totalReq,pt.totalMrs,pt.excessQty],i,7,C.GF,'FFF0FDF4','FFECFDF5');});
     if(!excessParts.length){var nr4=ws4.addRow(['No excess parts']);nr4.getCell(1).font={italic:true,size:9,color:{argb:C.GF2}};}
 
     var buffer=await wb.xlsx.writeBuffer();
@@ -784,7 +835,7 @@ async function exportExcel(){
   }
 }
 
-// ── DARK MODE ──
+// -- DARK MODE --
 // Synced with index.html via shared key 'wz-theme'.
 // index: default=dark, adds 'light' class for light mode.
 // procurement: default=light (no class), adds 'dark' class for dark mode.
@@ -796,7 +847,7 @@ function toggleDark(){
   try{localStorage.setItem('wz-theme',isDark?'dark':'light');}catch(e){}
 }
 
-// ── INIT ──
+// -- INIT --
 (function(){
   try{
     var saved=localStorage.getItem('wz-theme');
@@ -805,7 +856,7 @@ function toggleDark(){
       document.getElementById('darkIcon').textContent='\u2600\uFE0F';
       document.getElementById('darkLabel').textContent='Light Mode';
     }
-    // default = light (no class), button shows 🌙 Dark Mode (already in HTML)
+    // default = light (no class), button shows \uD83C\uDF19 Dark Mode (already in HTML)
   }catch(e){}
   loadSettings();
 })();
@@ -826,6 +877,66 @@ function toggleDark(){
       Designed & built by <strong style="color:var(--text2);">Krish Makwane</strong> &nbsp;·&nbsp; MVP v2.0
     </div>
   </footer>
+
+<!-- NORMALIZED MATCHES MODAL -->
+<div id="normModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(15,20,40,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center;">
+  <div style="background:var(--white);border-radius:12px;box-shadow:0 8px 40px rgba(30,34,53,.22);width:min(680px,96vw);max-height:80vh;display:flex;flex-direction:column;overflow:hidden;">
+    <div style="padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+      <div>
+        <div style="font-size:.92rem;font-weight:700;font-family:'Syne',sans-serif;color:var(--text);display:flex;align-items:center;gap:8px;">
+          <span style="background:#ede9fe;color:#7c3aed;border-radius:6px;padding:2px 8px;font-size:.7rem;font-weight:700;">&#128259; NORMALIZED</span>
+          Matched via Normalization
+        </div>
+        <div style="font-size:.68rem;color:var(--muted);margin-top:2px;">Part numbers reconciled after stripping special characters &amp; leading zeros.</div>
+      </div>
+      <button onclick="closeNormModal()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--muted);padding:4px 8px;border-radius:6px;" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='none'">&#10005;</button>
+    </div>
+    <div style="overflow-y:auto;padding:14px 20px;">
+      <table style="width:100%;border-collapse:collapse;font-size:.78rem;">
+        <thead>
+          <tr style="background:var(--surface2);">
+            <th style="text-align:left;padding:7px 10px;font-size:.65rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);">#</th>
+            <th style="text-align:left;padding:7px 10px;font-size:.65rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);">BOM Part Number</th>
+            <th style="text-align:center;padding:7px 6px;font-size:.65rem;color:var(--muted);border-bottom:2px solid var(--border);">&#8594;</th>
+            <th style="text-align:left;padding:7px 10px;font-size:.65rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);">MRS Part Number</th>
+            <th style="text-align:left;padding:7px 10px;font-size:.65rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);">Normalized Key</th>
+          </tr>
+        </thead>
+        <tbody id="normModalBody"></tbody>
+      </table>
+    </div>
+    <div style="padding:10px 20px;border-top:1px solid var(--border);flex-shrink:0;text-align:right;">
+      <button onclick="closeNormModal()" class="btn btn-secondary btn-sm">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function openNormModal(){
+  var p=processedData; if(!p||!p.normalizedMatchMap) return;
+  var rows=''; var i=1;
+  p.normalizedMatchMap.forEach(function(mrsOriginal,bomKey){
+    var bomOriginal=p.partsMap.has(bomKey)?p.partsMap.get(bomKey).partNum:bomKey;
+    var nk=normKey(bomKey);
+    var bg=i%2===0?'var(--surface2)':'var(--white)';
+    rows+='<tr style="background:'+bg+'">'+
+      '<td style="padding:6px 10px;color:var(--muted);">'+i+'</td>'+
+      '<td style="padding:6px 10px;font-family:monospace;font-size:.77rem;color:#1e3a5f;font-weight:600;">'+bomOriginal+'</td>'+
+      '<td style="padding:6px 6px;text-align:center;color:#7c3aed;font-weight:700;">-></td>'+
+      '<td style="padding:6px 10px;font-family:monospace;font-size:.77rem;color:#7c3aed;font-weight:600;">'+mrsOriginal+'</td>'+
+      '<td style="padding:6px 10px;font-family:monospace;font-size:.7rem;color:var(--muted);background:#faf5ff;">'+nk+'</td>'+
+      '</tr>';
+    i++;
+  });
+  document.getElementById('normModalBody').innerHTML=rows||'<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--muted);">No normalized matches</td></tr>';
+  var modal=document.getElementById('normModal');
+  modal.style.display='flex';
+}
+function closeNormModal(){
+  document.getElementById('normModal').style.display='none';
+}
+document.getElementById('normModal').addEventListener('click',function(e){if(e.target===this)closeNormModal();});
+</script>
 
 </body>
 </html>
