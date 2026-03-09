@@ -1,3 +1,17 @@
+// ══ PART NUMBER NORMALIZER ══
+// Mirrors the procurement tool's normalization — strips dirty chars,
+// unifies all separators (hyphen/underscore/dot/space) to nothing,
+// removes leading zeros, lowercases.
+// This means PATCH CORD-2M and PATCH CORD_2M both become "patchcord2m"
+function normalizePart(s) {
+  return String(s || '')
+    .toLowerCase()
+    .replace(/[\^~*#@!]/g, '')           // strip common EPLAN dirty prefix chars
+    .replace(/[-_.\s\/\\]+/g, '')        // unify ALL separators → nothing
+    .replace(/^0+([1-9])/, '$1')         // strip leading zeros before non-zero digit
+    .trim();
+}
+
 // ══ PROGRESS BAR ══
 function showProgress(current, total, fileName) {
   const wrap = document.getElementById('progressWrap');
@@ -205,9 +219,12 @@ async function parseShortage(file) {
     }
     const key = cleaned.toLowerCase();
     shortageMap.set(key, (shortageMap.get(key) || 0) + qty);
-    // Also store raw key in case prefixes haven't been applied
+    // Raw key fallback
     const rawKey = rawPart.toLowerCase();
     if (rawKey !== key) shortageMap.set(rawKey, (shortageMap.get(rawKey) || 0) + qty);
+    // Normalized key — catches separator mismatches
+    const normKey = normalizePart(rawPart);
+    if (normKey !== key && normKey !== rawKey) shortageMap.set(normKey, (shortageMap.get(normKey) || 0) + qty);
   }
   state.shortageData = shortageMap;
 }
@@ -223,14 +240,17 @@ async function parseMRS(file) {
     // Use raw numeric qty from _raw if available
     const rawQty = (row._raw && row._raw[15] !== undefined) ? row._raw[15] : row[15];
     if (!rawPart) continue;
-    // Store both the raw part number AND the cleaned version as keys
-    // so lookup always works regardless of whether prefixes are applied
     let qty = typeof rawQty === 'number' ? rawQty : parseFloat(String(rawQty ?? '').replace(/,/g, ''));
     if (isNaN(qty)) qty = 0;
-    // Raw key
+
+    // Store under 3 keys so lookup always works:
+    // 1. raw key (lowercase)
+    // 2. prefix/suffix-cleaned key (lowercase)
+    // 3. fully normalized key (separators stripped, leading zeros removed)
     const rawKey = rawPart.toLowerCase();
     mrsMap.set(rawKey, (mrsMap.get(rawKey) || 0) + qty);
-    // Also store cleaned key (prefix/suffix stripped) so it matches panel cleaned parts
+
+    // Prefix/suffix-cleaned key
     let cleaned = rawPart;
     for (const p of state.prefixes) {
       const pt = p.trim();
@@ -241,9 +261,11 @@ async function parseMRS(file) {
       if (st && cleaned.endsWith(st)) { cleaned = cleaned.slice(0, cleaned.length - st.length).trim(); break; }
     }
     const cleanedKey = cleaned.toLowerCase();
-    if (cleanedKey !== rawKey) {
-      mrsMap.set(cleanedKey, (mrsMap.get(cleanedKey) || 0) + qty);
-    }
+    if (cleanedKey !== rawKey) mrsMap.set(cleanedKey, (mrsMap.get(cleanedKey) || 0) + qty);
+
+    // Normalized key — catches separator mismatches like PATCH CORD-2M vs PATCH CORD_2M
+    const normKey = normalizePart(rawPart);
+    if (normKey !== rawKey && normKey !== cleanedKey) mrsMap.set(normKey, (mrsMap.get(normKey) || 0) + qty);
   }
   state.mrsData = mrsMap;
 }
@@ -354,6 +376,23 @@ function removeFR(id) { state.findReplace = state.findReplace.filter(f => f.id !
 
 
 
+// ══ MRS LOOKUP — tries exact lowercase, then normalized ══
+function getMrsQty(partNum) {
+  if (!state.mrsData) return 0;
+  const exact = state.mrsData.get(partNum.toLowerCase());
+  if (exact !== undefined) return exact;
+  const norm = state.mrsData.get(normalizePart(partNum));
+  return norm || 0;
+}
+
+function getShortageQty(partNum) {
+  if (!state.shortageData) return 0;
+  const exact = state.shortageData.get(partNum.toLowerCase());
+  if (exact !== undefined) return exact;
+  const norm = state.shortageData.get(normalizePart(partNum));
+  return norm || 0;
+}
+
 // ══ FILTER & PREVIEW ══
 function setFilter(filter) {
   state.currentFilter = filter;
@@ -370,10 +409,10 @@ function renderPreview() {
     else if (r.status === 'updated') counts.updated++;
     else if (r.status === 'mismatch') counts.mismatch++;
     if (state.mrsData) {
-      const mrsQty = state.mrsData.get(r.partNum.toLowerCase()) || 0;
+      const mrsQty = getMrsQty(r.partNum);
       if (!mrsQty) counts.nomrs++;
     }
-    if (state.shortageData && (state.shortageData.get(r.partNum.toLowerCase()) || 0) > 0) {
+    if (state.shortageData && (getShortageQty(r.partNum)) > 0) {
       counts.shortage++;
     }
   });
@@ -435,12 +474,12 @@ function renderPreviewTable() {
 
   if (filter === 'nomrs') {
     rows = state.merged.filter(r => {
-      const mrsQty = state.mrsData ? (state.mrsData.get(r.partNum.toLowerCase()) || 0) : 0;
+      const mrsQty = state.mrsData ? (getMrsQty(r.partNum)) : 0;
       return !mrsQty;
     });
   } else if (filter === 'shortage') {
     rows = state.merged.filter(r => {
-      return state.shortageData && (state.shortageData.get(r.partNum.toLowerCase()) || 0) > 0;
+      return state.shortageData && (getShortageQty(r.partNum)) > 0;
     });
   } else {
     rows = filter === 'all' ? state.merged : state.merged.filter(r => r.status === filter);
@@ -458,7 +497,7 @@ function renderPreviewTable() {
   };
 
   tbody.innerHTML = rows.map((r, i) => {
-    const shortageQty = state.shortageData ? (state.shortageData.get(r.partNum.toLowerCase()) || 0) : null;
+    const shortageQty = state.shortageData ? (getShortageQty(r.partNum)) : null;
     const shortageCell = state.shortageData
       ? (shortageQty > 0
           ? `<td style="font-family:'IBM Plex Mono',monospace;font-size:.78rem;font-weight:600;color:#c2410c;background:rgba(234,88,12,.07);">+${shortageQty}</td>`
@@ -571,12 +610,12 @@ async function exportMerged() {
     fileNames.forEach(fn => fullRow.push(r.fileQtys[fn] || 0));
     fullRow.push(r.totalQty);
     if (state.mrsData) {
-      const mrsQty = state.mrsData.get(r.partNum.toLowerCase()) || 0;
+      const mrsQty = getMrsQty(r.partNum);
       fullRow.push(mrsQty);
       fullRow.push(r.totalQty - mrsQty);
     }
     if (state.shortageData) {
-      fullRow.push(state.shortageData.get(r.partNum.toLowerCase()) || 0);
+      fullRow.push(getShortageQty(r.partNum));
     }
     dataRows.push(selectedIdx.map(i => fullRow[i]));
   });
