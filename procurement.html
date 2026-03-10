@@ -92,11 +92,14 @@
           </div>
           <div class="col-map-item" style="grid-column:1/-1;">
             <span class="col-map-label">Panel columns start at</span>
-            <input class="col-input" id="bomColPanelStart" value="E" maxlength="2" oninput="this.value=this.value.toUpperCase();saveSettings()">
+            <input class="col-input" id="bomColPanelStart" value="E" maxlength="2" oninput="this.value=this.value.toUpperCase();saveSettings();if(bomFile){readExcel(bomFile).then(function(d){var f=autoDetectPanels(d);var h=document.getElementById('bomPanelHint');if(h)h.textContent=f>0?'\u2714 Auto-detected '+f+' panel'+(f===1?'':'s'):'Could not auto-detect \u2014 enter manually';});}">
           </div>
           <div class="col-map-item" style="grid-column:1/-1;">
             <span class="col-map-label">Number of panels</span>
-            <input class="col-input" id="bomPanelCount" value="" maxlength="3" type="number" min="1" placeholder="&#8212;" style="width:60px;" oninput="saveSettings()">
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              <input class="col-input" id="bomPanelCount" value="" maxlength="3" type="number" min="1" placeholder="&#8212;" style="width:60px;" oninput="saveSettings()">
+              <span id="bomPanelHint" style="font-size:.65rem;color:#15803d;font-style:italic;">Upload BOM to auto-detect</span>
+            </div>
           </div>
         </div>
       </div>
@@ -265,6 +268,30 @@ function parseOrFromMrsFilename(filename) {
 }
 
 // -- FILES --
+function autoDetectPanels(bomData) {
+  var SKIP = ['total qty','mrs qty','total','mrs'];
+  var bPS  = colIdx(document.getElementById('bomColPanelStart').value || 'E');
+  var hdr  = bomData[0] || [];
+  var count = 0;
+  for (var c = bPS; c < hdr.length; c++) {
+    var h = String(hdr[c] || '').trim();
+    if (!h) break;                                      // blank = end of panels
+    if (SKIP.indexOf(h.toLowerCase()) !== -1) break;   // "Total Qty" / "MRS Qty" = end
+    count++;
+  }
+  if (count > 0) {
+    var el = document.getElementById('bomPanelCount');
+    if (el) {
+      el.value = count;
+      el.style.background = '#f0fdf4';
+      el.style.borderColor = '#86efac';
+      setTimeout(function(){ el.style.background=''; el.style.borderColor=''; }, 2000);
+      saveSettings();
+    }
+  }
+  return count;
+}
+
 function handleBOM(input) {
   if (!input.files.length) return;
   bomFile = input.files[0]; input.value='';
@@ -273,6 +300,12 @@ function handleBOM(input) {
   document.getElementById('bomExt').textContent = bomFile.name.split('.').pop().toUpperCase();
   document.getElementById('bomName').textContent = bomFile.name;
   document.getElementById('bomSize').textContent = fmtSz(bomFile.size);
+  // Auto-detect number of panels from BOM header row
+  readExcel(bomFile).then(function(data) {
+    var found = autoDetectPanels(data);
+    var hint = document.getElementById('bomPanelHint');
+    if (hint) hint.textContent = found > 0 ? '\u2714 Auto-detected ' + found + ' panel' + (found===1?'':'s') : 'Could not auto-detect — enter manually';
+  });
   checkReady();
 }
 function clearBOM() {
