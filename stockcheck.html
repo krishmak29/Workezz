@@ -50,266 +50,312 @@
      SCREEN 1
 ═══════════════════════════════════════ -->
 <div class="screen active" id="screen1">
-  <div class="s1-main">
+  <div class="s1-layout">
 
-    <!-- ── BOM PANEL (dominant, wider) ── -->
-    <div class="panel panel-bom">
-      <div class="panel-accent bom-accent"></div>
-      <div class="panel-inner panel-inner--gap">
-        <div class="panel-header">
-          <div class="panel-title panel-title-bom" style="color:var(--bom);">&#128202; BOM File <span style="font-size:.65rem;font-weight:500;color:var(--muted);font-family:'IBM Plex Sans',sans-serif;">&nbsp;— Primary</span></div>
-          <div class="panel-sub">Your Bill of Materials — all parts to cross-check against both stock sources</div>
+    <!-- ══ DARK NAV SIDEBAR ══ -->
+    <div class="s1-sidebar">
+      <div class="s1-sidebar-title">Files</div>
+
+      <!-- Hidden file inputs (kept exactly as before) -->
+      <input type="file" id="bomInput" accept=".xls,.xlsx" style="display:none;" onchange="handleBOM(this)">
+      <input type="file" id="siemInput" accept=".xls,.xlsx" style="display:none;" onchange="handleSiemens(this)">
+      <input type="file" id="purInput" accept=".xls,.xlsx" style="display:none;" onchange="handlePurchase(this)">
+
+      <!-- BOM nav item -->
+      <div class="s1-nav-item s1-nav-bom active" id="nav-bom" onclick="activatePanel('bom')">
+        <div class="s1-nav-icon">&#128202;</div>
+        <div class="s1-nav-text">
+          <div class="s1-nav-name">BOM File</div>
+          <div class="s1-nav-sub" id="nav-bom-sub">Bill of Materials</div>
         </div>
+        <div class="s1-nav-status s1-ns-req" id="nav-bom-status">Required</div>
+      </div>
 
-        <input type="file" id="bomInput" accept=".xls,.xlsx" style="display:none;" onchange="handleBOM(this)">
-
-        <!-- Upload zone -->
-        <div id="bomEmptyZone" class="upload-zone bom-zone"
-          onclick="document.getElementById('bomInput').click()"
-          ondragover="onDragOver(event,'bomEmptyZone')"
-          ondragleave="onDragLeave('bomEmptyZone')"
-          ondrop="onDrop(event,'bom')">
-          <span class="uz-icon uz-icon-lg">&#128202;</span>
-          <div class="uz-text"><strong style="color:var(--bom);font-size:.9rem;">Click or drag &amp; drop BOM file</strong></div>
-          <div class="uz-sub">.xls or .xlsx &mdash; best sheet auto-selected</div>
+      <!-- Siemens nav item -->
+      <div class="s1-nav-item s1-nav-siem" id="nav-siem" onclick="activatePanel('siem')">
+        <div class="s1-nav-icon">&#127981;</div>
+        <div class="s1-nav-text">
+          <div class="s1-nav-name">Siemens Stock</div>
+          <div class="s1-nav-sub" id="nav-siem-sub">Open status only</div>
         </div>
+        <div class="s1-nav-status s1-ns-opt" id="nav-siem-status">Optional</div>
+      </div>
 
-        <!-- Loaded state -->
-        <div id="bomLoaded" class="file-loaded bom-loaded" style="display:none;">
-          <div class="fl-top">
-            <div class="fl-icon" id="bomExt">XLS</div>
-            <div class="fl-info">
-              <div class="fl-name" id="bomName">&mdash;</div>
-              <div class="fl-meta" id="bomSize">&mdash;</div>
+      <!-- Purchase nav item -->
+      <div class="s1-nav-item s1-nav-pur" id="nav-pur" onclick="activatePanel('pur')">
+        <div class="s1-nav-icon">&#128722;</div>
+        <div class="s1-nav-text">
+          <div class="s1-nav-name">Purchase Stock</div>
+          <div class="s1-nav-sub" id="nav-pur-sub">Filter by Make</div>
+        </div>
+        <div class="s1-nav-status s1-ns-opt" id="nav-pur-status">Optional</div>
+      </div>
+
+      <!-- Requirements checklist at bottom -->
+      <div class="s1-sidebar-foot">
+        <div class="s1-foot-label">Requirements</div>
+        <div class="s1-foot-item" id="sb-ck-bom">
+          <span class="s1-foot-dot"></span> BOM file uploaded
+        </div>
+        <div class="s1-foot-item" id="sb-ck-stock">
+          <span class="s1-foot-dot"></span> At least 1 stock file
+        </div>
+      </div>
+    </div><!-- end s1-sidebar -->
+
+    <!-- ══ MAIN PANEL ══ -->
+    <div class="s1-main">
+
+      <!-- ── BOM PANEL ── -->
+      <div class="s1-panel s1-panel-bom active" id="panel-bom">
+        <div class="s1-panel-head">
+          <div class="s1-panel-title" style="color:#10b981;">&#128202; BOM File <span class="sb-panel-badge">Primary</span></div>
+          <div class="s1-panel-sub">Bill of Materials — all parts to cross-check against both stock sources</div>
+        </div>
+        <div class="s1-panel-body">
+          <div class="s1-panel-left">
+            <!-- Upload / loaded zone -->
+            <div id="bomEmptyZone" class="sb-upload-zone"
+              onclick="document.getElementById('bomInput').click()"
+              ondragover="onDragOver(event,'bomEmptyZone')"
+              ondragleave="onDragLeave('bomEmptyZone')"
+              ondrop="onDrop(event,'bom')">
+              <span style="font-size:1.6rem;">&#128202;</span>
+              <span style="font-weight:600;">Click or drag &amp; drop BOM file</span>
+              <span class="sb-uz-hint">.xls or .xlsx — sheet auto-selected</span>
             </div>
-            <button class="btn btn-danger-outline btn-sm" onclick="clearBOM()">&#10005;</button>
+            <div id="bomLoaded" class="sb-file-chip sb-chip-bom" style="display:none;">
+              <div class="sb-chip-top">
+                <div class="sb-chip-ext" id="bomExt">XLS</div>
+                <div class="sb-chip-info">
+                  <div class="sb-chip-name" id="bomName">—</div>
+                  <div class="sb-chip-meta" id="bomSize">—</div>
+                </div>
+                <button class="sb-chip-clear" onclick="clearBOM()">&#10005;</button>
+              </div>
+              <div class="sb-chip-foot">
+                <span class="sb-chip-preview" id="bomPreview">&#10003; —</span>
+                <span class="sb-chip-change" onclick="document.getElementById('bomInput').click()">Change</span>
+              </div>
+            </div>
+            <!-- Sheet selector -->
+            <div id="bomSheetSelector" style="display:none;">
+              <div class="sb-section-label">&#128196; Select sheet</div>
+              <div id="bomSheetPills" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;"></div>
+            </div>
+            <div class="s1-info-note s1-note-bom">&#8505; Matched parts highlighted <strong>blue</strong> (Siemens) or <strong>amber</strong> (Purchase) in export.</div>
           </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;">
-            <span class="fl-preview" id="bomPreview">&#10003; &mdash;</span>
-            <span class="fl-change" onclick="document.getElementById('bomInput').click()">Change file</span>
-          </div>
-        </div>
-
-        <!-- Advanced mapping toggle -->
-        <div>
-          <button class="adv-toggle" id="bomAdvBtn" onclick="toggleAdv('bom')">
-            <span>&#9881;&#65039;</span> Advanced Column Mapping
-            <span class="adv-toggle-icon" style="margin-left:auto;">&#9656;</span>
-          </button>
-          <div class="adv-body" id="bomAdvBody">
-            <div class="adv-inner">
-              <div class="col-map-card">
-                <div class="section-label">BOM Column Mapping</div>
-                <div style="font-size:.71rem;color:var(--muted);margin-bottom:8px;">Which column holds the Part Number?</div>
-                <div class="col-map-grid">
-                  <div class="col-map-item">
-                    <span class="col-map-label">Part Number Col</span>
-                    <input class="col-input" id="bomColPart" value="C" maxlength="2" oninput="this.value=this.value.toUpperCase()">
+          <div class="s1-panel-right">
+            <!-- Col mapping — collapsed by default, gear toggles -->
+            <button class="s1-colmap-btn" onclick="toggleColMap('bom')">&#9881; Column Mapping <span class="s1-colmap-arrow" id="bom-cmarrow">&#9656;</span></button>
+            <div class="s1-colmap-body" id="bom-cmbody">
+              <div class="s1-col-map-card">
+                <div class="sb-col-grid">
+                  <div class="sb-col-item">
+                    <span class="sb-col-label">Part No. Col</span>
+                    <input class="sb-col-input" id="bomColPart" value="C" maxlength="2" oninput="this.value=this.value.toUpperCase();refreshBomPreview()">
                   </div>
-                  <div class="col-map-item">
-                    <span class="col-map-label">Data Start Row</span>
-                    <input class="col-input" id="bomStartRow" value="2" maxlength="4" type="number" min="1">
+                  <div class="sb-col-item">
+                    <span class="sb-col-label">Start Row</span>
+                    <input class="sb-col-input" id="bomStartRow" value="2" maxlength="4" type="number" min="1" oninput="refreshBomPreview()">
                   </div>
                 </div>
-                <div style="font-size:.67rem;color:var(--muted);margin-top:8px;">&#8505; Required Qty is auto-detected from the column header containing "Total Qty".</div>
+                <div class="sb-adv-note">&#8505; Qty col auto-detected from "Total Qty" header</div>
               </div>
             </div>
           </div>
         </div>
-
-        <div class="info-note note-green">
-          &#8505;&#65039; Matched parts are <strong style="color:var(--stk);">highlighted blue</strong> (Siemens) or <strong style="color:var(--pur);">amber</strong> (Purchase) in the exported report.
+        <!-- BOM Preview -->
+        <div class="s1-preview-card s1-pcard-bom" id="bomPreviewWrap" style="display:none;">
+          <div class="s1-pcard-header">
+            <span class="s1-pcard-dot" style="background:#10b981;"></span>
+            <span class="s1-pcard-title">BOM Preview</span>
+            <span class="s1-pcard-sub" id="bomPreviewLabel"></span>
+          </div>
+          <div class="s1-pcard-table-wrap">
+            <table id="bomPreviewTable" class="s1-preview-table"></table>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- ── SIEMENS PANEL ── -->
-    <div class="panel panel-siem">
-      <div class="panel-accent siem-accent"></div>
-      <div class="panel-inner panel-inner--gap">
-        <div class="panel-header">
-          <div class="panel-title" style="color:var(--stk);">&#127981; Siemens Open Stock</div>
-          <div class="panel-sub">Only rows where Status = <strong>OPEN</strong> are matched</div>
+      <!-- ── SIEMENS PANEL ── -->
+      <div class="s1-panel s1-panel-siem" id="panel-siem">
+        <div class="s1-panel-head">
+          <div class="s1-panel-title" style="color:#38bdf8;">&#127981; Siemens Open Stock <span class="sb-panel-badge" style="background:#0c4a6e;color:#7dd3fc;">Optional</span></div>
+          <div class="s1-panel-sub">Only rows where Status = OPEN are matched — Sheet 2 of export</div>
         </div>
-
-        <input type="file" id="siemInput" accept=".xls,.xlsx" style="display:none;" onchange="handleSiemens(this)">
-
-        <div id="siemEmptyZone" class="upload-zone stk-zone"
-          onclick="document.getElementById('siemInput').click()"
-          ondragover="onDragOver(event,'siemEmptyZone')"
-          ondragleave="onDragLeave('siemEmptyZone')"
-          ondrop="onDrop(event,'siem')">
-          <span class="uz-icon">&#127981;</span>
-          <div class="uz-text"><strong style="color:var(--stk);">Click or drag &amp; drop</strong></div>
-          <div class="uz-sub">.xls or .xlsx — optional</div>
-        </div>
-
-        <div id="siemLoaded" class="file-loaded stk-loaded" style="display:none;">
-          <div class="fl-top">
-            <div class="fl-icon" id="siemExt">XLS</div>
-            <div class="fl-info">
-              <div class="fl-name" id="siemName">&mdash;</div>
-              <div class="fl-meta" id="siemSize">&mdash;</div>
+        <div class="s1-panel-body">
+          <div class="s1-panel-left">
+            <div id="siemEmptyZone" class="sb-upload-zone sb-upload-zone-siem"
+              onclick="document.getElementById('siemInput').click()"
+              ondragover="onDragOver(event,'siemEmptyZone')"
+              ondragleave="onDragLeave('siemEmptyZone')"
+              ondrop="onDrop(event,'siem')">
+              <span style="font-size:1.6rem;">&#127981;</span>
+              <span style="font-weight:600;">Click or drag &amp; drop Siemens file</span>
+              <span class="sb-uz-hint">.xls or .xlsx</span>
             </div>
-            <button class="btn btn-danger-outline btn-sm" onclick="clearSiemens()">&#10005;</button>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;">
-            <span class="fl-preview" id="siemPreview">&#10003; &mdash;</span>
-            <span class="fl-change" onclick="document.getElementById('siemInput').click()">Change file</span>
-          </div>
-        </div>
-
-        <div>
-          <button class="adv-toggle" id="siemAdvBtn" onclick="toggleAdv('siem')">
-            <span>&#9881;&#65039;</span> Advanced Column Mapping
-            <span class="adv-toggle-icon" style="margin-left:auto;">&#9656;</span>
-          </button>
-          <div class="adv-body" id="siemAdvBody">
-            <div class="adv-inner">
-              <div class="col-map-card" style="border-color:var(--stk-mid);">
-                <div class="section-label" style="color:var(--stk);">Siemens Stock Mapping</div>
-                <div style="font-size:.71rem;color:var(--muted);margin-bottom:8px;">Pre-set to standard Open Stock format</div>
-                <div class="col-map-grid">
-                  <div class="col-map-item">
-                    <span class="col-map-label">Part No. col</span>
-                    <input class="col-input" id="siemColPart" value="F" maxlength="2" oninput="this.value=this.value.toUpperCase()" style="border-color:var(--stk-mid);">
-                  </div>
-                  <div class="col-map-item">
-                    <span class="col-map-label">Status col</span>
-                    <input class="col-input" id="siemColStatus" value="D" maxlength="2" oninput="this.value=this.value.toUpperCase()" style="border-color:var(--stk-mid);">
-                  </div>
-                  <div class="col-map-item">
-                    <span class="col-map-label">Qty col</span>
-                    <input class="col-input" id="siemColQty" value="H" maxlength="2" oninput="this.value=this.value.toUpperCase()" style="border-color:var(--stk-mid);">
-                  </div>
-                  <div class="col-map-item">
-                    <span class="col-map-label">Start row</span>
-                    <input class="col-input" id="siemStartRow" value="3" maxlength="4" type="number" min="1" style="border-color:var(--stk-mid);">
-                  </div>
+            <div id="siemLoaded" class="sb-file-chip sb-chip-siem" style="display:none;">
+              <div class="sb-chip-top">
+                <div class="sb-chip-ext" id="siemExt">XLS</div>
+                <div class="sb-chip-info">
+                  <div class="sb-chip-name" id="siemName">—</div>
+                  <div class="sb-chip-meta" id="siemSize">—</div>
                 </div>
+                <button class="sb-chip-clear" onclick="clearSiemens()">&#10005;</button>
+              </div>
+              <div class="sb-chip-foot">
+                <span class="sb-chip-preview" id="siemPreview">&#10003; —</span>
+                <span class="sb-chip-change" onclick="document.getElementById('siemInput').click()">Change</span>
               </div>
             </div>
+            <div class="s1-info-note s1-note-siem">&#8505; Optional. Sheet 2 of export = matched Siemens OPEN rows.</div>
           </div>
-        </div>
-
-        <div class="info-note note-teal" style="font-size:.7rem;">&#8505; Optional. Sheet 2 of export = matched Siemens OPEN rows.</div>
-      </div>
-    </div>
-
-    <!-- ── PURCHASE PANEL ── -->
-    <div class="panel">
-      <div class="panel-accent pur-accent"></div>
-      <div class="panel-inner panel-inner--gap">
-        <div class="panel-header">
-          <div class="panel-title" style="color:var(--pur);">&#128722; Purchase Open Stock</div>
-          <div class="panel-sub">All rows used — filter by Make to narrow results</div>
-        </div>
-
-        <input type="file" id="purInput" accept=".xls,.xlsx" style="display:none;" onchange="handlePurchase(this)">
-
-        <div id="purEmptyZone" class="upload-zone pur-zone"
-          onclick="document.getElementById('purInput').click()"
-          ondragover="onDragOver(event,'purEmptyZone')"
-          ondragleave="onDragLeave('purEmptyZone')"
-          ondrop="onDrop(event,'pur')">
-          <span class="uz-icon">&#128722;</span>
-          <div class="uz-text"><strong style="color:var(--pur);">Click or drag &amp; drop</strong></div>
-          <div class="uz-sub">.xls or .xlsx — optional</div>
-        </div>
-
-        <div id="purLoaded" class="file-loaded pur-loaded" style="display:none;">
-          <div class="fl-top">
-            <div class="fl-icon" id="purExt">XLS</div>
-            <div class="fl-info">
-              <div class="fl-name" id="purName">&mdash;</div>
-              <div class="fl-meta" id="purSize">&mdash;</div>
-            </div>
-            <button class="btn btn-danger-outline btn-sm" onclick="clearPurchase()">&#10005;</button>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;">
-            <span class="fl-preview" id="purPreview">&#10003; &mdash;</span>
-            <span class="fl-change" onclick="document.getElementById('purInput').click()">Change file</span>
-          </div>
-        </div>
-
-        <div>
-          <button class="adv-toggle" id="purAdvBtn" onclick="toggleAdv('pur')">
-            <span>&#9881;&#65039;</span> Advanced Column Mapping
-            <span class="adv-toggle-icon" style="margin-left:auto;">&#9656;</span>
-          </button>
-          <div class="adv-body" id="purAdvBody">
-            <div class="adv-inner">
-              <div class="col-map-card" style="border-color:var(--pur-mid);">
-                <div class="section-label" style="color:var(--pur);">Purchase Stock Mapping</div>
-                <div style="font-size:.71rem;color:var(--muted);margin-bottom:8px;">No status filter — all rows included</div>
-                <div class="col-map-grid">
-                  <div class="col-map-item">
-                    <span class="col-map-label">Part No. col</span>
-                    <input class="col-input" id="purColPart" value="C" maxlength="2" oninput="this.value=this.value.toUpperCase()" style="border-color:var(--pur-mid);">
+          <div class="s1-panel-right">
+            <button class="s1-colmap-btn s1-colmap-btn-siem" onclick="toggleColMap('siem')">&#9881; Column Mapping <span class="s1-colmap-arrow" id="siem-cmarrow">&#9656;</span></button>
+            <div class="s1-colmap-body" id="siem-cmBody">
+              <div class="s1-col-map-card">
+                <div class="sb-col-grid">
+                  <div class="sb-col-item">
+                    <span class="sb-col-label">Part No.</span>
+                    <input class="sb-col-input sb-col-siem" id="siemColPart" value="F" maxlength="2" oninput="this.value=this.value.toUpperCase();refreshSiemPreview()">
                   </div>
-                  <div class="col-map-item">
-                    <span class="col-map-label">Make col</span>
-                    <input class="col-input" id="purColMake" value="B" maxlength="2" oninput="this.value=this.value.toUpperCase();rebuildMakeList()" style="border-color:var(--pur-mid);">
+                  <div class="sb-col-item">
+                    <span class="sb-col-label">Status</span>
+                    <input class="sb-col-input sb-col-siem" id="siemColStatus" value="D" maxlength="2" oninput="this.value=this.value.toUpperCase();refreshSiemPreview()">
                   </div>
-                  <div class="col-map-item">
-                    <span class="col-map-label">Qty col</span>
-                    <input class="col-input" id="purColQty" value="F" maxlength="2" oninput="this.value=this.value.toUpperCase()" style="border-color:var(--pur-mid);">
+                  <div class="sb-col-item">
+                    <span class="sb-col-label">Qty</span>
+                    <input class="sb-col-input sb-col-siem" id="siemColQty" value="H" maxlength="2" oninput="this.value=this.value.toUpperCase();refreshSiemPreview()">
                   </div>
-                  <div class="col-map-item">
-                    <span class="col-map-label">Start row</span>
-                    <input class="col-input" id="purStartRow" value="2" maxlength="4" type="number" min="1" style="border-color:var(--pur-mid);">
+                  <div class="sb-col-item">
+                    <span class="sb-col-label">Start Row</span>
+                    <input class="sb-col-input sb-col-siem" id="siemStartRow" value="3" maxlength="4" type="number" min="1" oninput="refreshSiemPreview()">
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
+        <!-- Siemens Preview -->
+        <div class="s1-preview-card s1-pcard-siem" id="siemPreviewWrap" style="display:none;">
+          <div class="s1-pcard-header">
+            <span class="s1-pcard-dot" style="background:#38bdf8;"></span>
+            <span class="s1-pcard-title">Siemens Open Stock Preview</span>
+            <span class="s1-pcard-sub" id="siemPreviewLabel"></span>
+          </div>
+          <div class="s1-pcard-table-wrap">
+            <table id="siemPreviewTable" class="s1-preview-table"></table>
+          </div>
+        </div>
+      </div>
 
-        <!-- Make filter with search — appears after upload -->
-        <div id="makeFilterSection" style="display:none;">
-          <div class="make-filter-card">
-            <div class="make-filter-head">
-              <div class="make-filter-title">&#127981; Filter by Make</div>
-              <span class="make-filter-count" id="makeCount">0 makes</span>
+      <!-- ── PURCHASE PANEL ── -->
+      <div class="s1-panel s1-panel-pur" id="panel-pur">
+        <div class="s1-panel-head">
+          <div class="s1-panel-title" style="color:#f59e0b;">&#128722; Purchase Open Stock <span class="sb-panel-badge" style="background:#78350f;color:#fcd34d;">Optional</span></div>
+          <div class="s1-panel-sub">All rows used — filter by Make to narrow results — Sheet 3 of export</div>
+        </div>
+        <div class="s1-panel-body">
+          <div class="s1-panel-left">
+            <div id="purEmptyZone" class="sb-upload-zone sb-upload-zone-pur"
+              onclick="document.getElementById('purInput').click()"
+              ondragover="onDragOver(event,'purEmptyZone')"
+              ondragleave="onDragLeave('purEmptyZone')"
+              ondrop="onDrop(event,'pur')">
+              <span style="font-size:1.6rem;">&#128722;</span>
+              <span style="font-weight:600;">Click or drag &amp; drop Purchase file</span>
+              <span class="sb-uz-hint">.xls or .xlsx</span>
             </div>
-            <div class="make-search-wrap">
-              <span class="make-search-icon">&#128269;</span>
-              <input class="make-search-input" id="makeSearch" type="text" placeholder="Search makes..." oninput="filterMakeSearch()">
+            <div id="purLoaded" class="sb-file-chip sb-chip-pur" style="display:none;">
+              <div class="sb-chip-top">
+                <div class="sb-chip-ext" id="purExt">XLS</div>
+                <div class="sb-chip-info">
+                  <div class="sb-chip-name" id="purName">—</div>
+                  <div class="sb-chip-meta" id="purSize">—</div>
+                </div>
+                <button class="sb-chip-clear" onclick="clearPurchase()">&#10005;</button>
+              </div>
+              <div class="sb-chip-foot">
+                <span class="sb-chip-preview" id="purPreview">&#10003; —</span>
+                <span class="sb-chip-change" onclick="document.getElementById('purInput').click()">Change</span>
+              </div>
             </div>
-            <div class="make-list-wrap" id="makeList"></div>
-            <div class="make-filter-foot">
-              <span style="font-size:.67rem;color:var(--muted);" id="makeSelectedCount">All selected</span>
-              <div class="make-act-btns">
-                <button class="make-act-btn" onclick="selectAllMakes()">Select All</button>
-                <button class="make-act-btn" onclick="clearAllMakes()">Clear All</button>
+            <div class="s1-info-note s1-note-pur">&#8505; Optional. Sheet 3 of export = matched Purchase rows.</div>
+          </div>
+          <div class="s1-panel-right">
+            <button class="s1-colmap-btn s1-colmap-btn-pur" onclick="toggleColMap('pur')">&#9881; Column Mapping <span class="s1-colmap-arrow" id="pur-cmarrow">&#9656;</span></button>
+            <div class="s1-colmap-body" id="pur-cmBody">
+              <div class="s1-col-map-card">
+                <div class="sb-col-grid">
+                  <div class="sb-col-item">
+                    <span class="sb-col-label">Part No.</span>
+                    <input class="sb-col-input sb-col-pur" id="purColPart" value="C" maxlength="2" oninput="this.value=this.value.toUpperCase();refreshPurPreview()">
+                  </div>
+                  <div class="sb-col-item">
+                    <span class="sb-col-label">Make Col</span>
+                    <input class="sb-col-input sb-col-pur" id="purColMake" value="B" maxlength="2" oninput="this.value=this.value.toUpperCase();rebuildMakeList();refreshPurPreview()">
+                  </div>
+                  <div class="sb-col-item">
+                    <span class="sb-col-label">Qty</span>
+                    <input class="sb-col-input sb-col-pur" id="purColQty" value="F" maxlength="2" oninput="this.value=this.value.toUpperCase();refreshPurPreview()">
+                  </div>
+                  <div class="sb-col-item">
+                    <span class="sb-col-label">Start Row</span>
+                    <input class="sb-col-input sb-col-pur" id="purStartRow" value="2" maxlength="4" type="number" min="1" oninput="refreshPurPreview()">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Make filter lives in RIGHT column so left stays short -->
+            <div id="makeFilterSection" style="display:none;">
+              <div class="sb-make-card">
+                <div class="sb-make-head">
+                  <span class="sb-make-title">&#9965; Filter by Make</span>
+                  <span class="sb-make-count" id="makeCount">0 makes</span>
+                </div>
+                <div class="make-search-wrap">
+                  <span class="make-search-icon">&#128269;</span>
+                  <input class="make-search-input" id="makeSearch" type="text" placeholder="Search makes..." oninput="filterMakeSearch()">
+                </div>
+                <div class="make-list-wrap" id="makeList"></div>
+                <div class="make-filter-foot">
+                  <span style="font-size:.63rem;color:var(--muted);" id="makeSelectedCount">All selected</span>
+                  <div class="make-act-btns">
+                    <button class="make-act-btn" onclick="selectAllMakes()">All</button>
+                    <button class="make-act-btn" onclick="clearAllMakes()">None</button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-
-        <div class="info-note note-amber" style="font-size:.7rem;">&#8505; Optional. Sheet 3 of export = matched Purchase rows.</div>
+        <!-- Purchase Preview -->
+        <div class="s1-preview-card s1-pcard-pur" id="purPreviewWrap" style="display:none;">
+          <div class="s1-pcard-header">
+            <span class="s1-pcard-dot" style="background:#f59e0b;"></span>
+            <span class="s1-pcard-title">Purchase Open Stock Preview</span>
+            <span class="s1-pcard-sub" id="purPreviewLabel"></span>
+          </div>
+          <div class="s1-pcard-table-wrap">
+            <table id="purPreviewTable" class="s1-preview-table"></table>
+          </div>
+        </div>
       </div>
-    </div>
 
-  </div><!-- end s1-main -->
+      <!-- Run bar — fixed bottom -->
+      <div class="s1-run-area">
+        <div class="s1-checklist">
+          <div class="s1-run-ck" id="ck-bom"><div class="s1-run-dot"></div><span>BOM file</span></div>
+          <span class="check-sep">·</span>
+          <div class="s1-run-ck" id="ck-stock"><div class="s1-run-dot"></div><span>Stock file</span></div>
+        </div>
+        <button class="btn btn-green btn-lg" id="runBtn" onclick="runAnalysis()" disabled>&#9889; Run Stock Check &nbsp;›</button>
+      </div>
 
-  <!-- FOOTER — live checklist -->
-  <div class="footer-bar">
-    <div class="checklist">
-      <div class="check-item" id="ck-bom">
-        <div class="check-dot" id="ck-bom-dot"></div>
-        <span>BOM file</span>
-      </div>
-      <span class="check-sep">·</span>
-      <div class="check-item" id="ck-stock">
-        <div class="check-dot" id="ck-stock-dot"></div>
-        <span>Stock file (Siemens or Purchase)</span>
-      </div>
-    </div>
-    <div class="run-wrap">
-      <button class="btn btn-green btn-lg" id="runBtn" onclick="runAnalysis()" disabled>&#9889; Run Stock Check &nbsp;›</button>
-    </div>
-  </div>
+    </div><!-- end s1-main -->
+
+  </div><!-- end s1-layout -->
 </div>
 
 <!-- ═══════════════════════════════════════
@@ -412,10 +458,56 @@
   </div>
 </div>
 
+
+
 <script>
 var bomFile=null,siemFile=null,purFile=null,purRawData=null;
 var analysisResult=null,activeFilter='all';
 var allMakes=[]; // full make list for search
+var bomSelectedSheet=null; // which sheet the user picked for BOM
+var siemRawData=null; // cached siemens data for preview refresh
+
+/* ── NORMALIZATION ── */
+function normKey(str){
+  return String(str||'').replace(/[^a-zA-Z0-9]/g,'').replace(/^0+(?=[a-zA-Z0-9])/,'').toLowerCase();
+}
+function stockLookup(bomKey,map,normMap){
+  // Exact match first
+  if(map.has(bomKey))return{entry:map.get(bomKey),isNormalized:false};
+  // Normalized match — normMap stores merged entries directly
+  var nk=normKey(bomKey);
+  if(nk&&normMap.has(nk))return{entry:normMap.get(nk),isNormalized:true};
+  return null;
+}
+
+/* ── READ SHEET BY NAME (column-safe) ── */
+// Uses header:'A' so index 0=colA, 1=colB, 2=colC always — regardless of where sheet data starts
+function readSheetByName(file,sheetName){
+  return new Promise(function(resolve){
+    var r=new FileReader();
+    r.onload=function(e){
+      try{
+        var wb=XLSX.read(e.target.result,{type:'array'});
+        var sn=(sheetName&&wb.SheetNames.indexOf(sheetName)>=0)?sheetName:wb.SheetNames[0];
+        var ws=wb.Sheets[sn];
+        var ref=ws['!ref'];
+        if(!ref){resolve([]);return;}
+        var range=XLSX.utils.decode_range(ref);
+        var rows=XLSX.utils.sheet_to_json(ws,{header:'A',defval:'',raw:true});
+        var result=rows.map(function(row){
+          var arr=[];
+          for(var ci=0;ci<=range.e.c;ci++){
+            var cl=XLSX.utils.encode_col(ci);
+            arr.push(row[cl]!==undefined?row[cl]:'');
+          }
+          return arr;
+        });
+        resolve(result);
+      }catch(ex){resolve([]);}
+    };
+    r.readAsArrayBuffer(file);
+  });
+}
 
 /* ── UTILS ── */
 function colIdx(l){return l.toUpperCase().charCodeAt(0)-65;}
@@ -518,20 +610,170 @@ function hideLoaded(prefix){
 function handleBOM(input,fileOverride){
   var file=fileOverride||input.files[0];
   if(!file)return;
-  bomFile=file;if(input&&!fileOverride)input.value='';
-  readBestSheet(bomFile).then(function(data){
+  bomFile=file;bomSelectedSheet=null;
+  if(input&&!fileOverride)input.value='';
+  hideLoaded('bom');
+  document.getElementById('bomSheetSelector').style.display='none';
+  document.getElementById('bomSheetPills').innerHTML='';
+  updateChecklist();
+  var fr=new FileReader();
+  fr.onload=function(e){
+    try{
+      var wb=XLSX.read(e.target.result,{type:'array'});
+      var names=wb.SheetNames;
+      if(names.length===1){
+        // Single sheet — use it directly
+        bomSelectedSheet=names[0];
+        readSheetByName(bomFile,bomSelectedSheet).then(function(data){
+          var sr=parseInt(document.getElementById('bomStartRow').value)||2;
+          var cp=colIdx(document.getElementById('bomColPart').value||'C');
+          var c=0;for(var i=sr-1;i<data.length;i++){if(String(data[i][cp]||'').trim())c++;}
+          showLoaded('bom',file,'<strong>'+c+' part rows</strong> detected');
+          renderBomPreview(data);
+          updateChecklist();
+        });
+      } else {
+        // Multiple sheets — show file chip and pills, wait for user to pick
+        document.getElementById('bomEmptyZone').style.display='none';
+        document.getElementById('bomLoaded').style.display='';
+        document.getElementById('bomExt').textContent=file.name.split('.').pop().toUpperCase();
+        document.getElementById('bomName').textContent=file.name;
+        document.getElementById('bomSize').textContent=fmtSz(file.size);
+        document.getElementById('bomPreview').innerHTML='&#128196; Pick a sheet below';
+        var html='';
+        names.forEach(function(n){
+          html+='<button class="bom-sheet-pill" data-sheet="'+escH(n)+'"'
+            +' onclick="selectBomSheet(\''+escH(n).replace(/'/g,'&#39;')+'\')"'
+            +' style="padding:3px 12px;border-radius:12px;border:1.5px solid var(--border);'
+            +'background:var(--surface2);color:var(--text2);font-size:.7rem;font-weight:600;'
+            +'cursor:pointer;font-family:\'IBM Plex Sans\',sans-serif;transition:background .15s,color .15s;">'
+            +escH(n)+'</button>';
+        });
+        document.getElementById('bomSheetPills').innerHTML=html;
+        document.getElementById('bomSheetSelector').style.display='';
+        updateChecklist(); // Run stays disabled — no sheet selected yet
+      }
+    }catch(ex){alert('Could not read file.');}
+  };
+  fr.readAsArrayBuffer(file);
+}
+function selectBomSheet(name){
+  bomSelectedSheet=name;
+  // Highlight selected pill
+  document.querySelectorAll('.bom-sheet-pill').forEach(function(p){
+    var sel=p.getAttribute('data-sheet')===name;
+    p.style.background=sel?'var(--bom)':'var(--surface2)';
+    p.style.color=sel?'#fff':'var(--text2)';
+    p.style.borderColor=sel?'var(--bom)':'var(--border)';
+  });
+  // Read that sheet and update preview
+  readSheetByName(bomFile,name).then(function(data){
     var sr=parseInt(document.getElementById('bomStartRow').value)||2;
     var cp=colIdx(document.getElementById('bomColPart').value||'C');
     var c=0;for(var i=sr-1;i<data.length;i++){if(String(data[i][cp]||'').trim())c++;}
-    showLoaded('bom',bomFile,'<strong>'+c+' part rows</strong> detected');
+    document.getElementById('bomPreview').innerHTML='&#10003; <strong>'+c+' part rows</strong> in "'+escH(name)+'"';
+    renderBomPreview(data);
     updateChecklist();
   });
-  updateChecklist();
+}
+
+/* ── PREVIEW HELPERS ── */
+function updateEmptyState(){
+  var anyLoaded=!!(bomFile||siemFile||purFile);
+  var es=document.getElementById('s1EmptyState');
+  if(es)es.style.display=anyLoaded?'none':'';
+}
+
+function renderStockPreview(data,tableId,wrapId,labelId,startRowInputId,partColInputId,accentColor){
+  var sr=parseInt(document.getElementById(startRowInputId).value)||2;
+  var cp=colIdx(document.getElementById(partColInputId).value||'A');
+  var hdrIdx=sr-2;
+  var startIdx=sr-1;
+  var maxC=0;
+  for(var i=Math.max(0,hdrIdx);i<Math.min(data.length,startIdx+5);i++){
+    if(data[i]&&data[i].length>maxC)maxC=data[i].length;
+  }
+  maxC=Math.min(maxC,12);
+  var html='';
+  if(hdrIdx>=0&&data[hdrIdx]){
+    html+='<tr>';
+    for(var ci=0;ci<maxC;ci++){
+      var v=String(data[hdrIdx][ci]!==undefined?data[hdrIdx][ci]:'');
+      var isPN=(ci===cp);
+      html+='<th style="'+(isPN?'background:'+accentColor+';color:#fff;':'')+'">'+(v?escH(v):('Col '+(ci+1)))+'</th>';
+    }
+    html+='</tr>';
+  }
+  var shown=0;
+  for(var ri=startIdx;ri<data.length&&shown<5;ri++){
+    var row=data[ri];
+    if(!row||!row.some(function(v){return v!=='';}))continue;
+    html+='<tr>';
+    for(var ci2=0;ci2<maxC;ci2++){
+      var v2=String(row[ci2]!==undefined?row[ci2]:'');
+      var isPN2=(ci2===cp);
+      html+='<td style="font-weight:'+(isPN2?'700':'400')+';color:'+(isPN2?accentColor:'')+';">'+escH(v2)+'</td>';
+    }
+    html+='</tr>';
+    shown++;
+  }
+  if(!html)html='<tr><td style="padding:10px;color:var(--muted);">No data at this start row</td></tr>';
+  document.getElementById(tableId).innerHTML=html;
+  if(labelId)document.getElementById(labelId).textContent=shown+' rows shown';
+  document.getElementById(wrapId).style.display='';
+}
+function refreshSiemPreview(){
+  if(!siemRawData)return;
+  renderStockPreview(siemRawData,'siemPreviewTable','siemPreviewWrap','siemPreviewLabel','siemStartRow','siemColPart','#38bdf8');
+}
+function refreshPurPreview(){
+  if(!purRawData)return;
+  renderStockPreview(purRawData,'purPreviewTable','purPreviewWrap','purPreviewLabel','purStartRow','purColPart','#f59e0b');
+}
+function renderBomPreview(data){
+  var sr=parseInt(document.getElementById('bomStartRow').value)||2;
+  var cp=colIdx(document.getElementById('bomColPart').value||'C');
+  var hdrIdx=sr-2;var startIdx=sr-1;var html='';var maxC=0;
+  for(var i=Math.max(0,hdrIdx);i<Math.min(data.length,startIdx+5);i++){if(data[i]&&data[i].length>maxC)maxC=data[i].length;}
+  maxC=Math.min(maxC,12);
+  if(hdrIdx>=0&&data[hdrIdx]){
+    html+='<tr>';
+    for(var ci=0;ci<maxC;ci++){var v=String(data[hdrIdx][ci]!==undefined?data[hdrIdx][ci]:'');var isPN=(ci===cp);html+='<th style="'+(isPN?'background:#10b981;color:#fff;':'')+'">'+(v?escH(v):('Col '+(ci+1)))+'</th>';}
+    html+='</tr>';
+  }
+  var shown=0;
+  for(var ri=startIdx;ri<data.length&&shown<5;ri++){
+    var row=data[ri];if(!row||!row.some(function(v){return v!=='';}))continue;
+    html+='<tr>';
+    for(var ci2=0;ci2<maxC;ci2++){var v2=String(row[ci2]!==undefined?row[ci2]:'');var isPN2=(ci2===cp);html+='<td style="font-weight:'+(isPN2?'700':'400')+';color:'+(isPN2?'#10b981':'')+';">'+escH(v2)+'</td>';}
+    html+='</tr>';shown++;
+  }
+  if(!html){html='<tr><td style="padding:10px;color:var(--muted);">No data at this start row</td></tr>';}
+  document.getElementById('bomPreviewTable').innerHTML=html;
+  if(document.getElementById('bomPreviewLabel'))document.getElementById('bomPreviewLabel').textContent=shown+' rows shown';
+  document.getElementById('bomPreviewWrap').style.display='';
+  updateEmptyState();
+}
+function refreshBomPreview(){
+  if(!bomFile||!bomSelectedSheet)return;
+  readSheetByName(bomFile,bomSelectedSheet).then(function(data){
+    var sr=parseInt(document.getElementById('bomStartRow').value)||2;
+    var cp=colIdx(document.getElementById('bomColPart').value||'C');
+    var c=0;for(var i=sr-1;i<data.length;i++){if(String(data[i][cp]||'').trim())c++;}
+    var name=bomSelectedSheet;
+    document.getElementById('bomPreview').innerHTML='&#10003; <strong>'+c+' part rows</strong>'+(name?' in "'+escH(name)+'"':'');
+    renderBomPreview(data);
+  });
 }
 function clearBOM(){
-  bomFile=null;hideLoaded('bom');
+  bomFile=null;bomSelectedSheet=null;
+  hideLoaded('bom');
   document.getElementById('bomInput').value='';
-  updateChecklist();
+  document.getElementById('bomSheetSelector').style.display='none';
+  document.getElementById('bomSheetPills').innerHTML='';
+  document.getElementById('bomPreviewWrap').style.display='none';
+  document.getElementById('bomPreviewTable').innerHTML='';
+  updateChecklist();updateEmptyState();
 }
 
 function handleSiemens(input,fileOverride){
@@ -539,6 +781,7 @@ function handleSiemens(input,fileOverride){
   if(!file)return;
   siemFile=file;if(input&&!fileOverride)input.value='';
   readFirstSheetCached(siemFile).then(function(data){
+    siemRawData=data;
     var sr=parseInt(document.getElementById('siemStartRow').value)||3;
     var cp=colIdx(document.getElementById('siemColPart').value||'F');
     var cs=colIdx(document.getElementById('siemColStatus').value||'D');
@@ -548,14 +791,17 @@ function handleSiemens(input,fileOverride){
       if(String(data[i][cp]||'').trim())c++;
     }
     showLoaded('siem',siemFile,'<strong>'+c+' OPEN</strong> parts detected');
-    updateChecklist();
+    refreshSiemPreview();
+    updateChecklist();updateEmptyState();
   });
   updateChecklist();
 }
 function clearSiemens(){
-  siemFile=null;hideLoaded('siem');
+  siemFile=null;siemRawData=null;hideLoaded('siem');
   document.getElementById('siemInput').value='';
-  updateChecklist();
+  document.getElementById('siemPreviewWrap').style.display='none';
+  document.getElementById('siemPreviewTable').innerHTML='';
+  updateChecklist();updateEmptyState();
 }
 
 function handlePurchase(input,fileOverride){
@@ -569,7 +815,8 @@ function handlePurchase(input,fileOverride){
     var c=0;for(var i=sr-1;i<data.length;i++){if(String(data[i][cp]||'').trim())c++;}
     showLoaded('pur',purFile,'<strong>'+c+' rows</strong> in Purchase file');
     buildMakeList(data);
-    updateChecklist();
+    refreshPurPreview();
+    updateChecklist();updateEmptyState();
   });
   updateChecklist();
 }
@@ -580,7 +827,9 @@ function clearPurchase(){
   document.getElementById('makeFilterSection').style.display='none';
   document.getElementById('makeList').innerHTML='';
   document.getElementById('makeSearch').value='';
-  updateChecklist();
+  document.getElementById('purPreviewWrap').style.display='none';
+  document.getElementById('purPreviewTable').innerHTML='';
+  updateChecklist();updateEmptyState();
 }
 
 /* ── MAKE FILTER ── */
@@ -644,14 +893,62 @@ function getSelectedMakes(){
 }
 
 /* ── LIVE CHECKLIST ── */
+function toggleColMap(panel){
+  var bodyId = panel+'-cm'+(panel==='bom'?'body':'Body');
+  // bom uses 'bom-cmbody', siem uses 'siem-cmBody', pur uses 'pur-cmBody'
+  if(panel==='bom') bodyId='bom-cmbody';
+  var body=document.getElementById(bodyId);
+  var arrow=document.getElementById(panel+'-cmarrow');
+  if(!body)return;
+  var open=body.classList.toggle('open');
+  if(arrow)arrow.style.transform=open?'rotate(90deg)':'';
+}
+
+function activatePanel(key){
+  document.querySelectorAll('.s1-nav-item').forEach(function(el){el.classList.remove('active');});
+  document.querySelectorAll('.s1-panel').forEach(function(el){el.classList.remove('active');});
+  var navEl=document.getElementById('nav-'+key);
+  var panelEl=document.getElementById('panel-'+key);
+  if(navEl)navEl.classList.add('active');
+  if(panelEl)panelEl.classList.add('active');
+}
+
 function updateChecklist(){
-  var hasBom=!!bomFile;
+  var hasBom=!!(bomFile&&bomSelectedSheet);
   var hasStock=!!(siemFile||purFile);
+
+  // ── Run area dots (bottom bar)
   var ckBom=document.getElementById('ck-bom');
   var ckStock=document.getElementById('ck-stock');
-  ckBom.className='check-item'+(hasBom?' done':' active');
-  ckStock.className='check-item'+(hasStock?' done':(hasBom?' active':''));
+  if(ckBom)ckBom.className='s1-run-ck'+(hasBom?' done':'');
+  if(ckStock)ckStock.className='s1-run-ck'+(hasStock?' done':'');
+
+  // ── Sidebar footer dots
+  var sbBom=document.getElementById('sb-ck-bom');
+  var sbStock=document.getElementById('sb-ck-stock');
+  if(sbBom)sbBom.className='s1-foot-item'+(hasBom?' done':'');
+  if(sbStock)sbStock.className='s1-foot-item'+(hasStock?' done':(hasBom?' partial':''));
+
   document.getElementById('runBtn').disabled=!(hasBom&&hasStock);
+
+  // ── Sidebar nav status badges
+  var bomStatus=document.getElementById('nav-bom-status');
+  var siemStatus=document.getElementById('nav-siem-status');
+  var purStatus=document.getElementById('nav-pur-status');
+  if(bomStatus){bomStatus.className='s1-nav-status '+(hasBom?'s1-ns-done':'s1-ns-req');bomStatus.textContent=hasBom?'Loaded':'Required';}
+  if(siemStatus){siemStatus.className='s1-nav-status '+(siemFile?'s1-ns-done':'s1-ns-opt');siemStatus.textContent=siemFile?'Loaded':'Optional';}
+  if(purStatus){purStatus.className='s1-nav-status '+(purFile?'s1-ns-done':'s1-ns-opt');purStatus.textContent=purFile?'Loaded':'Optional';}
+
+  // ── Sidebar nav sub-text (filename when loaded)
+  var bomSub=document.getElementById('nav-bom-sub');
+  if(bomSub&&hasBom){var bn=document.getElementById('bomName');bomSub.textContent=bn&&bn.textContent!='—'?bn.textContent:'BOM loaded';}
+  else if(bomSub)bomSub.textContent='Bill of Materials';
+  var siemSub=document.getElementById('nav-siem-sub');
+  if(siemSub&&siemFile){var sn=document.getElementById('siemName');siemSub.textContent=sn&&sn.textContent!='—'?sn.textContent:'Siemens loaded';}
+  else if(siemSub)siemSub.textContent='Open status only';
+  var purSub=document.getElementById('nav-pur-sub');
+  if(purSub&&purFile){var pn2=document.getElementById('purName');purSub.textContent=pn2&&pn2.textContent!='—'?pn2.textContent:'Purchase loaded';}
+  else if(purSub)purSub.textContent='Filter by Make';
 }
 
 /* ── BUILD MAPS ── */
@@ -660,18 +957,38 @@ function buildSiemMap(data){
   var cp=colIdx(document.getElementById('siemColPart').value||'F');
   var cs=colIdx(document.getElementById('siemColStatus').value||'D');
   var cq=colIdx(document.getElementById('siemColQty').value||'H');
-  var map=new Map();var maxCols=0;
+  var cAllocStatus=10; // col K (0-indexed)
+  var cAllocStart=11;  // col L onwards — project reservation columns
+  var map=new Map();var normMap=new Map();var maxCols=0;
   for(var i=sr-1;i<data.length;i++){
     var row=data[i];
     if(String(row[cs]||'').trim().toUpperCase()!=='OPEN')continue;
     var pn=String(row[cp]||'').trim();if(!pn)continue;
     var k=pn.toLowerCase();
-    var rq=row[cq];var q=typeof rq==='number'?rq:(parseFloat(String(rq||'').replace(/,/g,''))||0);
+    var nk=normKey(pn);
+    // Raw qty from col H
+    var rq=row[cq];var rawQty=typeof rq==='number'?rq:(parseFloat(String(rq||'').replace(/,/g,''))||0);
+    // Subtract project reservations from col L onwards if col K is marked
+    var usedQty=0;
+    var statusMark=String(row[cAllocStatus]||'').trim();
+    if(statusMark!==''){
+      for(var ac=cAllocStart;ac<row.length;ac++){
+        var av=row[ac];
+        usedQty+=typeof av==='number'?av:(parseFloat(String(av||'').replace(/,/g,''))||0);
+      }
+    }
+    var q=Math.max(0,rawQty-usedQty); // net available qty
+    // Add to exact map
     if(!map.has(k))map.set(k,{displayPart:pn,qty:0,rows:[]});
     map.get(k).qty+=q;map.get(k).rows.push(row);
+    // Add to normMap
+    if(nk){
+      if(!normMap.has(nk))normMap.set(nk,{displayPart:pn,qty:0,rows:[]});
+      normMap.get(nk).qty+=q;normMap.get(nk).rows.push(row);
+    }
     if(row.length>maxCols)maxCols=row.length;
   }
-  return {map:map,maxCols:Math.min(Math.max(maxCols,8),12)};
+  return {map:map,normMap:normMap,maxCols:Math.min(Math.max(maxCols,8),12)};
 }
 function buildPurMap(data,selectedMakes){
   var sr=parseInt(document.getElementById('purStartRow').value)||2;
@@ -679,19 +996,26 @@ function buildPurMap(data,selectedMakes){
   var cm=colIdx(document.getElementById('purColMake').value||'B');
   var cq=colIdx(document.getElementById('purColQty').value||'F');
   var useMakeFilter=selectedMakes&&selectedMakes.size>0&&selectedMakes.size<allMakes.length;
-  var map=new Map();var maxCols=0;
+  var map=new Map();var normMap=new Map();var maxCols=0;
   for(var i=sr-1;i<data.length;i++){
     var row=data[i];
     var make=String(row[cm]||'').trim();
     if(useMakeFilter&&!selectedMakes.has(make))continue;
     var pn=String(row[cp]||'').trim();if(!pn)continue;
     var k=pn.toLowerCase();
+    var nk=normKey(pn);
     var rq=row[cq];var q=typeof rq==='number'?rq:(parseFloat(String(rq||'').replace(/,/g,''))||0);
+    // Add to exact map
     if(!map.has(k))map.set(k,{displayPart:pn,qty:0,rows:[]});
     map.get(k).qty+=q;map.get(k).rows.push(row);
+    // Add to normMap — if already exists, merge qty+rows into shared entry
+    if(nk){
+      if(!normMap.has(nk))normMap.set(nk,{displayPart:pn,qty:0,rows:[]});
+      normMap.get(nk).qty+=q;normMap.get(nk).rows.push(row);
+    }
     if(row.length>maxCols)maxCols=row.length;
   }
-  return {map:map,maxCols:Math.min(Math.max(maxCols,8),20)};
+  return {map:map,normMap:normMap,maxCols:Math.min(Math.max(maxCols,8),20)};
 }
 
 /* ── RUN ANALYSIS ── */
@@ -702,7 +1026,7 @@ async function runAnalysis(){
   try{
     var bomSR=parseInt(document.getElementById('bomStartRow').value)||2;
     var bomCP=colIdx(document.getElementById('bomColPart').value||'C');
-    var toRead=[readBestSheet(bomFile)];
+    var toRead=[readSheetByName(bomFile,bomSelectedSheet)];
     if(siemFile)toRead.push(readFirstSheetCached(siemFile));
     var res=await Promise.all(toRead);
     var bomData=res[0]||[];
@@ -727,11 +1051,11 @@ async function runAnalysis(){
         }
       }
     }
-    var siemRes=siemData?buildSiemMap(siemData):{map:new Map(),maxCols:8};
-    var siemMap=siemRes.map,siemMaxCols=siemRes.maxCols;
+    var siemRes=siemData?buildSiemMap(siemData):{map:new Map(),normMap:new Map(),maxCols:8};
+    var siemMap=siemRes.map,siemNormMap=siemRes.normMap,siemMaxCols=siemRes.maxCols;
     var selMakes=getSelectedMakes();
-    var purRes=purData?buildPurMap(purData,selMakes):{map:new Map(),maxCols:8};
-    var purMap=purRes.map,purMaxCols=purRes.maxCols;
+    var purRes=purData?buildPurMap(purData,selMakes):{map:new Map(),normMap:new Map(),maxCols:8};
+    var purMap=purRes.map,purNormMap=purRes.normMap,purMaxCols=purRes.maxCols;
     var bomHdr=bomData[0]||[];
     var bomMaxCols=Math.max(bomHdr.length,8);
     var bomRows=[];
@@ -740,15 +1064,19 @@ async function runAnalysis(){
       if(!brow.some(function(v){return v!=='';}))continue;
       var pn=String(brow[bomCP]||'').trim();
       var k=pn?pn.toLowerCase():'';
-      var sm=k&&siemMap.has(k)&&siemMap.get(k).qty>=1;
-      var pm=k&&purMap.has(k)&&purMap.get(k).qty>=1;
+      var siemLk=k?stockLookup(k,siemMap,siemNormMap):null;
+      var purLk=k?stockLookup(k,purMap,purNormMap):null;
+      var sm=!!(siemLk&&siemLk.entry.qty>=1);
+      var pm=!!(purLk&&purLk.entry.qty>=1);
       var rqRaw=bomCQ>=0?brow[bomCQ]:undefined;
       var reqQty=rqRaw!=null&&rqRaw!==''?(typeof rqRaw==='number'?rqRaw:(parseFloat(String(rqRaw).replace(/,/g,''))||null)):null;
       bomRows.push({raw:brow,pn:pn,siemMatch:sm,purMatch:pm,matched:sm||pm,
-        siemQty:sm?siemMap.get(k).qty:0,purQty:pm?purMap.get(k).qty:0,reqQty:reqQty});
+        siemQty:sm?siemLk.entry.qty:0,purQty:pm?purLk.entry.qty:0,reqQty:reqQty,
+        siemLk:siemLk,purLk:purLk});
     }
     analysisResult={bomRows:bomRows,bomHdr:bomHdr,bomMaxCols:bomMaxCols,bomCP:bomCP,
-      siemMap:siemMap,purMap:purMap,siemMaxCols:siemMaxCols,purMaxCols:purMaxCols,
+      siemMap:siemMap,siemNormMap:siemNormMap,purMap:purMap,purNormMap:purNormMap,
+      siemMaxCols:siemMaxCols,purMaxCols:purMaxCols,
       siemData:siemData,purData:purData,selMakes:selMakes};
     renderScreen2();
     goTo(2);
@@ -900,12 +1228,12 @@ async function runExport(){
   try{
     var d=analysisResult;
     var bomRows=d.bomRows,bomHdr=d.bomHdr,bomMaxCols=d.bomMaxCols,bomCP=d.bomCP;
-    var siemMap=d.siemMap,purMap=d.purMap,siemMaxCols=d.siemMaxCols,purMaxCols=d.purMaxCols;
+    var siemMap=d.siemMap,siemNormMap=d.siemNormMap,purMap=d.purMap,purNormMap=d.purNormMap;
+    var siemMaxCols=d.siemMaxCols,purMaxCols=d.purMaxCols;
     var siemData=d.siemData,purData=d.purData,selMakes=d.selMakes;
     var matchCount=bomRows.filter(function(r){return r.matched;}).length;
-    var bomSet=new Set();bomRows.forEach(function(e){if(e.pn)bomSet.add(e.pn.toLowerCase());});
-    var siemU=0;siemMap.forEach(function(_,k){if(bomSet.has(k))siemU++;});
-    var purU=0;purMap.forEach(function(_,k){if(bomSet.has(k))purU++;});
+    var siemU=bomRows.filter(function(r){return r.siemMatch;}).length;
+    var purU=bomRows.filter(function(r){return r.purMatch;}).length;
     var wb=new ExcelJS.Workbook();
     var W='FFFFFFFF',T='FF1E2235',M='FF8890AA';
     var BH='FF065F46',GR1='FFF7F8FB',GR2='FFECEEf4';
@@ -958,7 +1286,7 @@ async function runExport(){
     for(var si2=0;si2<siemMaxCols;si2++)ws2.getColumn(si2+1).width=[24,6,16,9,14,22,24,13][si2]||14;
     var lr2=ws2.addRow([]);lr2.height=20;ws2.mergeCells(1,1,1,siemMaxCols);
     var lc2=lr2.getCell(1);
-    lc2.value='Siemens Open Stock - BOM-matched OPEN parts  |  '+siemU+' unique parts';
+    lc2.value='Siemens Open Stock - BOM-matched OPEN parts  |  '+siemU+' BOM parts matched';
     lc2.font={italic:true,size:8,color:{argb:SF},name:'Calibri'};
     lc2.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFE0F2FE'}};
     lc2.alignment={vertical:'middle',horizontal:'left'};
@@ -973,18 +1301,41 @@ async function runExport(){
       ws2.addRow(['No Siemens stock file uploaded.']).getCell(1).font={italic:true,size:9,color:{argb:M}};
     } else {
       var s2i=0,scP=colIdx(document.getElementById('siemColPart').value||'F'),scQ=colIdx(document.getElementById('siemColQty').value||'H');
-      siemMap.forEach(function(ent,key){
-        if(!bomSet.has(key))return;
-        ent.rows.forEach(function(raw){
+      var cAllocStatus=10;  // col K (0-indexed) — allocation status marker
+      var cAllocStart=11;   // col L onwards — project reservation qty columns
+      for(var s2ri=0;s2ri<bomRows.length;s2ri++){
+        var s2e=bomRows[s2ri];
+        if(!s2e.siemMatch||!s2e.siemLk)continue;
+        s2e.siemLk.entry.rows.forEach(function(raw){
+          // Calculate net qty for this row
+          var rawQty=typeof raw[scQ]==='number'?raw[scQ]:(parseFloat(String(raw[scQ]||'').replace(/,/g,''))||0);
+          var statusMark=String(raw[cAllocStatus]||'').trim();
+          var usedQty=0;
+          if(statusMark!==''){
+            for(var ac=cAllocStart;ac<raw.length;ac++){
+              var av=raw[ac];
+              usedQty+=typeof av==='number'?av:(parseFloat(String(av||'').replace(/,/g,''))||0);
+            }
+          }
+          var netQty=Math.max(0,rawQty-usedQty);
+          // Row colour: red=fully allocated, amber=partially allocated, blue=untouched
+          var rowBg;
+          if(statusMark!==''&&netQty===0){
+            rowBg='FFFCA5A5'; // red — fully allocated, nothing left
+          } else if(statusMark!==''&&netQty>0){
+            rowBg='FFFDE68A'; // amber — partially allocated, some remaining
+          } else {
+            rowBg='FFB9E6FB'; // blue — untouched, fully available
+          }
           var dr2=ws2.addRow([]);dr2.height=17;
           for(var ci3=0;ci3<siemMaxCols;ci3++){
             var v=raw[ci3]!==undefined&&raw[ci3]!==''?raw[ci3]:null;
             var c3=dr2.getCell(ci3+1);c3.value=v;
-            cs(c3,SL,(ci3===scP)?SF:T,(ci3===scP||ci3===scQ),(ci3===scP),(ci3===scQ)?'center':'left','FF7DD3FC');
+            cs(c3,rowBg,(ci3===scP)?SF:T,(ci3===scP||ci3===scQ),(ci3===scP),(ci3===scQ)?'center':'left',rowBg);
           }
           s2i++;
         });
-      });
+      }
       if(s2i===0)ws2.addRow(['No Siemens rows matched this BOM.']).getCell(1).font={italic:true,size:9,color:{argb:M}};
     }
     await new Promise(function(r){setTimeout(r,0);});
@@ -995,7 +1346,7 @@ async function runExport(){
     var makeLabel=selMakes.size>0?Array.from(selMakes).join(', '):'All makes';
     var lr3=ws3.addRow([]);lr3.height=20;ws3.mergeCells(1,1,1,purMaxCols);
     var lc3=lr3.getCell(1);
-    lc3.value='Purchase Stock - BOM-matched parts  |  '+purU+' unique parts  |  Makes: '+makeLabel;
+    lc3.value='Purchase Stock - BOM-matched parts  |  '+purU+' BOM parts matched  |  Makes: '+makeLabel;
     lc3.font={italic:true,size:8,color:{argb:PF},name:'Calibri'};
     lc3.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFFBEB'}};
     lc3.alignment={vertical:'middle',horizontal:'left'};
@@ -1010,9 +1361,10 @@ async function runExport(){
       ws3.addRow(['No Purchase stock file uploaded.']).getCell(1).font={italic:true,size:9,color:{argb:M}};
     } else {
       var s3i=0,pcP=colIdx(document.getElementById('purColPart').value||'C'),pcQ=colIdx(document.getElementById('purColQty').value||'F');
-      purMap.forEach(function(ent,key){
-        if(!bomSet.has(key))return;
-        ent.rows.forEach(function(raw){
+      for(var s3ri=0;s3ri<bomRows.length;s3ri++){
+        var s3e=bomRows[s3ri];
+        if(!s3e.purMatch||!s3e.purLk)continue;
+        s3e.purLk.entry.rows.forEach(function(raw){
           var dr3=ws3.addRow([]);dr3.height=17;
           for(var ci4=0;ci4<purMaxCols;ci4++){
             var v2=raw[ci4]!==undefined&&raw[ci4]!==''?raw[ci4]:null;
@@ -1021,7 +1373,7 @@ async function runExport(){
           }
           s3i++;
         });
-      });
+      }
       if(s3i===0)ws3.addRow(['No Purchase rows matched this BOM with selected makes.']).getCell(1).font={italic:true,size:9,color:{argb:M}};
     }
     var buffer=await wb.xlsx.writeBuffer();
@@ -1054,5 +1406,22 @@ function toggleDark(){
   updateChecklist();
 })();
 </script>
+
+  <!-- Footer -->
+  <footer style="background:var(--white);border-top:1px solid var(--border);padding:10px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;box-shadow:0 -1px 4px rgba(30,34,53,.05);">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <svg width="16" height="16" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="32" height="32" rx="8" fill="#2563eb"/>
+        <path d="M7 10L12 22L16 13L20 22L25 10" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="16" cy="13" r="1.5" fill="white"/>
+      </svg>
+      <span style="font-size:.72rem;font-weight:700;font-family:'Syne',sans-serif;color:var(--text);">Workezz</span>
+      <span style="font-size:.68rem;color:var(--muted);">— Stock Check</span>
+    </div>
+    <div style="font-size:.68rem;color:var(--muted);">
+      Designed &amp; built by <strong style="color:var(--text2);">Krish Makwane</strong>
+    </div>
+  </footer>
+
 </body>
 </html>
