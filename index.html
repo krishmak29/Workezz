@@ -27,10 +27,7 @@
   </div>
   <div class="nav-right">
     <span class="nav-version">v2.1</span>
-    <button class="whats-new-nav-btn" id="whatsNewNavBtn" onclick="openWhatsNew()">
-      <span class="wn-nav-dot" id="whatsNewDot"></span>
-      ✦ What's New
-    </button>
+    <button class="whats-new-nav-btn" onclick="openWhatsNew()">✦ What's New</button>
     <button class="nav-toggle" id="modeBtn" onclick="toggleMode()">
       <span id="modeIcon">☀️</span>
       <span id="modeLbl">Light</span>
@@ -349,261 +346,259 @@
   Designed &amp; built by <strong>Krish Makwane</strong> &nbsp;·&nbsp; Workezz v2.0 &nbsp;·&nbsp; All processing is local — your files never leave your browser.
 </footer>
 
-<!-- ══ WHAT'S NEW SLIDE PANEL ══ -->
-<div id="wnPanel" class="wn-panel">
-  <div class="wn-panel-header">
-    <div class="wn-panel-title">
-      <span class="wn-panel-icon">✦</span>
-      What's New
-    </div>
-    <button class="wn-close-btn" onclick="closeWhatsNew()" title="Close">&#10005;</button>
-  </div>
-  <div class="wn-panel-version-pill">v2.1 — June 2025</div>
-  <div class="wn-panel-body">
+<!-- ══ WHAT'S NEW MODAL ══ -->
+<div id="wnOverlay" class="wn-overlay" onclick="handleOverlayClick(event)">
+  <div class="wn-modal" id="wnModal">
 
-    <!-- UPDATE 1: Procurement Tool -->
-    <div class="wn-update-block">
-      <div class="wn-update-head">
-        <div class="wn-update-icon proc-icon">📋</div>
+    <!-- Header -->
+    <div class="wn-modal-header">
+      <div class="wn-modal-title">
+        <div class="wn-modal-title-icon">✦</div>
         <div>
-          <div class="wn-update-tool">Procurement Planner</div>
-          <div class="wn-update-badge wn-badge-fix">Bug Fix</div>
+          <div class="wn-modal-heading">What's New</div>
+          <div class="wn-modal-sub">Version 2.1 · June 2025</div>
         </div>
       </div>
-      <div class="wn-update-title">Parts to Order now shows correct shortage quantity</div>
-      <div class="wn-update-desc">
-        Previously, if a part had <strong>Req Qty = 10</strong> and <strong>MRS Qty = 5</strong>, the "Parts to Order" sheet would incorrectly show <span class="wn-strike">10</span>. It now correctly shows only the shortage — <strong>5</strong> (Req − MRS).
-      </div>
-      <div class="wn-affected-row">
-        <span class="wn-affected-label">Affects</span>
-        <span class="wn-affected-chip">Sheet 3 · Parts to Order</span>
-        <span class="wn-affected-chip">Stats bar · Need Order</span>
-      </div>
+      <button class="wn-modal-close" onclick="closeWhatsNew()">&#10005;</button>
     </div>
 
-    <div class="wn-divider"></div>
+    <!-- Body -->
+    <div class="wn-modal-body">
 
-    <!-- UPDATE 2: MRS Merger -->
-    <div class="wn-update-block">
-      <div class="wn-update-head">
-        <div class="wn-update-icon mrs-icon">🔀</div>
-        <div>
-          <div class="wn-update-tool">MRS Merger</div>
-          <div class="wn-update-badge wn-badge-new">New Feature</div>
+      <!-- Update 1: Procurement -->
+      <div class="wn-card">
+        <div class="wn-card-head">
+          <div class="wn-card-icon proc-icon">📋</div>
+          <div class="wn-card-meta">
+            <div class="wn-card-tool">Procurement Planner</div>
+            <span class="wn-badge wn-badge-fix">Bug Fix</span>
+          </div>
+        </div>
+        <div class="wn-card-title">Parts to Order now shows correct shortage quantity</div>
+        <div class="wn-card-desc">
+          If a part had <strong>Req Qty = 10</strong> and <strong>MRS Qty = 5</strong>, the "Parts to Order" sheet was incorrectly showing <span class="wn-strike">10</span>. It now correctly shows only the shortage — <strong>5</strong> (Req − MRS).
+        </div>
+        <div class="wn-chips-row">
+          <span class="wn-chip">Sheet 3 · Parts to Order</span>
+          <span class="wn-chip">Stats bar · Need Order</span>
         </div>
       </div>
-      <div class="wn-update-title">Section name remapping — Screen 2</div>
-      <div class="wn-update-desc">
-        A brand new Screen 2 now sits between file upload and export. After uploading your MRS files, the tool detects all unique section names and lets you remap them to your preferred names before merging.
-      </div>
-      <div class="wn-feature-list">
-        <div class="wn-feature-item">
-          <span class="wn-feat-dot"></span>
-          <span>All unique section names from your MRS files are listed automatically</span>
+
+      <!-- Update 2: MRS Merger -->
+      <div class="wn-card">
+        <div class="wn-card-head">
+          <div class="wn-card-icon mrs-icon">🔀</div>
+          <div class="wn-card-meta">
+            <div class="wn-card-tool">MRS Merger</div>
+            <span class="wn-badge wn-badge-new">New Feature</span>
+          </div>
         </div>
-        <div class="wn-feature-item">
-          <span class="wn-feat-dot"></span>
-          <span>Type new names directly next to each section</span>
+        <div class="wn-card-title">Section name remapping — new Screen 2</div>
+        <div class="wn-card-desc">
+          A new screen now sits between file upload and export. All unique section names from your MRS files are detected automatically — remap them to your preferred names before merging.
         </div>
-        <div class="wn-feature-item">
-          <span class="wn-feat-dot"></span>
-          <span>Or import a mapping Excel — <strong>Col A</strong> = current section name, <strong>Col B</strong> = new name to replace it with</span>
+        <div class="wn-feature-list">
+          <div class="wn-feature-item"><span class="wn-dot"></span><span>All unique section names listed automatically</span></div>
+          <div class="wn-feature-item"><span class="wn-dot"></span><span>Type new names directly next to each section</span></div>
+          <div class="wn-feature-item"><span class="wn-dot"></span><span>Or import a mapping Excel — <strong>Col A</strong> = current name &nbsp;·&nbsp; <strong>Col B</strong> = new name</span></div>
+        </div>
+        <div class="wn-chips-row">
+          <span class="wn-chip">Screen 2 · Section Mapping</span>
+          <span class="wn-chip">Export output</span>
         </div>
       </div>
-      <div class="wn-affected-row">
-        <span class="wn-affected-label">Affects</span>
-        <span class="wn-affected-chip">Screen 2 · Section Mapping</span>
-        <span class="wn-affected-chip">Export output</span>
-      </div>
+
     </div>
 
-  </div>
-  <div class="wn-panel-footer">
-    <button class="wn-dismiss-btn" onclick="closeWhatsNew()">Got it ✓</button>
+    <!-- Footer -->
+    <div class="wn-modal-footer">
+      <span class="wn-footer-note">This popup won't appear again until the next update.</span>
+      <button class="wn-got-it-btn" onclick="closeWhatsNew()">Got it ✓</button>
+    </div>
+
   </div>
 </div>
-<!-- slide-in panel end -->
 
 <style>
-/* ── WHAT'S NEW NAV BUTTON ── */
+/* ── NAVBAR BUTTON ── */
 .whats-new-nav-btn {
-  display: inline-flex; align-items: center; gap: 6px;
+  display: inline-flex; align-items: center; gap: 5px;
   padding: 5px 13px; border-radius: 100px;
   font-family: 'IBM Plex Sans', sans-serif; font-size: .74rem; font-weight: 600;
-  cursor: pointer; border: 1.5px solid rgba(37,99,235,.45);
-  background: rgba(37,99,235,.08); color: #2563eb;
-  transition: all .18s; position: relative; white-space: nowrap;
+  cursor: pointer; border: 1.5px solid rgba(37,99,235,.5);
+  background: rgba(37,99,235,.1); color: #2563eb;
+  transition: all .18s; white-space: nowrap;
 }
-.whats-new-nav-btn:hover { background: rgba(37,99,235,.16); border-color: #2563eb; }
-body.light .whats-new-nav-btn { background: rgba(37,99,235,.12); color: #1d4ed8; border-color: rgba(37,99,235,.4); }
-.wn-nav-dot {
-  width: 7px; height: 7px; border-radius: 50%; background: #ef4444;
-  display: none; animation: wn-pulse 1.8s infinite;
-}
-.wn-nav-dot.visible { display: block; }
-@keyframes wn-pulse {
-  0%,100% { opacity: 1; transform: scale(1); }
-  50%      { opacity: .5; transform: scale(.75); }
-}
+.whats-new-nav-btn:hover { background: rgba(37,99,235,.2); border-color: #2563eb; }
+body.light .whats-new-nav-btn { background: rgba(37,99,235,.13); color: #1d4ed8; }
 
-/* ── SLIDE PANEL ── */
-.wn-panel {
-  position: fixed; top: 0; right: 0; bottom: 0;
-  width: 360px; z-index: 900;
+/* ── OVERLAY ── */
+.wn-overlay {
+  display: none; position: fixed; inset: 0; z-index: 1000;
+  background: rgba(10,14,30,.6);
+  backdrop-filter: blur(4px);
+  align-items: center; justify-content: center;
+  padding: 20px;
+}
+.wn-overlay.open { display: flex; }
+
+/* ── MODAL ── */
+.wn-modal {
   background: #ffffff;
-  border-left: 1px solid rgba(30,34,53,.12);
-  box-shadow: -6px 0 32px rgba(30,34,53,.13);
+  border-radius: 16px;
+  border: 1px solid rgba(30,34,53,.1);
+  box-shadow: 0 24px 60px rgba(10,14,30,.25);
+  width: 100%; max-width: 520px;
+  max-height: 88vh;
   display: flex; flex-direction: column;
-  transform: translateX(100%);
-  transition: transform .35s cubic-bezier(.4,0,.2,1);
   font-family: 'IBM Plex Sans', sans-serif;
+  animation: wn-pop .28s cubic-bezier(.34,1.56,.64,1);
 }
-.wn-panel.open { transform: translateX(0); }
-
-/* dark mode panel */
-body:not(.light) .wn-panel {
-  background: #1a1a2e;
-  border-left-color: rgba(255,255,255,.08);
-  box-shadow: -6px 0 32px rgba(0,0,0,.45);
+@keyframes wn-pop {
+  from { opacity: 0; transform: scale(.94) translateY(10px); }
+  to   { opacity: 1; transform: scale(1)   translateY(0); }
+}
+body:not(.light) .wn-modal {
+  background: #1a1b2e;
+  border-color: rgba(255,255,255,.08);
+  box-shadow: 0 24px 60px rgba(0,0,0,.55);
 }
 
-/* ── PANEL HEADER ── */
-.wn-panel-header {
-  padding: 18px 20px 14px;
-  border-bottom: 1px solid rgba(30,34,53,.1);
+/* ── MODAL HEADER ── */
+.wn-modal-header {
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid rgba(30,34,53,.09);
   display: flex; align-items: center; justify-content: space-between;
   flex-shrink: 0;
 }
-body:not(.light) .wn-panel-header { border-bottom-color: rgba(255,255,255,.07); }
-.wn-panel-title {
-  display: flex; align-items: center; gap: 8px;
-  font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 800;
+body:not(.light) .wn-modal-header { border-bottom-color: rgba(255,255,255,.07); }
+.wn-modal-title { display: flex; align-items: center; gap: 12px; }
+.wn-modal-title-icon {
+  width: 38px; height: 38px; border-radius: 10px;
+  background: #dbeafe; color: #1d4ed8;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; flex-shrink: 0;
+}
+body:not(.light) .wn-modal-title-icon { background: #172554; color: #93c5fd; }
+.wn-modal-heading {
+  font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 800;
   color: #1e2235; letter-spacing: -.01em;
 }
-body:not(.light) .wn-panel-title { color: #f0f0f0; }
-.wn-panel-icon { color: #2563eb; font-style: normal; }
-.wn-close-btn {
-  width: 28px; height: 28px; border-radius: 6px; border: none;
-  background: transparent; font-size: .85rem; cursor: pointer;
-  color: #8890aa; transition: all .15s;
+body:not(.light) .wn-modal-heading { color: #f0f0f0; }
+.wn-modal-sub { font-size: .68rem; color: #8890aa; margin-top: 2px; }
+.wn-modal-close {
+  width: 30px; height: 30px; border-radius: 7px;
+  border: none; background: transparent; font-size: .85rem;
+  cursor: pointer; color: #8890aa;
   display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
 }
-.wn-close-btn:hover { background: rgba(30,34,53,.08); color: #1e2235; }
-body:not(.light) .wn-close-btn:hover { background: rgba(255,255,255,.08); color: #f0f0f0; }
+.wn-modal-close:hover { background: rgba(30,34,53,.07); color: #1e2235; }
+body:not(.light) .wn-modal-close:hover { background: rgba(255,255,255,.08); color: #f0f0f0; }
 
-/* ── VERSION PILL ── */
-.wn-panel-version-pill {
-  margin: 12px 20px 0;
-  display: inline-flex; align-items: center;
-  padding: 4px 12px; border-radius: 100px;
-  font-size: .68rem; font-weight: 700; letter-spacing: .06em;
-  background: #dbeafe; color: #1d4ed8; border: 1px solid #93c5fd;
-  width: fit-content; flex-shrink: 0;
+/* ── MODAL BODY ── */
+.wn-modal-body {
+  flex: 1; overflow-y: auto; padding: 18px 22px 10px;
+  display: flex; flex-direction: column; gap: 14px;
+  scrollbar-width: thin; scrollbar-color: rgba(30,34,53,.12) transparent;
 }
-body:not(.light) .wn-panel-version-pill { background: #172554; color: #93c5fd; border-color: #1e3a8a; }
+.wn-modal-body::-webkit-scrollbar { width: 4px; }
+.wn-modal-body::-webkit-scrollbar-thumb { background: rgba(30,34,53,.12); border-radius: 4px; }
 
-/* ── SCROLLABLE BODY ── */
-.wn-panel-body {
-  flex: 1; overflow-y: auto; padding: 16px 20px 4px;
-  scrollbar-width: thin; scrollbar-color: rgba(30,34,53,.15) transparent;
+/* ── UPDATE CARD ── */
+.wn-card {
+  background: #f8f9fc; border: 1px solid rgba(30,34,53,.08);
+  border-radius: 12px; padding: 16px;
 }
-.wn-panel-body::-webkit-scrollbar { width: 4px; }
-.wn-panel-body::-webkit-scrollbar-thumb { background: rgba(30,34,53,.15); border-radius: 4px; }
-
-/* ── UPDATE BLOCK ── */
-.wn-update-block { padding: 14px 0 10px; }
-.wn-update-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.wn-update-icon {
-  width: 36px; height: 36px; border-radius: 9px;
+body:not(.light) .wn-card { background: #12131f; border-color: rgba(255,255,255,.06); }
+.wn-card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.wn-card-icon {
+  width: 38px; height: 38px; border-radius: 9px;
   display: flex; align-items: center; justify-content: center;
   font-size: 1.1rem; flex-shrink: 0;
 }
 .proc-icon { background: #ede9fe; }
 .mrs-icon  { background: #dcfce7; }
-.wn-update-tool {
-  font-size: .72rem; font-weight: 700; letter-spacing: .05em;
-  text-transform: uppercase; color: #8890aa; margin-bottom: 4px;
+.wn-card-meta { display: flex; flex-direction: column; gap: 4px; }
+.wn-card-tool {
+  font-size: .68rem; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: #8890aa;
 }
-body:not(.light) .wn-update-tool { color: #666; }
-.wn-update-badge {
-  display: inline-flex; align-items: center;
-  padding: 2px 8px; border-radius: 100px;
-  font-size: .62rem; font-weight: 700; letter-spacing: .04em;
+body:not(.light) .wn-card-tool { color: #555; }
+.wn-badge {
+  display: inline-flex; padding: 2px 8px; border-radius: 100px;
+  font-size: .62rem; font-weight: 700; width: fit-content;
 }
-.wn-badge-fix  { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
-.wn-badge-new  { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
-.wn-update-title {
+.wn-badge-fix { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+.wn-badge-new { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+.wn-card-title {
   font-family: 'Syne', sans-serif; font-size: .88rem; font-weight: 700;
-  color: #1e2235; margin-bottom: 8px; line-height: 1.35;
+  color: #1e2235; margin-bottom: 7px; line-height: 1.35;
 }
-body:not(.light) .wn-update-title { color: #f0f0f0; }
-.wn-update-desc {
-  font-size: .75rem; color: #4a5072; line-height: 1.65;
-  margin-bottom: 10px;
-}
-body:not(.light) .wn-update-desc { color: #a0a0a0; }
-.wn-update-desc strong { color: #1e2235; }
-body:not(.light) .wn-update-desc strong { color: #e0e0e0; }
+body:not(.light) .wn-card-title { color: #f0f0f0; }
+.wn-card-desc { font-size: .74rem; color: #4a5072; line-height: 1.65; margin-bottom: 10px; }
+body:not(.light) .wn-card-desc { color: #9090a8; }
+.wn-card-desc strong { color: #1e2235; }
+body:not(.light) .wn-card-desc strong { color: #e0e0e0; }
 .wn-strike { text-decoration: line-through; color: #b91c1c; font-weight: 600; }
 
 /* ── FEATURE LIST ── */
-.wn-feature-list { margin: 8px 0 10px; display: flex; flex-direction: column; gap: 7px; }
+.wn-feature-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
 .wn-feature-item {
   display: flex; align-items: flex-start; gap: 8px;
-  font-size: .74rem; color: #4a5072; line-height: 1.5;
+  font-size: .73rem; color: #4a5072; line-height: 1.5;
 }
-body:not(.light) .wn-feature-item { color: #a0a0a0; }
+body:not(.light) .wn-feature-item { color: #9090a8; }
 .wn-feature-item strong { color: #1e2235; }
 body:not(.light) .wn-feature-item strong { color: #e0e0e0; }
-.wn-feat-dot {
-  width: 5px; height: 5px; border-radius: 50%; background: #2563eb;
-  margin-top: 5px; flex-shrink: 0;
+.wn-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: #2563eb; margin-top: 5px; flex-shrink: 0;
 }
 
-/* ── AFFECTED ROW ── */
-.wn-affected-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-.wn-affected-label { font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #8890aa; }
-.wn-affected-chip {
-  font-size: .65rem; font-weight: 600; padding: 2px 8px; border-radius: 4px;
-  background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;
+/* ── CHIPS ── */
+.wn-chips-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.wn-chip {
+  font-size: .64rem; font-weight: 600; padding: 2px 9px;
+  border-radius: 5px; background: #eef0f5;
+  color: #4a5072; border: 1px solid #dde0ea;
 }
-body:not(.light) .wn-affected-chip { background: #1e293b; color: #94a3b8; border-color: #334155; }
+body:not(.light) .wn-chip { background: #1e2235; color: #8890aa; border-color: #2e3150; }
 
-/* ── DIVIDER ── */
-.wn-divider { height: 1px; background: rgba(30,34,53,.08); margin: 4px 0; }
-body:not(.light) .wn-divider { background: rgba(255,255,255,.06); }
-
-/* ── PANEL FOOTER ── */
-.wn-panel-footer {
-  padding: 14px 20px; border-top: 1px solid rgba(30,34,53,.1);
-  flex-shrink: 0;
+/* ── MODAL FOOTER ── */
+.wn-modal-footer {
+  padding: 14px 22px 18px;
+  border-top: 1px solid rgba(30,34,53,.09);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-shrink: 0;
 }
-body:not(.light) .wn-panel-footer { border-top-color: rgba(255,255,255,.07); }
-.wn-dismiss-btn {
-  width: 100%; padding: 9px; border-radius: 8px;
+body:not(.light) .wn-modal-footer { border-top-color: rgba(255,255,255,.07); }
+.wn-footer-note { font-size: .68rem; color: #8890aa; line-height: 1.4; }
+.wn-got-it-btn {
+  padding: 8px 22px; border-radius: 8px; border: none;
+  background: #2563eb; color: #fff;
   font-family: 'IBM Plex Sans', sans-serif; font-size: .8rem; font-weight: 600;
-  border: none; background: #2563eb; color: #fff; cursor: pointer;
-  transition: all .15s;
+  cursor: pointer; white-space: nowrap; transition: all .15s;
+  box-shadow: 0 2px 8px rgba(37,99,235,.3);
 }
-.wn-dismiss-btn:hover { background: #1d4ed8; transform: translateY(-1px); }
+.wn-got-it-btn:hover { background: #1d4ed8; transform: translateY(-1px); }
 </style>
 
 <script>
 /* ── WHAT'S NEW LOGIC ── */
-// To show the panel again for ALL users on next visit, bump this version string.
+// Bump WN_VERSION when you deploy updates — modal reappears for all users automatically.
 var WN_VERSION = '2.1';
 var WN_KEY     = 'wz-whatsNew-v' + WN_VERSION;
 
 function openWhatsNew() {
-  document.getElementById('wnPanel').classList.add('open');
-  // hide red dot once user opens it
-  document.getElementById('whatsNewDot').classList.remove('visible');
+  document.getElementById('wnOverlay').classList.add('open');
+}
+function closeWhatsNew() {
+  document.getElementById('wnOverlay').classList.remove('open');
   try { localStorage.setItem(WN_KEY, '1'); } catch(e) {}
 }
-
-function closeWhatsNew() {
-  document.getElementById('wnPanel').classList.remove('open');
-  try { localStorage.setItem(WN_KEY, '1'); } catch(e) {}
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('wnOverlay')) closeWhatsNew();
 }
 
 function toggleMode(){
@@ -624,18 +619,13 @@ function toggleMode(){
     }
   }catch(e){}
 
-  // check if user has seen this version's panel
+  // show modal if user hasn't seen this version yet
   try {
-    var seen = localStorage.getItem(WN_KEY);
-    if (!seen) {
-      // first time seeing v2.1 — slide panel open automatically
-      setTimeout(function(){ openWhatsNew(); }, 600);
-    } else {
-      // already seen — just show the red dot on the button so they can reopen
-      document.getElementById('whatsNewDot').classList.add('visible');
+    if (!localStorage.getItem(WN_KEY)) {
+      setTimeout(function(){ openWhatsNew(); }, 500);
     }
   } catch(e) {
-    setTimeout(function(){ openWhatsNew(); }, 600);
+    setTimeout(function(){ openWhatsNew(); }, 500);
   }
 })();
 </script>
