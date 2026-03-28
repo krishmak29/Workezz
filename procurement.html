@@ -503,7 +503,7 @@ async function processData() {
       var mq=(me&&me.sections.has(p.name))?me.sections.get(p.name):0;
       if(mq<rq){
         if(!toOrderMap.has(key)) toOrderMap.set(key,{partNum:part.partNum,make:part.make,desc:part.desc,totalReq:0});
-        toOrderMap.get(key).totalReq+=rq;
+        toOrderMap.get(key).totalReq+=(rq-mq);
       }
     });
   });
@@ -773,7 +773,8 @@ async function exportExcel(){
     // SHEET 3 - Parts to Order (with per-panel qty breakdown, only short parts)
     var ws3 = wb.addWorksheet('Parts to Order');
     // Collect only the panels where each part is SHORT (mrsQty < reqQty)
-    // Build a map: partKey -> { partNum, make, desc, panelQtys:{panelName->reqQty}, total }
+    // panelQtys stores SHORTAGE qty = reqQty - mrsQty (not full reqQty)
+    // Build a map: partKey -> { partNum, make, desc, panelQtys:{panelName->shortageQty}, total }
     var orderDetailMap = new Map();
     partsMap.forEach(function(part, key) {
       var s3lk=mrsLookup(key,mrsMap,mrsNormMap); var s3me=s3lk?s3lk.entry:null;
@@ -782,8 +783,8 @@ async function exportExcel(){
         var mq = (s3me&&s3me.sections.has(pl.name)) ? s3me.sections.get(pl.name) : 0;
         if (mq < rq) { // only short panels
           if (!orderDetailMap.has(key)) orderDetailMap.set(key, { partNum: part.partNum, make: part.make, desc: part.desc, panelQtys: {}, total: 0 });
-          orderDetailMap.get(key).panelQtys[pl.name] = rq;
-          orderDetailMap.get(key).total += rq;
+          orderDetailMap.get(key).panelQtys[pl.name] = rq - mq;
+          orderDetailMap.get(key).total += (rq - mq);
         }
       });
     });

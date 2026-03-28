@@ -3,60 +3,233 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="css/mrs_style.css">
 <title>Workezz &mdash; MRS Merger</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <style>
-.card-section-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-shrink: 0;
-  margin-bottom: 6px;
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#eef0f5;--white:#fff;--surface:#f7f8fb;--surface2:#eceef4;
+  --border:#dde0ea;--border2:#c8ccda;
+  --accent:#2563eb;--accent-light:#dbeafe;--accent-hover:#1d4ed8;
+  --text:#1e2235;--text2:#4a5072;--muted:#8890aa;
+  --success:#15803d;--success-bg:#dcfce7;--success-border:#86efac;
+  --danger:#b91c1c;--danger-bg:#fee2e2;--danger-border:#fca5a5;
+  --green:#10b981;--green-light:#d1fae5;--green-border:#6ee7b7;
+  --shadow:0 1px 3px rgba(30,34,53,.07),0 1px 2px rgba(30,34,53,.05);
+  --shadow-md:0 4px 16px rgba(30,34,53,.09);
+  --radius:10px;--radius-sm:6px;
 }
-.card-section-title { display: flex; align-items: center; gap: 8px; }
-.ver-badge {
-  font-size: .64rem;
-  font-weight: 700;
-  padding: 2px 9px;
-  border-radius: 100px;
-  border: 1px solid;
-  white-space: nowrap;
+html,body{height:100%;font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;}
+
+/* HEADER */
+header{background:var(--white);border-bottom:1px solid var(--border);padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow-md);flex-shrink:0;position:sticky;top:0;z-index:100;}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.3rem;letter-spacing:-.02em;color:var(--text);}
+.logo span{color:var(--accent);}
+.logo-sub{font-size:.62rem;color:var(--muted);font-weight:500;letter-spacing:.04em;margin-top:-2px;}
+.home-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--radius-sm);font-size:.78rem;font-weight:600;color:var(--text2);background:var(--surface2);border:1px solid var(--border2);cursor:pointer;text-decoration:none;transition:all .15s;}
+.home-btn:hover{background:var(--accent-light);color:var(--accent);border-color:var(--accent);}
+
+/* STEP INDICATOR */
+.step-bar{background:var(--white);border-bottom:1px solid var(--border);padding:0 24px;height:44px;display:flex;align-items:center;gap:0;flex-shrink:0;}
+.step-item{display:flex;align-items:center;gap:8px;padding:0 16px 0 0;font-size:.75rem;font-weight:600;color:var(--muted);transition:color .2s;}
+.step-item:first-child{padding-left:0;}
+.step-num{width:22px;height:22px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;transition:all .2s;flex-shrink:0;}
+.step-item.active{color:var(--accent);}
+.step-item.active .step-num{background:var(--accent);border-color:var(--accent);color:#fff;}
+.step-item.done{color:var(--success);}
+.step-item.done .step-num{background:var(--success-bg);border-color:var(--success-border);color:var(--success);}
+.step-arrow{color:var(--border2);font-size:.8rem;margin-right:16px;flex-shrink:0;}
+
+/* SCREENS */
+.screen{display:none;flex:1;overflow:hidden;}
+.screen.active{display:flex;flex-direction:column;}
+
+/* MAIN LAYOUT (Screen 1) */
+.main{display:grid;grid-template-columns:380px 1fr;flex:1;overflow:hidden;}
+.left{background:var(--white);border-right:1px solid var(--border);padding:24px 20px;display:flex;flex-direction:column;gap:20px;overflow-y:auto;box-shadow:2px 0 8px rgba(30,34,53,.04);}
+.right{padding:24px;display:flex;flex-direction:column;gap:16px;min-height:0;overflow:hidden;}
+
+/* SECTION LABELS */
+.section-label{font-size:.68rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+
+/* MASTER UPLOAD */
+.master-upload-zone{border:2px dashed var(--green-border);border-radius:var(--radius);padding:22px 16px;text-align:center;cursor:pointer;transition:all .2s;background:#f0fdf4;}
+.master-upload-zone:hover{border-color:var(--green);background:var(--green-light);}
+.muz-icon{font-size:1.6rem;margin-bottom:5px;display:block;}
+.muz-text{font-size:.78rem;color:var(--success);line-height:1.5;}
+.muz-text strong{color:var(--success);}
+.muz-sub{font-size:.67rem;color:var(--green);margin-top:3px;}
+.master-chip{display:flex;align-items:center;gap:10px;background:var(--green-light);border:1px solid var(--green-border);border-radius:var(--radius-sm);padding:10px 14px;}
+.master-chip-icon{width:32px;height:32px;border-radius:6px;background:var(--success);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:700;font-family:'IBM Plex Mono',monospace;flex-shrink:0;}
+.master-chip-info{flex:1;min-width:0;}
+.master-chip-name{font-size:.8rem;font-weight:600;color:var(--success);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.master-chip-sub{font-size:.68rem;color:var(--green);}
+.master-badge{font-size:.58rem;font-weight:700;background:var(--success);color:#fff;padding:2px 7px;border-radius:100px;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;flex-shrink:0;}
+
+/* DROP ZONE */
+.drop-zone{border:2px dashed var(--border2);border-radius:var(--radius);padding:22px 16px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface);}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--accent);background:var(--accent-light);}
+.dz-icon{font-size:1.6rem;margin-bottom:5px;display:block;}
+.dz-text{font-size:.78rem;color:var(--text2);line-height:1.5;}
+.dz-text strong{color:var(--accent);}
+.dz-sub{font-size:.67rem;color:var(--muted);margin-top:3px;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;border-radius:var(--radius-sm);font-family:'IBM Plex Sans',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .15s;border:none;white-space:nowrap;}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 1px 3px rgba(37,99,235,.3);}
+.btn-primary:hover{background:var(--accent-hover);transform:translateY(-1px);}
+.btn-primary:disabled{background:var(--border2);color:var(--muted);cursor:not-allowed;transform:none;box-shadow:none;}
+.btn-secondary{background:var(--surface2);color:var(--text2);border:1px solid var(--border2);}
+.btn-secondary:hover{background:var(--accent-light);color:var(--accent);border-color:var(--accent);}
+.btn-danger-outline{background:transparent;color:var(--danger);border:1px solid var(--danger-border);}
+.btn-danger-outline:hover{background:var(--danger-bg);}
+.btn-success{background:var(--success);color:#fff;box-shadow:0 1px 3px rgba(21,128,61,.25);}
+.btn-success:hover{background:#166534;transform:translateY(-1px);}
+.btn-success:disabled{background:var(--border2);color:var(--muted);cursor:not-allowed;transform:none;box-shadow:none;}
+.btn-full{width:100%;}
+.btn-lg{padding:11px 22px;font-size:.9rem;}
+.btn-sm{padding:4px 10px;font-size:.72rem;}
+
+/* FILE TABLE */
+.file-table-wrap{border-radius:var(--radius);border:1px solid var(--border);background:var(--white);box-shadow:var(--shadow);flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;}
+table{width:100%;border-collapse:collapse;}
+thead th{background:var(--surface2);padding:9px 14px;text-align:left;font-size:.66rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);}
+tbody td{padding:10px 14px;font-size:.8rem;border-bottom:1px solid var(--border);vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:var(--surface);}
+.table-scroll{overflow-y:auto;flex:1;}
+.sr-no{font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--muted);width:40px;}
+.file-chip{display:flex;align-items:center;gap:10px;}
+.file-chip-icon{width:28px;height:28px;border-radius:5px;background:var(--accent-light);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;font-family:'IBM Plex Mono',monospace;flex-shrink:0;}
+.file-chip-name{font-size:.8rem;font-weight:500;color:var(--text);}
+.file-chip-size{font-size:.68rem;color:var(--muted);}
+.empty-table{text-align:center;padding:40px 20px;color:var(--muted);font-size:.8rem;line-height:1.7;}
+
+/* INFO CARD */
+.info-card{background:var(--accent-light);border:1px solid #bfdbfe;border-radius:var(--radius-sm);padding:12px 16px;font-size:.75rem;color:#1e40af;line-height:1.7;flex-shrink:0;}
+.info-card strong{font-weight:600;}
+
+/* STATUS LOG */
+.status-log{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;font-size:.75rem;color:var(--text2);line-height:1.8;height:130px;overflow-y:auto;box-shadow:var(--shadow);flex-shrink:0;}
+.log-item{display:flex;align-items:flex-start;gap:6px;}
+.log-new{color:var(--success);}
+.log-inserted{color:#7c3aed;}
+.log-muted{color:var(--muted);}
+.log-error{color:var(--danger);}
+
+/* DIVIDER */
+.divider{height:1px;background:var(--border);flex-shrink:0;}
+
+/* FOOTER */
+footer{background:var(--white);border-top:1px solid var(--border);padding:10px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;box-shadow:0 -1px 4px rgba(30,34,53,.05);}
+
+/* CARD SECTION HEAD */
+.card-section-head{display:flex;align-items:center;justify-content:space-between;flex-shrink:0;margin-bottom:6px;}
+.card-section-title{display:flex;align-items:center;gap:8px;}
+.ver-badge{font-size:.64rem;font-weight:700;padding:2px 9px;border-radius:100px;border:1px solid;white-space:nowrap;}
+.ver-badge.active{background:#dcfce7;color:#15803d;border-color:#86efac;}
+.ver-badge.ignored{background:#fee2e2;color:#b91c1c;border-color:#fca5a5;}
+.count-pill{font-size:.7rem;color:var(--muted);background:var(--surface2);padding:2px 10px;border-radius:100px;border:1px solid var(--border);white-space:nowrap;}
+.superseded-card{display:none;flex-shrink:0;margin-top:14px;}
+.superseded-table-wrap{border:1px solid #fca5a5 !important;border-radius:var(--radius-sm);overflow:hidden;}
+.superseded-table-wrap thead tr{background:#fff1f2;}
+.superseded-table-wrap thead th{color:#b91c1c !important;background:#fff1f2 !important;}
+body.dark .superseded-table-wrap thead th{background:#3b1212 !important;color:#fca5a5 !important;}
+.ver-tag{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:.64rem;font-weight:700;padding:2px 7px;border-radius:5px;background:#ede9fe;color:#5b21b6;border:1px solid #c4b5fd;letter-spacing:.04em;}
+.ver-tag.old{background:#fee2e2;color:#b91c1c;border-color:#fca5a5;}
+.ver-tag.none{background:var(--surface2);color:var(--muted);border-color:var(--border);}
+.superseded-by{font-family:'IBM Plex Mono',monospace;font-size:.63rem;color:#15803d;font-weight:700;}
+
+/* ── SCREEN 2 ── */
+.s2-stats-bar{display:flex;align-items:center;gap:12px;padding:14px 24px;background:var(--white);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;}
+.s2-stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 16px;text-align:center;min-width:80px;}
+.s2-stat-card.s2-stat-success{background:var(--success-bg);border-color:var(--success-border);}
+.s2-stat-card.s2-stat-warn{background:#fefce8;border-color:#fde68a;}
+body.dark .s2-stat-card.s2-stat-warn{background:#2d2200;border-color:#78540a;}
+.s2-stat-num{font-size:1.2rem;font-weight:700;font-family:'Syne',sans-serif;color:var(--text);line-height:1.2;}
+.s2-stat-card.s2-stat-success .s2-stat-num{color:var(--success);}
+.s2-stat-card.s2-stat-warn .s2-stat-num{color:#92400e;}
+body.dark .s2-stat-card.s2-stat-warn .s2-stat-num{color:#fcd34d;}
+.s2-stat-lbl{font-size:.62rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-top:2px;}
+
+.s2-import-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:1.5px dashed var(--border2);border-radius:var(--radius-sm);font-size:.78rem;font-weight:600;color:var(--text2);cursor:pointer;transition:all .2s;background:var(--surface);white-space:nowrap;}
+.s2-import-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light);}
+.s2-import-chip{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid #bfdbfe;border-radius:var(--radius-sm);background:var(--accent-light);}
+
+/* SECTION TABLE */
+.s2-table-wrap{flex:1;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);display:flex;flex-direction:column;overflow:hidden;min-height:0;}
+.s2-table-head{display:grid;grid-template-columns:1fr 90px 1fr;background:var(--surface2);border-bottom:1px solid var(--border);flex-shrink:0;}
+.s2-table-head > div{padding:9px 16px;font-size:.66rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+.s2-table-body{overflow-y:auto;flex:1;}
+.s2-section-row{display:grid;grid-template-columns:1fr 90px 1fr;align-items:center;border-bottom:1px solid var(--border);transition:background .1s;}
+.s2-section-row:last-child{border-bottom:none;}
+.s2-section-row:hover{background:var(--surface);}
+.s2-col-sec,.s2-col-rows,.s2-col-map{padding:10px 16px;}
+.s2-col-rows{font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--muted);text-align:center;}
+.s2-section-name{font-size:.82rem;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px;}
+.s2-section-dot{width:7px;height:7px;border-radius:50%;background:var(--border2);flex-shrink:0;transition:background .2s;}
+.s2-section-dot.mapped{background:var(--success);}
+.s2-rename-input{width:100%;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:6px 10px;font-family:'IBM Plex Sans',sans-serif;font-size:.78rem;color:var(--text);background:var(--white);outline:none;transition:border-color .15s;}
+.s2-rename-input:focus{border-color:var(--accent);}
+.s2-rename-input.has-value{border-color:var(--success-border);background:var(--success-bg);color:var(--success);}
+body.dark .s2-rename-input{background:var(--surface);border-color:var(--border2);color:var(--text);}
+body.dark .s2-rename-input.has-value{background:var(--success-bg);border-color:var(--success-border);}
+
+/* SCREEN 3 */
+.s3-layout{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:24px;gap:20px;}
+.s3-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);padding:36px 40px;width:100%;max-width:480px;display:flex;flex-direction:column;gap:20px;align-items:stretch;}
+.s3-icon{font-size:2.8rem;text-align:center;margin-bottom:4px;}
+.s3-title{font-family:'Syne',sans-serif;font-size:1.15rem;font-weight:800;color:var(--text);text-align:center;}
+.s3-sub{font-size:.78rem;color:var(--muted);text-align:center;line-height:1.6;}
+.s3-summary{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 16px;display:flex;flex-direction:column;gap:6px;}
+.s3-summary-row{display:flex;align-items:center;justify-content:space-between;font-size:.75rem;}
+.s3-summary-label{color:var(--muted);font-weight:500;}
+.s3-summary-val{color:var(--text);font-weight:600;font-family:'IBM Plex Mono',monospace;font-size:.72rem;}
+
+/* NAV FOOTER (bottom bar in screens 2&3) */
+.nav-footer{background:var(--white);border-top:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+
+/* DARK MODE */
+body.dark{
+  --bg:#111111;--white:#1c1c1c;--surface:#242424;--surface2:#2c2c2c;
+  --border:#2e2e2e;--border2:#3a3a3a;--accent:#4f8eff;--accent-light:#141e30;
+  --accent-hover:#6aa3ff;--text:#f0f0f0;--text2:#a0a0a0;--muted:#666666;
+  --success:#22c55e;--success-bg:#0a1f10;--success-border:#166334;
+  --danger:#f87171;--danger-bg:#220a0a;--danger-border:#991b1b;
+  --green:#22c55e;--green-light:#0a1f10;--green-border:#166334;
+  --shadow:0 1px 3px rgba(0,0,0,.5);--shadow-md:0 4px 16px rgba(0,0,0,.6);
 }
-.ver-badge.active  { background: #dcfce7; color: #15803d; border-color: #86efac; }
-.ver-badge.ignored { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
-.count-pill {
-  font-size: .7rem;
-  color: var(--muted);
-  background: var(--surface2);
-  padding: 2px 10px;
-  border-radius: 100px;
-  border: 1px solid var(--border);
-  white-space: nowrap;
-}
-.superseded-card { display: none; flex-shrink: 0; margin-top: 14px; }
-.superseded-table-wrap { border: 1px solid #fca5a5 !important; border-radius: var(--radius-sm); overflow: hidden; }
-.superseded-table-wrap thead tr { background: #fff1f2; }
-.superseded-table-wrap thead th { color: #b91c1c !important; background: #fff1f2 !important; }
-body.dark .superseded-table-wrap thead th { background: #3b1212 !important; color: #fca5a5 !important; }
-.ver-tag {
-  display: inline-block;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: .64rem;
-  font-weight: 700;
-  padding: 2px 7px;
-  border-radius: 5px;
-  background: #ede9fe;
-  color: #5b21b6;
-  border: 1px solid #c4b5fd;
-  letter-spacing: .04em;
-}
-.ver-tag.old  { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
-.ver-tag.none { background: var(--surface2); color: var(--muted); border-color: var(--border); }
-.superseded-by { font-family: 'IBM Plex Mono', monospace; font-size: .63rem; color: #15803d; font-weight: 700; }
+body.dark header{background:#181818;border-color:#2a2a2a;}
+body.dark .left{background:#181818;border-color:#2a2a2a;}
+body.dark .master-upload-zone{background:#0f2d1a;border-color:#166334;}
+body.dark .master-chip{background:#0f2d1a;border-color:#166334;}
+body.dark .drop-zone{background:var(--surface);border-color:var(--border2);}
+body.dark tbody tr:hover{background:var(--surface);}
+body.dark thead th{background:var(--surface2);}
+body.dark .status-log{background:var(--surface);}
+body.dark .s2-panel{background:var(--white);}
+body.dark .s2-panel-head{background:var(--surface2);}
+body.dark .s3-card{background:var(--white);}
+body.dark .map-upload-zone{background:var(--surface);border-color:var(--border2);}
+body.dark .map-chip{background:#141e30;border-color:#1e3a5f;}
+body.dark .s2-stats-bar{background:#181818;border-color:#2a2a2a;}
+body.dark .s2-stat-card{background:var(--surface2);border-color:var(--border);}
+body.dark .s2-table-wrap{background:var(--white);}
+body.dark .s2-import-btn{background:var(--surface2);border-color:var(--border2);}
+body.dark .s2-import-chip{background:#141e30;border-color:#1e3a5f;}
+.dark-toggle{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:100px;padding:5px 12px;cursor:pointer;font-size:.75rem;font-weight:600;color:var(--text2);transition:all .2s;font-family:'IBM Plex Sans',sans-serif;}
+.dark-toggle:hover{background:var(--accent-light);color:var(--accent);border-color:var(--accent);}
+.dark-toggle-icon{font-size:.9rem;transition:transform .3s;}
+body.dark .dark-toggle-icon{transform:rotate(180deg);}
+.drag-over{background:var(--accent-light)!important;outline:2px dashed var(--accent);outline-offset:-2px;}
+tr[draggable]:hover td{background:var(--surface);}
+
+/* SPINNER */
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
 </style>
 </head>
 <body>
@@ -85,47 +258,242 @@ body.dark .superseded-table-wrap thead th { background: #3b1212 !important; colo
   </div>
 </header>
 
-<div class="main">
+<!-- STEP BAR -->
+<div class="step-bar">
+  <div class="step-item active" id="step1item">
+    <div class="step-num">1</div>
+    <span>Upload &amp; Merge</span>
+  </div>
+  <span class="step-arrow">&#8250;</span>
+  <div class="step-item" id="step2item">
+    <div class="step-num">2</div>
+    <span>Review Sections</span>
+  </div>
+  <span class="step-arrow">&#8250;</span>
+  <div class="step-item" id="step3item">
+    <div class="step-num">3</div>
+    <span>Download</span>
+  </div>
+</div>
 
-  <!-- LEFT PANEL -->
-  <div class="left">
+<!-- ══════════════════════════════════════ SCREEN 1 ══ -->
+<div class="screen active" id="screen1" style="flex-direction:column;">
+  <div class="main" style="flex:1;overflow:hidden;">
 
-    <div>
-      <div class="section-label">&#9312; Master Sheet</div>
-      <input type="file" id="masterInput" accept=".xls,.xlsx" style="display:none;" onchange="handleMasterFile(this)">
-      <div id="masterEmptyZone" class="master-upload-zone" onclick="document.getElementById('masterInput').click()">
-        <span class="muz-icon">&#128193;</span>
-        <div class="muz-text"><strong>Click to upload Master Sheet</strong></div>
-        <div class="muz-sub">Blank template with formatting &mdash; .xls or .xlsx</div>
-      </div>
-      <div id="masterFileChip" class="master-chip" style="display:none;">
-        <div class="master-chip-icon" id="masterChipExt">XLS</div>
-        <div class="master-chip-info">
-          <div class="master-chip-name" id="masterChipName">&mdash;</div>
-          <div class="master-chip-sub" id="masterChipSize">&mdash;</div>
+    <!-- LEFT PANEL -->
+    <div class="left">
+
+      <div>
+        <div class="section-label">&#9312; Master Sheet</div>
+        <input type="file" id="masterInput" accept=".xls,.xlsx" style="display:none;" onchange="handleMasterFile(this)">
+        <div id="masterEmptyZone" class="master-upload-zone" onclick="document.getElementById('masterInput').click()">
+          <span class="muz-icon">&#128193;</span>
+          <div class="muz-text"><strong>Click to upload Master Sheet</strong></div>
+          <div class="muz-sub">Blank template with formatting &mdash; .xls or .xlsx</div>
         </div>
-        <span class="master-badge">Master</span>
-        <button class="btn btn-danger-outline btn-sm" onclick="clearMaster()">&#10005;</button>
+        <div id="masterFileChip" class="master-chip" style="display:none;">
+          <div class="master-chip-icon" id="masterChipExt">XLS</div>
+          <div class="master-chip-info">
+            <div class="master-chip-name" id="masterChipName">&mdash;</div>
+            <div class="master-chip-sub" id="masterChipSize">&mdash;</div>
+          </div>
+          <span class="master-badge">Master</span>
+          <button class="btn btn-danger-outline btn-sm" onclick="clearMaster()">&#10005;</button>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div>
+        <div class="section-label">&#9313; Files to Merge</div>
+        <input type="file" id="mergeInput" accept=".xls,.xlsx" multiple style="display:none;">
+        <div id="mergeDropZone" class="drop-zone" onclick="document.getElementById('mergeInput').click()">
+          <span class="dz-icon">&#128194;</span>
+          <div class="dz-text" id="mergeDzText"><strong>Click to browse</strong> or drag &amp; drop</div>
+          <div class="dz-sub" id="mergeDzSub">Select MRS files &mdash; older versions auto-detected &amp; separated</div>
+        </div>
+        <div style="margin-top:10px;">
+          <button class="btn btn-primary btn-full" onclick="addStagedFiles()">&#65291; Add Files to List</button>
+        </div>
+      </div>
+
+      <div style="margin-top:auto;padding-top:8px;">
+        <button class="btn btn-success btn-full btn-lg" id="mergeBtn" onclick="goToStep2()" disabled>
+          &#128256; Merge &amp; Continue &nbsp;&#8594;
+        </button>
+        <p style="font-size:.68rem;color:var(--muted);text-align:center;margin-top:8px;line-height:1.5;" id="mergeHint">Upload master + at least 1 file to merge</p>
+      </div>
+
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right">
+
+      <!-- ACTIVE FILES CARD -->
+      <div class="card-section-head">
+        <div class="card-section-title">
+          <div class="section-label" style="margin-bottom:0;">Active Files</div>
+          <span class="ver-badge active">&#10003; Will be merged</span>
+        </div>
+        <span class="count-pill" id="mergeFileCount">0 files</span>
+      </div>
+
+      <div class="file-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:34px;">#</th>
+              <th>File Name</th>
+              <th style="width:68px;text-align:center;">Version</th>
+              <th style="text-align:right;width:90px;">Action</th>
+            </tr>
+          </thead>
+        </table>
+        <div class="table-scroll">
+          <table style="width:100%">
+            <tbody id="mergeFileTable">
+              <tr><td colspan="4"><div class="empty-table">&#128203; No files added yet.<br>Upload MRS files and click Add Files to List.</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SUPERSEDED FILES CARD -->
+      <div class="superseded-card" id="supersededCard">
+        <div class="card-section-head">
+          <div class="card-section-title">
+            <div class="section-label" style="margin-bottom:0;color:#b91c1c;">Superseded Files</div>
+            <span class="ver-badge ignored">&#10005; Ignored &mdash; older version</span>
+          </div>
+          <span class="count-pill" id="ignoredFileCount">0 files</span>
+        </div>
+        <div class="file-table-wrap superseded-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:34px;">#</th>
+                <th>File Name</th>
+                <th style="width:68px;text-align:center;">Version</th>
+                <th>Superseded by</th>
+              </tr>
+            </thead>
+          </table>
+          <div class="table-scroll" style="max-height:88px;overflow-y:auto;">
+            <table style="width:100%">
+              <tbody id="ignoredFileTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="statusLog" class="status-log" style="margin-top:10px;">
+        <span class="log-muted">Waiting to start&#8230;</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ SCREEN 2 ══ -->
+<div class="screen" id="screen2">
+  <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+
+    <!-- STATS BAR -->
+    <div class="s2-stats-bar">
+      <div class="s2-stat-card">
+        <div class="s2-stat-num" id="statTotal">0</div>
+        <div class="s2-stat-lbl">Sections</div>
+      </div>
+      <div class="s2-stat-card s2-stat-success">
+        <div class="s2-stat-num" id="statMapped">0</div>
+        <div class="s2-stat-lbl">Mapped</div>
+      </div>
+      <div class="s2-stat-card s2-stat-warn">
+        <div class="s2-stat-num" id="statUnmapped">0</div>
+        <div class="s2-stat-lbl">Unmapped</div>
+      </div>
+      <div class="s2-stat-card">
+        <div class="s2-stat-num" id="statRows">0</div>
+        <div class="s2-stat-lbl">Total Rows</div>
+      </div>
+      <div style="flex:1;"></div>
+      <!-- Excel import zone inline in stats bar -->
+      <div style="display:flex;align-items:center;gap:10px;">
+        <input type="file" id="mappingInput" accept=".xls,.xlsx" style="display:none;" onchange="handleMappingFile(this)">
+        <div id="mappingEmptyZone" class="s2-import-btn" onclick="document.getElementById('mappingInput').click()">
+          <span style="font-size:.85rem;">&#128257;</span>
+          Import Section Mapping .xlsx
+        </div>
+        <div id="mappingFileChip" class="s2-import-chip" style="display:none;">
+          <div class="file-chip-icon" style="width:24px;height:24px;font-size:.58rem;">XLS</div>
+          <div style="min-width:0;">
+            <div style="font-size:.75rem;font-weight:600;color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;" id="mappingChipName">&mdash;</div>
+            <div style="font-size:.63rem;color:var(--muted);" id="mappingChipInfo">&mdash;</div>
+          </div>
+          <button class="btn btn-danger-outline btn-sm" style="padding:2px 8px;font-size:.68rem;" onclick="clearMapping()">&#10005;</button>
+        </div>
       </div>
     </div>
 
-    <div class="divider"></div>
-
-    <div>
-      <div class="section-label">&#9313; Files to Merge</div>
-      <input type="file" id="mergeInput" accept=".xls,.xlsx" multiple style="display:none;">
-      <div id="mergeDropZone" class="drop-zone" onclick="document.getElementById('mergeInput').click()">
-        <span class="dz-icon">&#128194;</span>
-        <div class="dz-text" id="mergeDzText"><strong>Click to browse</strong> or drag &amp; drop</div>
-        <div class="dz-sub" id="mergeDzSub">Select MRS files &mdash; older versions auto-detected &amp; separated</div>
-      </div>
-      <div style="margin-top:10px;">
-        <button class="btn btn-primary btn-full" onclick="addStagedFiles()">&#65291; Add Files to List</button>
+    <!-- SECTION TABLE -->
+    <div style="flex:1;overflow:hidden;padding:16px 24px;display:flex;flex-direction:column;gap:0;">
+      <div class="s2-table-wrap">
+        <!-- Fixed header -->
+        <div class="s2-table-head">
+          <div class="s2-col-sec">Section Name <span style="font-size:.62rem;color:var(--muted);font-weight:400;">(Col G)</span></div>
+          <div class="s2-col-rows">Rows</div>
+          <div class="s2-col-map">Rename To <span style="font-size:.62rem;color:var(--muted);font-weight:400;">— type or import via Excel above</span></div>
+        </div>
+        <!-- Scrollable body -->
+        <div class="s2-table-body" id="sectionListBody">
+          <div class="empty-table">Sections will appear after merging.</div>
+        </div>
       </div>
     </div>
 
-    <div style="margin-top:auto;padding-top:8px;">
-      <div style="margin-bottom:10px;">
+  </div>
+
+  <!-- NAV FOOTER -->
+  <div class="nav-footer">
+    <button class="btn btn-secondary" onclick="goToStep1()">&#8592; Back to Upload</button>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="font-size:.72rem;color:var(--muted);" id="s2StatusMsg"></span>
+      <button class="btn btn-success btn-lg" onclick="goToStep3()">
+        Proceed to Download &nbsp;&#8594;
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ SCREEN 3 ══ -->
+<div class="screen" id="screen3">
+  <div class="s3-layout" style="flex:1;overflow-y:auto;">
+
+    <div class="s3-card">
+      <div class="s3-icon">&#9989;</div>
+      <div class="s3-title">Ready to Download</div>
+      <div class="s3-sub">Your merged file is ready. Section renaming has been applied.<br>Set your export filename and click download.</div>
+
+      <div class="s3-summary" id="s3Summary">
+        <div class="s3-summary-row">
+          <span class="s3-summary-label">Total rows merged</span>
+          <span class="s3-summary-val" id="s3RowCount">—</span>
+        </div>
+        <div class="s3-summary-row">
+          <span class="s3-summary-label">Unique sections</span>
+          <span class="s3-summary-val" id="s3SectionCount">—</span>
+        </div>
+        <div class="s3-summary-row">
+          <span class="s3-summary-label">Sections renamed</span>
+          <span class="s3-summary-val" id="s3RenamedCount">—</span>
+        </div>
+        <div class="s3-summary-row">
+          <span class="s3-summary-label">Active files merged</span>
+          <span class="s3-summary-val" id="s3FileCount">—</span>
+        </div>
+      </div>
+
+      <div>
         <label style="font-size:.68rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;">Export File Name</label>
         <div style="display:flex;align-items:center;border:1px solid var(--border2);border-radius:var(--radius-sm);overflow:hidden;background:var(--white);">
           <input id="exportFileName" type="text" placeholder="MRS_Merged" value="MRS_Merged"
@@ -134,78 +502,18 @@ body.dark .superseded-table-wrap thead th { background: #3b1212 !important; colo
         </div>
         <div style="font-size:.62rem;color:var(--muted);margin-top:4px;">✦ Auto-filled from MRS filename · edit freely</div>
       </div>
-      <button class="btn btn-success btn-full btn-lg" id="mergeBtn" onclick="runMRSMerge()" disabled>
-        &#128256; Merge &amp; Download
+
+      <button class="btn btn-success btn-full btn-lg" id="downloadBtn" onclick="runDownload()">
+        &#11123; Download Merged File
       </button>
-      <p style="font-size:.68rem;color:var(--muted);text-align:center;margin-top:8px;line-height:1.5;" id="mergeHint">Upload master + at least 1 file to merge</p>
     </div>
 
   </div>
 
-  <!-- RIGHT PANEL -->
-  <div class="right">
-
-    <!-- ACTIVE FILES CARD -->
-    <div class="card-section-head">
-      <div class="card-section-title">
-        <div class="section-label" style="margin-bottom:0;">Active Files</div>
-        <span class="ver-badge active">&#10003; Will be merged</span>
-      </div>
-      <span class="count-pill" id="mergeFileCount">0 files</span>
-    </div>
-
-    <div class="file-table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th style="width:34px;">#</th>
-            <th>File Name</th>
-            <th style="width:68px;text-align:center;">Version</th>
-            <th style="text-align:right;width:90px;">Action</th>
-          </tr>
-        </thead>
-      </table>
-      <div class="table-scroll">
-        <table style="width:100%">
-          <tbody id="mergeFileTable">
-            <tr><td colspan="4"><div class="empty-table">&#128203; No files added yet.<br>Upload MRS files and click Add Files to List.</div></td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- SUPERSEDED FILES CARD -->
-    <div class="superseded-card" id="supersededCard">
-      <div class="card-section-head">
-        <div class="card-section-title">
-          <div class="section-label" style="margin-bottom:0;color:#b91c1c;">Superseded Files</div>
-          <span class="ver-badge ignored">&#10005; Ignored &mdash; older version</span>
-        </div>
-        <span class="count-pill" id="ignoredFileCount">0 files</span>
-      </div>
-      <div class="file-table-wrap superseded-table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th style="width:34px;">#</th>
-              <th>File Name</th>
-              <th style="width:68px;text-align:center;">Version</th>
-              <th>Superseded by</th>
-            </tr>
-          </thead>
-        </table>
-        <div class="table-scroll" style="max-height:88px;overflow-y:auto;">
-          <table style="width:100%">
-            <tbody id="ignoredFileTable"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <div id="statusLog" class="status-log" style="margin-top:10px;">
-      <span class="log-muted">Waiting to start&#8230;</span>
-    </div>
-
+  <!-- NAV FOOTER -->
+  <div class="nav-footer">
+    <button class="btn btn-secondary" onclick="goToStep2()">&#8592; Back to Sections</button>
+    <span style="font-size:.72rem;color:var(--muted);" id="s3StatusMsg"></span>
   </div>
 </div>
 
@@ -220,7 +528,7 @@ body.dark .superseded-table-wrap thead th { background: #3b1212 !important; colo
     <span style="font-size:.68rem;color:var(--muted);">&mdash; MRS Merger</span>
   </div>
   <div style="font-size:.68rem;color:var(--muted);">
-    Designed &amp; built by <strong style="color:var(--text2);">Krish Makwane</strong> &nbsp;&middot;&nbsp; MVP v2.0
+    Designed &amp; built by <strong style="color:var(--text2);">Krish Makwane</strong> &nbsp;&middot;&nbsp; MVP v3.0
   </div>
 </footer>
 
@@ -229,9 +537,16 @@ body.dark .superseded-table-wrap thead th { background: #3b1212 !important; colo
 // STATE
 // ══════════════════════════════════════════════════
 var masterFile   = null;
-var mergeFiles   = [];   // full pool — all files added by user
-var ignoredFiles = [];   // computed: superseded entries { file, version, supersededBy, supersededVer }
-var stagedFiles  = [];   // picked but not yet confirmed
+var mergeFiles   = [];
+var ignoredFiles = [];
+var stagedFiles  = [];
+var mergedResult = [];       // raw merged rows (array of arrays)
+var uniqueSections = [];     // list of unique section strings from col G
+var sectionCounts  = {};     // section -> row count
+var sectionMapping = {};     // original -> renamed  (from imported Excel)
+var mappingFile    = null;
+
+var COL_G = 6; // 0-indexed column G
 
 function formatSize(b) {
   if (b < 1024) return b + ' B';
@@ -241,28 +556,51 @@ function formatSize(b) {
 function todayStr() { return new Date().toISOString().slice(0, 10); }
 
 // ══════════════════════════════════════════════════
+// STEP NAVIGATION
+// ══════════════════════════════════════════════════
+var currentStep = 1;
+
+function setStep(n) {
+  currentStep = n;
+  ['screen1','screen2','screen3'].forEach(function(id, i) {
+    document.getElementById(id).classList.toggle('active', i+1 === n);
+  });
+  ['step1item','step2item','step3item'].forEach(function(id, i) {
+    var el = document.getElementById(id);
+    el.classList.remove('active','done');
+    if (i+1 === n) el.classList.add('active');
+    else if (i+1 < n) el.classList.add('done');
+  });
+}
+
+function goToStep1() { setStep(1); }
+function goToStep2() {
+  if (currentStep === 1) {
+    // Run merge first
+    runMRSMerge().then(function() { setStep(2); });
+  } else {
+    setStep(2);
+  }
+}
+function goToStep3() {
+  // Apply section mapping to mergedResult, then go to step 3
+  applyMappingAndPrepareDownload();
+  setStep(3);
+}
+
+// ══════════════════════════════════════════════════
 // VERSION PARSING & COMPARISON
-// Filename format: BASE_NAME_V0A.xlsx  (version = _V followed by digit+alpha at end)
-// Examples: MRS_FSL_2425_PUN_OR115_01_V0B.xlsx  -> base=mrs_fsl_2425_pun_or115_01, ver=V0B
 // ══════════════════════════════════════════════════
 function parseVersion(filename) {
   var bare = filename.replace(/\.(xlsx|xls)$/i, '');
-  // Match _V<digit><alphanumeric>* at the very end (case-insensitive)
   var m = bare.match(/^(.*?)_(V[0-9][A-Z0-9]*)$/i);
   if (!m) return { base: bare.toLowerCase(), version: '', versionRaw: '' };
-  return {
-    base:       m[1].toLowerCase(),
-    version:    m[2].toUpperCase(),
-    versionRaw: m[2]
-  };
+  return { base: m[1].toLowerCase(), version: m[2].toUpperCase(), versionRaw: m[2] };
 }
-
-// Positive = a is newer, Negative = b is newer, 0 = same
 function compareVersions(a, b) {
   if (a === b) return 0;
   if (!a) return -1;
   if (!b) return  1;
-  // Strip leading V, split into numeric prefix + alpha suffix
   var sa = a.replace(/^V/i, '');
   var sb = b.replace(/^V/i, '');
   var pa = sa.match(/^([0-9]+)([A-Z0-9]*)$/i) || ['','0',''];
@@ -276,49 +614,28 @@ function compareVersions(a, b) {
   if (alpA > alpB) return  1;
   return 0;
 }
-
-// ══════════════════════════════════════════════════
-// DEDUPLICATE BY VERSION
-// Groups all files by base name. Within each group,
-// keeps only the latest version as active.
-// Returns: { active: [{file, version}], ignored: [{file, version, supersededBy, supersededVer}] }
-// ══════════════════════════════════════════════════
 function deduplicateByVersion(allFiles) {
-  var groups = {}; // base -> [ {file, version} ]
+  var groups = {};
   allFiles.forEach(function(f) {
     var p = parseVersion(f.name);
     if (!groups[p.base]) groups[p.base] = [];
     groups[p.base].push({ file: f, version: p.version });
   });
-
   var active  = [];
   var ignored = [];
-
   Object.keys(groups).forEach(function(base) {
     var grp = groups[base];
-    if (grp.length === 1) {
-      active.push(grp[0]);
-      return;
-    }
-    // Sort descending — latest first
+    if (grp.length === 1) { active.push(grp[0]); return; }
     grp.sort(function(a, b) { return compareVersions(b.version, a.version); });
     var winner = grp[0];
     active.push(winner);
     for (var i = 1; i < grp.length; i++) {
-      ignored.push({
-        file:          grp[i].file,
-        version:       grp[i].version,
-        supersededBy:  winner.file.name,
-        supersededVer: winner.version
-      });
+      ignored.push({ file: grp[i].file, version: grp[i].version, supersededBy: winner.file.name, supersededVer: winner.version });
     }
   });
-
-  // Preserve original insertion order for active files
   var order = {};
   allFiles.forEach(function(f, idx) { order[f.name] = idx; });
   active.sort(function(a, b) { return order[a.file.name] - order[b.file.name]; });
-
   return { active: active, ignored: ignored };
 }
 
@@ -402,26 +719,15 @@ function removeFile(name) {
 }
 
 // ══════════════════════════════════════════════════
-// PARSE OR NUMBER FROM MRS FILENAME
-// Format: MRS_FSL_2425_PUN_OR062_02_V0A.xlsx
-// Strategy: strip MRS_ prefix + version suffix + mrs-number suffix → rest is OR part
+// OR NUMBER / EXPORT NAME
 // ══════════════════════════════════════════════════
 function parseOrFromFilename(filename) {
-  // Strip extension
-  var bare = filename.replace(/\.(xlsx|xls)$/i, '');
-  // Strip leading MRS_ (case insensitive)
-  bare = bare.replace(/^MRS_/i, '');
-  // Strip trailing _V<digit><alphanumeric> version tag
-  bare = bare.replace(/_(V[0-9][A-Z0-9]*)$/i, '');
-  // Strip trailing _<1-3 digits> mrs number  e.g. _02
-  bare = bare.replace(/_(\d{1,3})$/, '');
-  // What remains is the OR part e.g. FSL_2425_PUN_OR062
+  var bare = filename.replace(/\.(xlsx|xls)$/i, '').replace(/^MRS_/i, '');
+  bare = bare.replace(/_(V[0-9][A-Z0-9]*)$/i, '').replace(/_(\d{1,3})$/, '');
   return bare || '';
 }
-
 function autoSuggestMergedName() {
   if (!mergeFiles.length) return;
-  // Use the first active file's name
   var active = deduplicateByVersion(mergeFiles).active;
   if (!active.length) return;
   var fname = active[0].file.name;
@@ -431,6 +737,7 @@ function autoSuggestMergedName() {
   var inp = document.getElementById('exportFileName');
   if (inp) inp.value = suggested;
 }
+
 function applyAndRender() {
   var result  = deduplicateByVersion(mergeFiles);
   ignoredFiles = result.ignored;
@@ -442,24 +749,20 @@ function applyAndRender() {
 
 // ── ACTIVE TABLE ──
 var mrsDragSrc = null;
-
 function renderActiveTable(activeEntries) {
   var tbody = document.getElementById('mergeFileTable');
   var count = activeEntries.length;
   document.getElementById('mergeFileCount').textContent = count + ' file' + (count !== 1 ? 's' : '');
-
   if (!count) {
     tbody.innerHTML = '<tr><td colspan="4"><div class="empty-table">&#128203; No files added yet.<br>Upload MRS files and click Add Files to List.</div></td></tr>';
     return;
   }
-
   tbody.innerHTML = activeEntries.map(function(entry, i) {
     var f   = entry.file;
     var ext = f.name.split('.').pop().toUpperCase();
     var verHtml = entry.version
       ? '<span class="ver-tag">' + entry.version + '</span>'
       : '<span class="ver-tag none">no ver</span>';
-    // Escape single quotes in filename for onclick
     var safeName = f.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
     return '<tr draggable="true" data-index="' + i + '"' +
       ' ondragstart="mrsDragStart(event,' + i + ')"' +
@@ -492,19 +795,15 @@ function renderIgnoredTable(ignored) {
   var card  = document.getElementById('supersededCard');
   var tbody = document.getElementById('ignoredFileTable');
   var pill  = document.getElementById('ignoredFileCount');
-
   if (!ignored.length) { card.style.display = 'none'; return; }
-
   card.style.display = 'block';
   pill.textContent = ignored.length + ' file' + (ignored.length !== 1 ? 's' : '');
-
   tbody.innerHTML = ignored.map(function(entry, i) {
     var f   = entry.file;
     var ext = f.name.split('.').pop().toUpperCase();
     var verHtml = entry.version
       ? '<span class="ver-tag old">' + entry.version + '</span>'
       : '<span class="ver-tag none">no ver</span>';
-    // Trim supersededBy name to keep it compact
     var supShort = entry.supersededBy.replace(/\.(xlsx|xls)$/i, '');
     if (supShort.length > 28) supShort = '...' + supShort.slice(-25);
     return '<tr>' +
@@ -538,7 +837,6 @@ function mrsDrop(e, toIndex) {
   e.preventDefault();
   e.currentTarget.classList.remove('drag-over');
   if (mrsDragSrc === null || mrsDragSrc === toIndex) return;
-  // Reorder active entries in mergeFiles
   var active = deduplicateByVersion(mergeFiles).active;
   var fromName = active[mrsDragSrc].file.name;
   var toName   = active[toIndex].file.name;
@@ -562,7 +860,7 @@ function checkReady() {
   var ready = masterFile !== null && activeCount >= 1;
   document.getElementById('mergeBtn').disabled = !ready;
   var hint = document.getElementById('mergeHint');
-  if (!masterFile)      hint.textContent = 'Upload master sheet to continue';
+  if (!masterFile)       hint.textContent = 'Upload master sheet to continue';
   else if (!activeCount) hint.textContent = 'Add at least 1 file to merge';
   else hint.textContent  = 'Ready \u2014 master + ' + activeCount + ' active file(s) queued';
 }
@@ -613,11 +911,11 @@ function lastDataRow(rows) {
 async function runMRSMerge() {
   clearLog();
   document.getElementById('mergeBtn').disabled = true;
+  document.getElementById('mergeBtn').innerHTML = '<span class="spinner"></span> Merging…';
 
   var activeEntries = deduplicateByVersion(mergeFiles).active;
   var activeFiles   = activeEntries.map(function(e) { return e.file; });
 
-  // Log version summary
   if (ignoredFiles.length) {
     log('Version check: <strong>' + ignoredFiles.length + ' superseded file(s) will be skipped</strong>', 'inserted');
     ignoredFiles.forEach(function(e) {
@@ -638,11 +936,9 @@ async function runMRSMerge() {
     var sheets = await readBothSheets(file);
     var src    = sheets.sheet2.length ? sheets.sheet2 : sheets.sheet1;
     var sname  = sheets.sheet2.length ? (sheets.names[1]||'Sheet2') : (sheets.names[0]||'Sheet1');
-
     var dataRows = src.slice(8).filter(function(row) {
       return row.some(function(v) { return v !== '' && v !== null && v !== undefined; });
     });
-
     var insertFrom = lastDataRow(result) + 1;
     for (var i = 0; i < dataRows.length; i++) {
       result[insertFrom + i] = dataRows[i].slice();
@@ -651,21 +947,199 @@ async function runMRSMerge() {
   }
 
   log('<strong>All files merged!</strong> Total rows: ' + result.length, 'new');
-  await exportResult(result);
+  mergedResult = result;
+
+  // Extract unique sections from Col G (index 6), data starts at row 8 (index 7)
+  extractSections(result);
+
   document.getElementById('mergeBtn').disabled = false;
+  document.getElementById('mergeBtn').innerHTML = '&#128256; Merge &amp; Continue &nbsp;&#8594;';
 }
 
 // ══════════════════════════════════════════════════
-// EXPORT
+// EXTRACT UNIQUE SECTIONS FROM COL G
 // ══════════════════════════════════════════════════
-async function exportResult(result) {
-  log('Writing output file\u2026');
+function extractSections(rows) {
+  var counts = {};
+  var dataRows = rows.slice(7); // data starts at row index 7 (row 8)
+  dataRows.forEach(function(row) {
+    var val = row[COL_G];
+    if (val === undefined || val === null || val === '') return;
+    var s = String(val).trim();
+    if (!s) return;
+    counts[s] = (counts[s] || 0) + 1;
+  });
+  uniqueSections = Object.keys(counts).sort();
+  sectionCounts  = counts;
+  renderSectionList();
+}
+
+// ══════════════════════════════════════════════════
+// RENDER SECTION LIST (Screen 2 — full-width table)
+// ══════════════════════════════════════════════════
+function renderSectionList() {
+  var body = document.getElementById('sectionListBody');
+
+  if (!uniqueSections.length) {
+    body.innerHTML = '<div class="empty-table">No sections found in Column G.</div>';
+    updateStatBar();
+    return;
+  }
+
+  body.innerHTML = uniqueSections.map(function(sec) {
+    var mapped = sectionMapping[sec] || '';
+    var safeId = 'inp_' + sec.replace(/[^a-zA-Z0-9]/g, '_');
+    var dotClass = mapped ? 's2-section-dot mapped' : 's2-section-dot';
+    var inputClass = mapped ? 's2-rename-input has-value' : 's2-rename-input';
+    return '<div class="s2-section-row" id="row_' + safeId + '">' +
+      '<div class="s2-col-sec">' +
+        '<div class="s2-section-name">' +
+          '<div class="' + dotClass + '" id="dot_' + safeId + '"></div>' +
+          sec +
+        '</div>' +
+      '</div>' +
+      '<div class="s2-col-rows">' + sectionCounts[sec] + '</div>' +
+      '<div class="s2-col-map">' +
+        '<input type="text" class="' + inputClass + '" id="' + safeId + '" ' +
+          'value="' + mapped.replace(/"/g, '&quot;') + '" ' +
+          'placeholder="Leave blank to keep as-is" ' +
+          'oninput="onRenameInput(this, \'' + sec.replace(/'/g, "\\'") + '\')">' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  updateStatBar();
+}
+
+function onRenameInput(input, sectionName) {
+  var val = input.value.trim();
+  var safeId = 'inp_' + sectionName.replace(/[^a-zA-Z0-9]/g, '_');
+  var dot = document.getElementById('dot_' + safeId);
+  if (val) {
+    sectionMapping[sectionName] = val;
+    input.classList.add('has-value');
+    if (dot) dot.classList.add('mapped');
+  } else {
+    delete sectionMapping[sectionName];
+    input.classList.remove('has-value');
+    if (dot) dot.classList.remove('mapped');
+  }
+  updateStatBar();
+}
+
+function updateStatBar() {
+  var total    = uniqueSections.length;
+  var mapped   = Object.keys(sectionMapping).filter(function(k) { return uniqueSections.indexOf(k) !== -1; }).length;
+  var unmapped = total - mapped;
+  var totalRows = uniqueSections.reduce(function(s, sec) { return s + (sectionCounts[sec] || 0); }, 0);
+  document.getElementById('statTotal').textContent    = total;
+  document.getElementById('statMapped').textContent   = mapped;
+  document.getElementById('statUnmapped').textContent = unmapped;
+  document.getElementById('statRows').textContent     = totalRows;
+}
+
+
+// ══════════════════════════════════════════════════
+// SECTION MAPPING IMPORT
+// ══════════════════════════════════════════════════
+function handleMappingFile(input) {
+  if (!input.files.length) return;
+  mappingFile = input.files[0];
+  input.value = '';
+
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var wb = XLSX.read(e.target.result, { type: 'array' });
+      var ws = wb.Sheets[wb.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+      sectionMapping = {};
+      var count = 0;
+      rows.forEach(function(row) {
+        var orig = row[0] ? String(row[0]).trim() : '';
+        var newn = row[1] ? String(row[1]).trim() : '';
+        if (orig && newn) { sectionMapping[orig] = newn; count++; }
+      });
+      // Show chip
+      document.getElementById('mappingEmptyZone').style.display = 'none';
+      document.getElementById('mappingFileChip').style.display = 'flex';
+      document.getElementById('mappingChipName').textContent = mappingFile.name;
+      document.getElementById('mappingChipInfo').textContent = count + ' mapping(s) loaded';
+      // Re-render table so inputs get pre-filled
+      renderSectionList();
+    } catch(err) {
+      alert('Error reading mapping file: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(mappingFile);
+}
+
+function clearMapping() {
+  mappingFile = null;
+  sectionMapping = {};
+  document.getElementById('mappingEmptyZone').style.display = '';
+  document.getElementById('mappingFileChip').style.display = 'none';
+  document.getElementById('mappingInput').value = '';
+  renderSectionList();
+}
+
+
+// ══════════════════════════════════════════════════
+// APPLY MAPPING & PREPARE DOWNLOAD (when going to Step 3)
+// ══════════════════════════════════════════════════
+function applyMappingAndPrepareDownload() {
+  // Collect the final mapping from input fields (in case user typed manually)
+  uniqueSections.forEach(function(sec) {
+    var safeId = 'inp_' + sec.replace(/[^a-zA-Z0-9]/g, '_');
+    var inp = document.getElementById(safeId);
+    if (inp) {
+      var val = inp.value.trim();
+      if (val) sectionMapping[sec] = val;
+      else delete sectionMapping[sec];
+    }
+  });
+
+  // Apply section mapping to mergedResult in Column G
+  var renamedCount = 0;
+  if (Object.keys(sectionMapping).length > 0) {
+    for (var i = 7; i < mergedResult.length; i++) {
+      var row = mergedResult[i];
+      if (!row) continue;
+      var val = row[COL_G];
+      if (val === undefined || val === null || val === '') continue;
+      var s = String(val).trim();
+      if (sectionMapping[s]) {
+        mergedResult[i][COL_G] = sectionMapping[s];
+        renamedCount++;
+      }
+    }
+  }
+
+  var activeCount  = deduplicateByVersion(mergeFiles).active.length;
+  var dataRowCount = mergedResult.length - 7;
+  var mappedCount  = Object.keys(sectionMapping).filter(function(k) { return uniqueSections.indexOf(k) !== -1; }).length;
+
+  document.getElementById('s3RowCount').textContent    = dataRowCount + ' rows';
+  document.getElementById('s3SectionCount').textContent = uniqueSections.length;
+  document.getElementById('s3RenamedCount').textContent = renamedCount > 0 ? renamedCount + ' rows updated (' + mappedCount + ' sections)' : 'None — skipped';
+  document.getElementById('s3FileCount').textContent    = activeCount + ' file' + (activeCount !== 1 ? 's' : '');
+}
+
+// ══════════════════════════════════════════════════
+// EXPORT (Screen 3 Download)
+// ══════════════════════════════════════════════════
+async function runDownload() {
+  var btn = document.getElementById('downloadBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Generating file…';
+  document.getElementById('s3StatusMsg').textContent = '';
+
   try {
     var masterBuffer = await masterFile.arrayBuffer();
     var wb = new ExcelJS.Workbook();
     await wb.xlsx.load(masterBuffer);
     var ws = wb.getWorksheet(1);
-    var dataRows = result.slice(7);
+    var dataRows = mergedResult.slice(7);
     for (var i = 0; i < dataRows.length; i++) {
       var exRow = ws.getRow(8 + i);
       dataRows[i].forEach(function(val, ci) {
@@ -678,15 +1152,22 @@ async function exportResult(result) {
     var exportName = (document.getElementById('exportFileName').value.trim()||'MRS_Merged').replace(/[^a-zA-Z0-9_\-. ]/g,'_');
     var finalName  = exportName + '.xlsx';
     saveAs(blob, finalName);
-    log('&#9989; Downloaded: ' + finalName, 'new');
+    document.getElementById('s3StatusMsg').textContent = '✓ Downloaded: ' + finalName;
+    btn.innerHTML = '&#9989; Downloaded!';
+    setTimeout(function() {
+      btn.innerHTML = '&#11123; Download Merged File';
+      btn.disabled = false;
+    }, 3000);
   } catch(err) {
-    log('Export error: ' + err.message, 'error');
+    document.getElementById('s3StatusMsg').textContent = 'Export error: ' + err.message;
     console.error(err);
+    btn.innerHTML = '&#11123; Download Merged File';
+    btn.disabled = false;
   }
 }
 
 // ══════════════════════════════════════════════════
-// DARK MODE — unified key with index.html (wz-theme)
+// DARK MODE
 // ══════════════════════════════════════════════════
 function toggleDark() {
   var isDark = document.body.classList.toggle('dark');
