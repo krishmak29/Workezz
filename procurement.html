@@ -193,7 +193,7 @@
     <div class="export-card">
       <div style="font-size:2.5rem;margin-bottom:12px;">&#128229;</div>
       <h2>Export Procurement Plan</h2>
-      <p id="exportSheetDesc">Exports 4 sheets: Panel Comparison &middot; Unmatched MRS &middot; Parts to Order &middot; Excess Parts.</p>
+      <p id="exportSheetDesc">Exports 5 sheets: Panel Comparison &middot; Unmatched MRS &middot; Parts to Order &middot; Excess Parts &middot; Unmatched Sections.</p>
       <div class="export-summary" id="exportSummary"></div>
       <div style="margin-bottom:16px;text-align:left;">
         <div style="font-size:.68rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Output File Name</div>
@@ -494,18 +494,39 @@ async function processData() {
     }
   });
 
+  // bomPanelNames - needed for both toOrderMap and unmatchedSections below
+  var bomPanelNames = new Set(panels.map(function(p){return p.name;}));
+
   // Parts to order (consolidated)
+  // For each part, compute total shortage across all panels, then subtract
+  // any qty sitting in unmatched sections before deciding to order.
   var toOrderMap=new Map();
   partsMap.forEach(function(part,key){
     var lk=mrsLookup(key,mrsMap,mrsNormMap); var me=lk?lk.entry:null;
+
+    // Sum shortage across all BOM panels
+    var totalShortage=0;
     panels.forEach(function(p){
       var rq=part.panelQtys[p.name]||0; if(!rq) return;
       var mq=(me&&me.sections.has(p.name))?me.sections.get(p.name):0;
-      if(mq<rq){
-        if(!toOrderMap.has(key)) toOrderMap.set(key,{partNum:part.partNum,make:part.make,desc:part.desc,totalReq:0});
-        toOrderMap.get(key).totalReq+=(rq-mq);
-      }
+      if(mq<rq) totalShortage+=(rq-mq);
     });
+
+    if(totalShortage<=0) return; // no shortage at all
+
+    // Sum qty available in unmatched sections (sections present in MRS but NOT in BOM panels)
+    var unmatchedQty=0;
+    if(me){
+      me.sections.forEach(function(qty,sectionName){
+        if(!bomPanelNames.has(sectionName)) unmatchedQty+=qty;
+      });
+    }
+
+    // Net shortage after crediting unmatched section stock
+    var netShortage=totalShortage-unmatchedQty;
+    if(netShortage>0){
+      toOrderMap.set(key,{partNum:part.partNum,make:part.make,desc:part.desc,totalReq:netShortage});
+    }
   });
   var toOrderParts=Array.from(toOrderMap.values());
 
@@ -525,6 +546,31 @@ async function processData() {
   });
   var excessParts=Array.from(excessMap.values()).map(function(p){return{partNum:p.partNum,make:p.make,desc:p.desc,totalReq:p.totalReq,totalMrs:p.totalMrs,excessQty:p.totalMrs-p.totalReq};});
 
+  // UNMATCHED SECTIONS
+  // For every BOM part that matches an MRS entry, find MRS sections that are NOT in the BOM panels list
+  // (bomPanelNames already defined above)
+  // Map: partKey -> { partNum, make, desc, sections: { sectionName -> qty } }
+  var unmatchedSectionsMap = new Map();
+  // Collect all unique unmatched section names (for matrix columns)
+  var unmatchedSectionNames = new Set();
+  partsMap.forEach(function(part, key) {
+    var lk = mrsLookup(key, mrsMap, mrsNormMap);
+    if (!lk) return; // no MRS match at all - skip
+    var mrsEntry = lk.entry;
+    mrsEntry.sections.forEach(function(qty, sectionName) {
+      if (bomPanelNames.has(sectionName)) return; // this section IS in BOM panels - skip
+      if (!qty) return;
+      unmatchedSectionNames.add(sectionName);
+      if (!unmatchedSectionsMap.has(key)) {
+        unmatchedSectionsMap.set(key, { partNum: part.partNum, make: part.make, desc: part.desc, sections: {} });
+      }
+      var entry = unmatchedSectionsMap.get(key);
+      entry.sections[sectionName] = (entry.sections[sectionName] || 0) + qty;
+    });
+  });
+  var unmatchedSectionsList = Array.from(unmatchedSectionNames).sort();
+  var unmatchedSectionsParts = Array.from(unmatchedSectionsMap.values());
+
   // shortParts for stats
   var shortParts=[];
   partsMap.forEach(function(part,key){
@@ -538,14 +584,14 @@ async function processData() {
 
   var stockMatchCount = 0;
 
-  processedData={panels:panels,partsMap:partsMap,panelRows:panelRows,mrsMap:mrsMap,mrsNormMap:mrsNormMap,unmatchedMRS:unmatchedMRS,excessParts:excessParts,shortParts:shortParts,toOrderParts:toOrderParts,stockMap:stockMap,stockRawRows:stockRawRows,stockMatchCount:stockMatchCount,normalizedMatchMap:normalizedMatchMap};
+  processedData={panels:panels,partsMap:partsMap,panelRows:panelRows,mrsMap:mrsMap,mrsNormMap:mrsNormMap,unmatchedMRS:unmatchedMRS,excessParts:excessParts,shortParts:shortParts,toOrderParts:toOrderParts,stockMap:stockMap,stockRawRows:stockRawRows,stockMatchCount:stockMatchCount,normalizedMatchMap:normalizedMatchMap,unmatchedSectionsParts:unmatchedSectionsParts,unmatchedSectionsList:unmatchedSectionsList};
 
   document.getElementById('processBtn').disabled=false;
   document.getElementById('processBtn').textContent='Process Data \u2192';
 
-  // fixed: always 4 sheets
+  // fixed: always 5 sheets
   var desc = document.getElementById('exportSheetDesc');
-  if (desc) desc.textContent = 'Exports 4 sheets: Panel Comparison &middot; Unmatched MRS &middot; Parts to Order &middot; Excess Parts.';
+  if (desc) desc.textContent = 'Exports 5 sheets: Panel Comparison \u00b7 Unmatched MRS \u00b7 Parts to Order \u00b7 Excess Parts \u00b7 Unmatched Sections.';
 
   renderVisualization();
   goTo(2);
@@ -775,18 +821,37 @@ async function exportExcel(){
     // Collect only the panels where each part is SHORT (mrsQty < reqQty)
     // panelQtys stores SHORTAGE qty = reqQty - mrsQty (not full reqQty)
     // Build a map: partKey -> { partNum, make, desc, panelQtys:{panelName->shortageQty}, total }
+    var s3BomPanelNames = new Set(panels.map(function(pl){return pl.name;}));
     var orderDetailMap = new Map();
     partsMap.forEach(function(part, key) {
       var s3lk=mrsLookup(key,mrsMap,mrsNormMap); var s3me=s3lk?s3lk.entry:null;
+      // Compute raw shortage per panel
+      var panelShortages={}, totalShortage=0;
       panels.forEach(function(pl) {
-        var rq = part.panelQtys[pl.name] || 0; if (!rq) return;
-        var mq = (s3me&&s3me.sections.has(pl.name)) ? s3me.sections.get(pl.name) : 0;
-        if (mq < rq) { // only short panels
-          if (!orderDetailMap.has(key)) orderDetailMap.set(key, { partNum: part.partNum, make: part.make, desc: part.desc, panelQtys: {}, total: 0 });
-          orderDetailMap.get(key).panelQtys[pl.name] = rq - mq;
-          orderDetailMap.get(key).total += (rq - mq);
-        }
+        var rq=part.panelQtys[pl.name]||0; if(!rq) return;
+        var mq=(s3me&&s3me.sections.has(pl.name))?s3me.sections.get(pl.name):0;
+        if(mq<rq){ panelShortages[pl.name]=rq-mq; totalShortage+=(rq-mq); }
       });
+      if(!totalShortage) return;
+      // Credit qty from unmatched sections (MRS sections NOT in BOM panels)
+      var unmatchedCredit=0;
+      if(s3me){
+        s3me.sections.forEach(function(qty,sectionName){
+          if(!s3BomPanelNames.has(sectionName)) unmatchedCredit+=qty;
+        });
+      }
+      var netShortage=totalShortage-unmatchedCredit;
+      if(netShortage<=0) return; // fully covered by unmatched stock
+      // Scale each panel shortage proportionally by the remaining net shortage
+      var scale=netShortage/totalShortage;
+      var entry={partNum:part.partNum,make:part.make,desc:part.desc,panelQtys:{},total:0};
+      panels.forEach(function(pl){
+        if(!panelShortages[pl.name]) return;
+        var scaled=Math.ceil(panelShortages[pl.name]*scale);
+        entry.panelQtys[pl.name]=scaled;
+        entry.total+=scaled;
+      });
+      orderDetailMap.set(key,entry);
     });
     var orderDetailParts = Array.from(orderDetailMap.values());
     // Column headers: SR, Make, Part Number, Part Description, [panel names...], Total Required
@@ -855,6 +920,54 @@ async function exportExcel(){
     mkHdr(ws4,['SR','Make','Part Number','Part Description','Total Req Qty','Total MRS Qty','Excess Qty'],C.GF,[5,20,26,45,14,14,14]);
     excessParts.forEach(function(pt,i){dRow(ws4,[i+1,pt.make||'-',pt.partNum,pt.desc||'-',pt.totalReq,pt.totalMrs,pt.excessQty],i,7,C.GF,'FFF0FDF4','FFECFDF5');});
     if(!excessParts.length){var nr4=ws4.addRow(['No excess parts']);nr4.getCell(1).font={italic:true,size:9,color:{argb:C.GF2}};}
+
+    // SHEET 5 - Unmatched Sections (matrix: parts matched BOM<->MRS but MRS section not in BOM panels)
+    var ws5 = wb.addWorksheet('Unmatched Sections');
+    var uSecParts  = p.unmatchedSectionsParts  || [];
+    var uSecNames  = p.unmatchedSectionsList   || [];
+    // Column widths: SR(5), Make(18), Part Number(26), Description(42), then each section(14)
+    var s5widths = [5, 18, 26, 42].concat(uSecNames.map(function(){ return 14; }));
+    s5widths.forEach(function(w, i){ ws5.getColumn(i+1).width = w; });
+    ws5.views = [{ state:'frozen', xSplit:0, ySplit:1 }];
+    // Header row - light blue theme
+    var s5hdr = ws5.addRow([]); s5hdr.height = 22;
+    var s5BaseHeaders = ['SR', 'Make', 'Part Number', 'Description'];
+    var s5AllHeaders  = s5BaseHeaders.concat(uSecNames);
+    s5AllHeaders.forEach(function(label, i) {
+      var c = s5hdr.getCell(i+1);
+      c.value = label;
+      var isSection = i >= 4;
+      c.font      = { bold:true, size:9, color:{ argb:'FF1E3A5F' }, name:'Calibri' };
+      c.fill      = { type:'pattern', pattern:'solid', fgColor:{ argb: isSection ? 'FFD6E4F7' : 'FFE0EDFF' } };
+      c.alignment = { vertical:'middle', horizontal: isSection ? 'center' : 'left', wrapText: true };
+      c.border    = { bottom:{ style:'medium', color:{ argb:'FF93C5FD' } }, right:{ style:'thin', color:{ argb:'FFBFDBFE' } } };
+    });
+    if (uSecParts.length) {
+      uSecParts.forEach(function(pt, ri) {
+        var vals = [ri+1, pt.make||'-', pt.partNum, pt.desc||'-'];
+        uSecNames.forEach(function(sn) { vals.push(pt.sections[sn] || ''); });
+        var r5 = ws5.addRow(vals); r5.height = 17;
+        var evenBg = 'FFFAFCFF'; var oddBg = 'FFF0F6FF';
+        var bg = ri % 2 === 0 ? evenBg : oddBg;
+        vals.forEach(function(_, ci) {
+          var c = r5.getCell(ci+1);
+          c.fill = { type:'pattern', pattern:'solid', fgColor:{ argb: bg } };
+          var isPartCol    = (ci === 2);
+          var isSectionCol = (ci >= 4);
+          c.font = {
+            size: 9,
+            name: isPartCol ? 'Courier New' : 'Calibri',
+            bold: isSectionCol && !!vals[ci],
+            color: { argb: isPartCol ? C.DB : (isSectionCol ? 'FF1D4ED8' : 'FF1F2937') }
+          };
+          c.alignment = { vertical:'middle', horizontal: ci < 4 ? 'left' : 'center', wrapText: ci===3 };
+          c.border = { bottom:{ style:'thin', color:{ argb:'FFBFDBFE' } }, right:{ style:'thin', color:{ argb:'FFBFDBFE' } } };
+        });
+      });
+    } else {
+      var nr5 = ws5.addRow(['No unmatched sections found']);
+      nr5.getCell(1).font = { italic:true, size:9, color:{ argb: C.GF2 } };
+    }
 
     var buffer=await wb.xlsx.writeBuffer();
     var blob=new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
