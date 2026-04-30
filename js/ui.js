@@ -684,7 +684,7 @@ async function exportMerged() {
   const blob = new Blob([buffer], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   const exportFileName = (nameInput && nameInput.value.trim()
     ? nameInput.value.trim().replace(/[^a-zA-Z0-9_\-. ]/g, '_')
-    : 'Workezz_Merged') + `_${todayStr()}.xlsx`;
+    : 'Workezz_Merged') + `.xlsx`;
   saveAs(blob, exportFileName);
 }
 

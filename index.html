@@ -26,7 +26,7 @@
     <span class="nav-tag">Engineering Tools Suite</span>
   </div>
   <div class="nav-right">
-    <span class="nav-version">v2.1</span>
+    <span class="nav-version">v2.2</span>
     <button class="whats-new-nav-btn" onclick="openWhatsNew()">✦ What's New</button>
     <button class="nav-toggle" id="modeBtn" onclick="toggleMode()">
       <span id="modeIcon">☀️</span>
@@ -356,7 +356,7 @@
         <div class="wn-modal-title-icon">✦</div>
         <div>
           <div class="wn-modal-heading">What's New</div>
-          <div class="wn-modal-sub">Version 2.1 · March 2026</div>
+          <div class="wn-modal-sub">Version 2.2 · March 2026</div>
         </div>
       </div>
       <button class="wn-modal-close" onclick="closeWhatsNew()">&#10005;</button>
@@ -365,7 +365,7 @@
     <!-- Body -->
     <div class="wn-modal-body">
 
-      <!-- Update 1: Procurement -->
+      <!-- Change 1: Procurement Planner - Excess fix -->
       <div class="wn-card">
         <div class="wn-card-head">
           <div class="wn-card-icon proc-icon">📋</div>
@@ -374,50 +374,45 @@
             <span class="wn-badge wn-badge-fix">Bug Fix</span>
           </div>
         </div>
-        <div class="wn-card-title">Parts to Order now shows correct shortage quantity</div>
+        <div class="wn-card-title">Excess Parts now correctly includes MRS-only entries</div>
         <div class="wn-card-desc">
-          If a part had <strong>Req Qty = 10</strong> and <strong>MRS Qty = 5</strong>, the "Parts to Order" sheet was incorrectly showing <span class="wn-strike">10</span>. It now correctly shows only the shortage — <strong>5</strong> (Req − MRS).
+          Parts where <strong>MRS Qty was present</strong> but the <strong>BOM had no requirement</strong> (empty cell) were being silently skipped — never flagged as excess. They now appear correctly in the Excess Parts sheet with the full MRS qty counted as surplus.
         </div>
         <div class="wn-chips-row">
-          <span class="wn-chip">Sheet 3 · Parts to Order</span>
-          <span class="wn-chip">Stats bar · Need Order</span>
+          <span class="wn-chip">Sheet 4 · Excess Parts</span>
+          <span class="wn-chip">BOM qty = 0 case</span>
         </div>
       </div>
 
-      <!-- Update 2: MRS Merger -->
+      <!-- Change 2: BOM Generation - duplicate date fix -->
       <div class="wn-card">
         <div class="wn-card-head">
-          <div class="wn-card-icon mrs-icon">🔀</div>
+          <div class="wn-card-icon" style="background:#fef9c3;">📊</div>
           <div class="wn-card-meta">
-            <div class="wn-card-tool">MRS Merger</div>
-            <span class="wn-badge wn-badge-new">New Feature</span>
+            <div class="wn-card-tool">BOM Generation</div>
+            <span class="wn-badge wn-badge-fix">Bug Fix</span>
           </div>
         </div>
-        <div class="wn-card-title">Section name remapping — new Screen 2</div>
+        <div class="wn-card-title">Export filename no longer shows the date twice</div>
         <div class="wn-card-desc">
-          A new screen now sits between file upload and export. All unique section names from your MRS files are detected automatically — remap them to your preferred names before merging.
-        </div>
-        <div class="wn-feature-list">
-          <div class="wn-feature-item"><span class="wn-dot"></span><span>All unique section names listed automatically</span></div>
-          <div class="wn-feature-item"><span class="wn-dot"></span><span>Type new names directly next to each section</span></div>
-          <div class="wn-feature-item"><span class="wn-dot"></span><span>Or import a mapping Excel — <strong>Col A</strong> = current name &nbsp;·&nbsp; <strong>Col B</strong> = new name</span></div>
+          The exported file name was appending <strong>today's date twice</strong> — once from the auto-filled filename and again hardcoded at export. The duplicate has been removed; the date now appears once, cleanly.
         </div>
         <div class="wn-chips-row">
-          <span class="wn-chip">Screen 2 · Section Mapping</span>
-          <span class="wn-chip">Export output</span>
+          <span class="wn-chip">Export · File Name</span>
+          <span class="wn-chip">Screen 4 · Download</span>
         </div>
       </div>
 
     </div>
 
-    <!-- Footer -->
-    <div class="wn-modal-footer">
-      <span class="wn-footer-note">This popup won't appear again until the next update.</span>
-      <button class="wn-got-it-btn" onclick="closeWhatsNew()">Got it ✓</button>
-    </div>
+        <!-- Footer -->
+        <div class="wn-modal-footer">
+          <span class="wn-footer-note">This popup won't appear again until the next update.</span>
+          <button class="wn-got-it-btn" onclick="closeWhatsNew()">Got it ✓</button>
+        </div>
 
-  </div>
-</div>
+      </div>
+    </div>
 
 <style>
 /* ── NAVBAR BUTTON ── */
@@ -587,7 +582,7 @@ body:not(.light) .wn-modal-footer { border-top-color: rgba(255,255,255,.07); }
 <script>
 /* ── WHAT'S NEW LOGIC ── */
 // Bump WN_VERSION when you deploy updates — modal reappears for all users automatically.
-var WN_VERSION = '2.1';
+var WN_VERSION = '2.2';
 var WN_KEY     = 'wz-whatsNew-v' + WN_VERSION;
 
 function openWhatsNew() {
