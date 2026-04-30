@@ -530,21 +530,25 @@ async function processData() {
   });
   var toOrderParts=Array.from(toOrderMap.values());
 
-  // Excess (consolidated)
-  var excessMap=new Map();
-  partsMap.forEach(function(part,key){
-    var lk=mrsLookup(key,mrsMap,mrsNormMap); var me=lk?lk.entry:null;
-    panels.forEach(function(p){
-      var rq=part.panelQtys[p.name]||0; if(!rq) return;
-      var mq=(me&&me.sections.has(p.name))?me.sections.get(p.name):0;
-      if(mq>rq){
-        if(!excessMap.has(key)) excessMap.set(key,{partNum:part.partNum,make:part.make,desc:part.desc,totalReq:0,totalMrs:0});
-        excessMap.get(key).totalReq+=rq;
-        excessMap.get(key).totalMrs+=mq;
-      }
-    });
+// Excess (consolidated)
+var excessMap = new Map();
+partsMap.forEach(function(part, key){
+  var lk = mrsLookup(key, mrsMap, mrsNormMap); var me = lk ? lk.entry : null;
+  if(!me) return;
+
+  me.sections.forEach(function(mq, sectionName){
+    if(!mq) return;
+    var rq = part.panelQtys[sectionName] || 0;
+    if(mq > rq){
+      if(!excessMap.has(key)) excessMap.set(key, {partNum:part.partNum, make:part.make, desc:part.desc, totalReq:0, totalMrs:0});
+      excessMap.get(key).totalReq += rq;
+      excessMap.get(key).totalMrs += mq;
+    }
   });
-  var excessParts=Array.from(excessMap.values()).map(function(p){return{partNum:p.partNum,make:p.make,desc:p.desc,totalReq:p.totalReq,totalMrs:p.totalMrs,excessQty:p.totalMrs-p.totalReq};});
+});
+var excessParts = Array.from(excessMap.values()).map(function(p){
+  return {partNum:p.partNum, make:p.make, desc:p.desc, totalReq:p.totalReq, totalMrs:p.totalMrs, excessQty:p.totalMrs-p.totalReq};
+});
 
   // UNMATCHED SECTIONS
   // For every BOM part that matches an MRS entry, find MRS sections that are NOT in the BOM panels list
